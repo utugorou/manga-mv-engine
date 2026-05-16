@@ -106,6 +106,7 @@ export default function Home() {
   const [panelMode, setPanelMode] = useState<PanelMode>("random");
 
   const [chorusBoost, setChorusBoost] = useState(false);
+  const [audioMood, setAudioMood] = useState<AudioMood>("quiet");
   const [chorusSensitivity, setChorusSensitivity] = useState(22);
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -336,7 +337,13 @@ export default function Home() {
     if (!audioRef.current) return;
 
     const AudioContextClass =
-      window.AudioContext || (window as any).webkitAudioContext;
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+
+    if (!AudioContextClass) {
+      throw new Error("AudioContext is not supported");
+    }
 
     if (!audioContextRef.current) {
       audioContextRef.current = new AudioContextClass();
@@ -432,6 +439,7 @@ export default function Home() {
       } else {
         audioMoodRef.current = "quiet";
       }
+      setAudioMood(audioMoodRef.current);
 
       lastLowEnergyRef.current =
         lowEnergy * 0.45 + lastLowEnergyRef.current * 0.55;
@@ -513,7 +521,6 @@ export default function Home() {
   useEffect(() => {
     if (!isPlaying) {
       stopAnalysisLoop();
-      setChorusBoost(false);
     }
   }, [isPlaying]);
 
@@ -563,6 +570,7 @@ export default function Home() {
     setCurrentTime(0);
     setIsPlaying(false);
     setChorusBoost(false);
+    setAudioMood("quiet");
 
     sourceRef.current = null;
     analyserRef.current = null;
@@ -628,6 +636,7 @@ export default function Home() {
     setCurrentImageIndex(0);
     setCurrentTime(0);
     setChorusBoost(false);
+    setAudioMood("quiet");
 
     lastSwitchTimeRef.current = 0;
     wasAboveThresholdRef.current = false;
@@ -978,7 +987,7 @@ export default function Home() {
         isPlaying={isPlaying}
         chorusBoost={chorusBoost}
         activePreset={activePreset}
-        audioMood={audioMoodRef.current}
+        audioMood={audioMood}
         imageMotions={imageMotions}
         onSelectImage={(image, index) => {
           setSelectedImage(image);
@@ -1127,7 +1136,7 @@ export default function Home() {
             setAutoBubble={setAutoBubble}
             textMode={textMode}
             setTextMode={setTextMode}
-            audioMood={audioMoodRef.current}
+            audioMood={audioMood}
             showSfx={showSfx}
             setShowSfx={setShowSfx}
             sfxText={sfxText}

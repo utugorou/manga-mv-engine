@@ -15,10 +15,13 @@ import {
   smartBubbleTexts,
   smartSfxTexts,
 } from "../src/lib/textEngine";
+import { getExportResolution } from "../src/lib/exportHelpers";
 import type {
   AspectRatio,
   AudioMood,
+  ExportMode,
   ExportQuality,
+  ExportStatus,
   MotionGroup,
   MotionType,
   PanelMode,
@@ -55,9 +58,11 @@ export default function Home() {
 
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
 
+  const [exportMode] = useState<ExportMode>("preview");
   const [exportQuality, setExportQuality] =
     useState<ExportQuality>("standard");
-  const [exportStatus, setExportStatus] = useState("未書き出し");
+  const [exportStatus, setExportStatus] = useState<ExportStatus>("idle");
+  const [exportMessage, setExportMessage] = useState("未準備");
 
   const [showBubble, setShowBubble] = useState(false);
   const [bubbleText, setBubbleText] = useState("ここにセリフ");
@@ -642,14 +647,18 @@ export default function Home() {
 
   const handlePrepareExport = () => {
     if (!audioUrl || images.length === 0) {
-      setExportStatus("画像と音楽をアップロードしてください");
+      setExportStatus("error");
+      setExportMessage("画像と音楽をアップロードしてください");
       return;
     }
 
-    setExportStatus(
+    const resolution = getExportResolution(aspectRatio, exportQuality);
+
+    setExportStatus("ready");
+    setExportMessage(
       `準備OK：${aspectRatio} / ${
         exportQuality === "high" ? "高画質" : "標準"
-      } / ${formatTime(audioDuration)}`
+      } / ${resolution.width} x ${resolution.height} / ${formatTime(audioDuration)} / ${images.length}枚`
     );
   };
 
@@ -935,9 +944,11 @@ export default function Home() {
             aspectRatio={aspectRatio}
             audioDuration={audioDuration}
             imageCount={images.length}
+            exportMode={exportMode}
             exportQuality={exportQuality}
             setExportQuality={setExportQuality}
             exportStatus={exportStatus}
+            exportMessage={exportMessage}
             handlePrepareExport={handlePrepareExport}
             formatTime={formatTime}
           />

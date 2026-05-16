@@ -1,15 +1,22 @@
 "use client";
 
-type ExportQuality = "standard" | "high";
-type AspectRatio = "16:9" | "9:16" | "1:1" | "4:5";
+import { getExportModeLabel, getExportResolution, getExportStatusLabel } from "../lib/exportHelpers";
+import type {
+  AspectRatio,
+  ExportMode,
+  ExportQuality,
+  ExportStatus,
+} from "../types/mv";
 
 type ExportPanelProps = {
   aspectRatio: AspectRatio;
   audioDuration: number;
   imageCount: number;
+  exportMode: ExportMode;
   exportQuality: ExportQuality;
   setExportQuality: (quality: ExportQuality) => void;
-  exportStatus: string;
+  exportStatus: ExportStatus;
+  exportMessage: string;
   handlePrepareExport: () => void;
   formatTime: (time: number) => string;
 };
@@ -18,12 +25,16 @@ export default function ExportPanel({
   aspectRatio,
   audioDuration,
   imageCount,
+  exportMode,
   exportQuality,
   setExportQuality,
   exportStatus,
+  exportMessage,
   handlePrepareExport,
   formatTime,
 }: ExportPanelProps) {
+  const resolution = getExportResolution(aspectRatio, exportQuality);
+
   return (
     <div className="pt-3 pb-3 border-b border-zinc-700">
       <p className="text-sm mb-2 text-yellow-300 font-bold">出力設定</p>
@@ -32,6 +43,16 @@ export default function ExportPanel({
         <div className="flex justify-between">
           <span>出力画角</span>
           <span className="text-yellow-300">{aspectRatio}</span>
+        </div>
+
+        <div className="flex justify-between">
+          <span>書き出し方式</span>
+          <span className="text-lime-300">{getExportModeLabel(exportMode)}</span>
+        </div>
+
+        <div className="flex justify-between">
+          <span>出力解像度</span>
+          <span className="text-emerald-300">{resolution.width} x {resolution.height}</span>
         </div>
 
         <div className="flex justify-between">
@@ -78,7 +99,10 @@ export default function ExportPanel({
         書き出し準備
       </button>
 
-      <p className="text-xs text-zinc-400 mt-2">状態：{exportStatus}</p>
+      <p className="text-xs text-zinc-400 mt-2">
+        状態：{getExportStatusLabel(exportStatus)}
+      </p>
+      <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{exportMessage}</p>
 
       <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
         ※現在は書き出し準備モードです。MP4保存は次の段階で Remotion

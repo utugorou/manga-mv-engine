@@ -13,3 +13,5 @@ export type ExportStatus = "idle" | "ready" | "recording" | "finished" | "error"
 export type PresetName = "ROCK" | "POP" | "FUNK" | "JAZZ" | "DANCE" | "DISCO" | "Synth Vocal" | "BALLADE" | "漫画BATTLE" | "SIMPLE";
 
 export type TimelineMarker = { index: number; percent: number };
+
+export type ExportAudioStatus = "unknown" | "with-audio" | "video-only";

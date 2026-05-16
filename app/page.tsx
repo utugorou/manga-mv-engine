@@ -16,9 +16,14 @@ import {
   smartSfxTexts,
 } from "../src/lib/textEngine";
 import { getExportResolution } from "../src/lib/exportHelpers";
+import {
+  combineCanvasAndAudioStreams,
+  getAudioStreamFromElement,
+} from "../src/lib/canvasRecorder";
 import type {
   AspectRatio,
   AudioMood,
+  ExportAudioStatus,
   ExportMode,
   ExportQuality,
   ExportStatus,
@@ -38,6 +43,10 @@ export default function Home() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const rafRef = useRef<number | null>(null);
+  const exportCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const exportImageRef = useRef<HTMLImageElement | null>(null);
+  const exportDrawRafRef = useRef<number | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   const lastSwitchTimeRef = useRef(0);
   const wasAboveThresholdRef = useRef(false);
@@ -63,6 +72,9 @@ export default function Home() {
     useState<ExportQuality>("standard");
   const [exportStatus, setExportStatus] = useState<ExportStatus>("idle");
   const [exportMessage, setExportMessage] = useState("未準備");
+  const [exportAudioStatus, setExportAudioStatus] =
+    useState<ExportAudioStatus>("unknown");
+  const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
 
   const [showBubble, setShowBubble] = useState(false);
   const [bubbleText, setBubbleText] = useState("ここにセリフ");
@@ -662,6 +674,82 @@ export default function Home() {
     );
   };
 
+  const stopExportCanvasLoop = () => {
+    if (exportDrawRafRef.current !== null) {
+      cancelAnimationFrame(exportDrawRafRef.current);
+      exportDrawRafRef.current = null;
+    }
+  };
+
+  const startExportCanvasLoop = () => {
+    const canvas = exportCanvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (!canvas || !ctx) return;
+    const draw = () => {
+      ctx.fillStyle = "#111111";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const image = exportImageRef.current;
+      if (image && image.complete) {
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      }
+      exportDrawRafRef.current = requestAnimationFrame(draw);
+    };
+    draw();
+  };
+
+  const handleStartRecording = () => {
+    const canvas = exportCanvasRef.current;
+    if (!canvas) return;
+    const resolution = getExportResolution(aspectRatio, exportQuality);
+    canvas.width = resolution.width;
+    canvas.height = resolution.height;
+    setRecordedBlob(null);
+    const canvasStream = canvas.captureStream(30);
+    const audioStream = getAudioStreamFromElement(audioRef.current);
+    const { stream, audioCaptureSupport } = combineCanvasAndAudioStreams(
+      canvasStream,
+      audioStream
+    );
+    setExportAudioStatus(audioCaptureSupport);
+    const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+    mediaRecorderRef.current = recorder;
+    const chunks: BlobPart[] = [];
+    recorder.ondataavailable = (event) => {
+      if (event.data.size > 0) chunks.push(event.data);
+    };
+    recorder.onstop = () => {
+      setRecordedBlob(new Blob(chunks, { type: "video/webm" }));
+      setExportStatus("finished");
+      setExportMessage("録画完了：WebMリンクを生成しました");
+      stopExportCanvasLoop();
+      stream.getTracks().forEach((track) => track.stop());
+    };
+    recorder.start();
+    startExportCanvasLoop();
+    setExportStatus("recording");
+    setExportMessage(
+      audioCaptureSupport === "with-audio"
+        ? "録画中：Canvas映像 + 音声を記録しています"
+        : "録画中：この環境では音声キャプチャ未対応のため映像のみです"
+    );
+  };
+
+  const handleStopRecording = () => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state !== "recording") return;
+    recorder.stop();
+  };
+
+  const handleDownloadRecording = () => {
+    if (!recordedBlob) return;
+    const url = URL.createObjectURL(recordedBlob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "manga-mv-export.webm";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getTimelineMarkers = () => {
     if (audioDuration <= 0 || images.length === 0) return [];
 
@@ -851,6 +939,13 @@ export default function Home() {
       />
 
       <div className="flex-1 flex flex-col items-center justify-center gap-4 overflow-auto p-4">
+        <img
+          ref={exportImageRef}
+          src={selectedImage ?? ""}
+          alt=""
+          className="hidden"
+        />
+        <canvas ref={exportCanvasRef} className="hidden" />
         <PreviewStage
           previewSizeClass={getPreviewSizeClass()}
           chorusBoost={chorusBoost}
@@ -949,7 +1044,12 @@ export default function Home() {
             setExportQuality={setExportQuality}
             exportStatus={exportStatus}
             exportMessage={exportMessage}
+            exportAudioStatus={exportAudioStatus}
+            hasRecordedBlob={Boolean(recordedBlob)}
             handlePrepareExport={handlePrepareExport}
+            handleStartRecording={handleStartRecording}
+            handleStopRecording={handleStopRecording}
+            handleDownloadRecording={handleDownloadRecording}
             formatTime={formatTime}
           />
 

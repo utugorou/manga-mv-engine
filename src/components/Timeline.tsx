@@ -26,9 +26,9 @@ export default function Timeline({
   if (!audioUrl) return null;
 
   return (
-    <div className="w-full max-w-[720px] bg-zinc-900 border border-zinc-700 rounded-xl p-4">
-      <div className="flex justify-between text-xs text-zinc-400 mb-2">
-        <span>{formatTime(currentTime)}</span>
+    <div className="w-full rounded-xl border border-cyan-500/30 bg-zinc-950/90 p-4">
+      <div className="mb-2 flex items-center justify-between text-sm font-medium text-zinc-300">
+        <span className="text-cyan-300">{formatTime(currentTime)}</span>
         <span>{formatTime(audioDuration)}</span>
       </div>
 
@@ -42,34 +42,21 @@ export default function Timeline({
         className="w-full accent-pink-500"
       />
 
-      <div className="mt-3 h-4 bg-zinc-800 rounded-full overflow-hidden relative">
-        <div
-          className="h-full bg-gradient-to-r from-pink-500 to-cyan-400"
-          style={{ width: audioDuration > 0 ? `${(currentTime / audioDuration) * 100}%` : "0%" }}
-        />
-
+      <div className="relative mt-3 h-4 overflow-hidden rounded-full bg-zinc-800">
+        <div className="h-full bg-gradient-to-r from-pink-500 via-cyan-400 to-yellow-300" style={{ width: audioDuration > 0 ? `${(currentTime / audioDuration) * 100}%` : "0%" }} />
         {markers.map((marker) => (
           <div
             key={marker.index}
-            className={`absolute top-0 h-full w-[3px] ${
-              marker.index === currentImageIndex ? "bg-yellow-300" : "bg-white/70"
-            }`}
+            className={`absolute top-0 h-full w-[3px] ${marker.index === currentImageIndex ? "bg-yellow-200" : "bg-white/70"}`}
             style={{ left: `${marker.percent}%` }}
             title={`画像 ${marker.index + 1}`}
           />
         ))}
       </div>
 
-      <div className="flex justify-between text-xs text-zinc-500 mt-2">
-        <span>画像 {imagesLength > 0 ? currentImageIndex + 1 : 0}</span>
-
-        <span>
-          {switchMode === "equal"
-            ? "均等タイムライン"
-            : switchMode === "peak"
-            ? "音量ピーク＋補助"
-            : "低音キック＋補助"}
-        </span>
+      <div className="mt-2 flex justify-between text-xs text-zinc-400">
+        <span>画像 {imagesLength > 0 ? currentImageIndex + 1 : 0} / {imagesLength}</span>
+        <span>{switchMode === "equal" ? "均等タイムライン" : switchMode === "peak" ? "音量ピーク＋補助" : "低音キック＋補助"}</span>
       </div>
     </div>
   );

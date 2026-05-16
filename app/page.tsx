@@ -1103,7 +1103,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-black text-white flex">
+    <main className="min-h-screen bg-black text-white">
       <style>{`
         @keyframes zoomInAnim {
           0%,100% { transform: scale(1); }
@@ -1195,69 +1195,186 @@ export default function Home() {
         }
       `}</style>
 
-      <UploadPanel
-        handleImageUpload={handleImageUpload}
-        handleAudioUpload={handleAudioUpload}
-        audioName={audioName}
-        aspectRatio={aspectRatio}
-        formatTime={formatTime}
-        audioDuration={audioDuration}
-        currentTime={currentTime}
-        images={images}
-        currentImageIndex={currentImageIndex}
-        isPlaying={isPlaying}
-        chorusBoost={chorusBoost}
-        activePreset={activePreset}
-        audioMood={audioMood}
-        imageMotions={imageMotions}
-        onSelectImage={(image, index) => {
-          setSelectedImage(image);
-          setCurrentImageIndex(index);
-        }}
-      />
-
-      <div className="flex-1 flex flex-col items-center justify-center gap-4 overflow-auto p-4">
-        <PreviewStage
-          previewSizeClass={getPreviewSizeClass()}
-          chorusBoost={chorusBoost}
-          showGlitch={showGlitch}
-          selectedImage={selectedImage}
-          isPlaying={isPlaying}
-          getMotionStyle={getMotionStyle}
-          showPanels={showPanels}
-          panelBurst={panelBurst}
-          panelPattern={panelPattern}
-          showEqualizer={showEqualizer}
-          eqBars={eqBars}
-          showSfx={showSfx}
-          sfxPosition={sfxPosition}
-          sfxText={sfxText}
-          getPositionClass={getPositionClass}
-          showBubble={showBubble}
-          bubblePosition={bubblePosition}
-          bubbleText={bubbleText}
-          flashActive={flashActive}
-        />
-
-        <ControlButtons
-          isPlaying={isPlaying}
-          onPlay={handlePlay}
-          onPause={handlePause}
-          onReset={handleReset}
-        />
-
-        <Timeline
-          audioUrl={audioUrl}
-          currentTime={currentTime}
-          audioDuration={audioDuration}
-          onSeek={handleSeek}
-          markers={getTimelineMarkers()}
-          currentImageIndex={currentImageIndex}
-          imagesLength={images.length}
-          switchMode={switchMode}
+      <div className="px-4 py-4 border-b border-zinc-800 bg-gradient-to-r from-zinc-950 via-black to-zinc-950">
+        <h1 className="text-3xl font-black tracking-wide text-pink-300">Manga MV Engine</h1>
+        <p className="text-sm text-cyan-300 mt-1">音で動く、漫画MVジェネレーター</p>
+        <p className="text-xs text-yellow-300 mt-1">WebM Export Ready</p>
+      </div>
+      <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr_360px] gap-4 p-4">
+        <UploadPanel
+          handleImageUpload={handleImageUpload}
+          handleAudioUpload={handleAudioUpload}
+          audioName={audioName}
+          aspectRatio={aspectRatio}
           formatTime={formatTime}
+          audioDuration={audioDuration}
+          currentTime={currentTime}
+          images={images}
+          currentImageIndex={currentImageIndex}
+          isPlaying={isPlaying}
+          chorusBoost={chorusBoost}
+          activePreset={activePreset}
+          audioMood={audioMood}
+          imageMotions={imageMotions}
+          onSelectImage={(image, index) => {
+            setSelectedImage(image);
+            setCurrentImageIndex(index);
+          }}
         />
-
+        <div className="flex flex-col rounded-2xl border border-cyan-500/30 bg-zinc-950/70 p-4">
+          <div className="flex-1 flex items-center justify-center p-4">
+            <PreviewStage
+              previewSizeClass={getPreviewSizeClass()}
+              chorusBoost={chorusBoost}
+              showGlitch={showGlitch}
+              selectedImage={selectedImage}
+              isPlaying={isPlaying}
+              isRecording={isRecording}
+              getMotionStyle={getMotionStyle}
+              showPanels={showPanels}
+              panelBurst={panelBurst}
+              panelPattern={panelPattern}
+              showEqualizer={showEqualizer}
+              eqBars={eqBars}
+              showSfx={showSfx}
+              sfxPosition={sfxPosition}
+              sfxText={sfxText}
+              getPositionClass={getPositionClass}
+              showBubble={showBubble}
+              bubblePosition={bubblePosition}
+              bubbleText={bubbleText}
+              flashActive={flashActive}
+            />
+          </div>
+          <div className="mt-6 space-y-3">
+            <ControlButtons
+              isPlaying={isPlaying}
+              onPlay={handlePlay}
+              onPause={handlePause}
+              onReset={handleReset}
+            />
+            <Timeline
+              audioUrl={audioUrl}
+              currentTime={currentTime}
+              audioDuration={audioDuration}
+              onSeek={handleSeek}
+              markers={getTimelineMarkers()}
+              currentImageIndex={currentImageIndex}
+              imagesLength={images.length}
+              switchMode={switchMode}
+              formatTime={formatTime}
+            />
+          </div>
+        </div>
+        <div className="max-h-[calc(100vh-140px)] overflow-y-auto rounded-2xl border border-cyan-500/30 bg-zinc-950/90 p-4">
+          <h2 className="text-xl font-bold mb-4 text-cyan-300">演出設定と書き出し</h2>
+          <div className="space-y-4">
+            <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
+              <p className="text-sm mb-2 text-pink-300 font-bold">画角</p>
+              <div className="grid grid-cols-2 gap-2">
+                {aspectList.map((ratio) => (
+                  <button
+                    key={ratio}
+                    onClick={() => setAspectRatio(ratio)}
+                    className={`p-2 rounded text-xs font-bold ${
+                      aspectRatio === ratio
+                        ? "bg-yellow-400 text-black shadow-[0_0_10px_#facc15]"
+                        : "bg-zinc-800 hover:bg-zinc-700"
+                    }`}
+                  >
+                    {ratio}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
+              <ExportPanel
+                aspectRatio={aspectRatio}
+                audioDuration={audioDuration}
+                imageCount={images.length}
+                exportMode={exportMode}
+                exportQuality={exportQuality}
+                setExportQuality={setExportQuality}
+                exportStatus={exportStatus}
+                exportMessage={exportMessage}
+                handlePrepareExport={handlePrepareExport}
+                handleStartRecording={handleStartRecording}
+                handleStartSyncedRecording={handleStartSyncedRecording}
+                handleStopRecording={handleStopRecording}
+                isRecording={isRecording}
+                hasAudioSource={Boolean(audioUrl)}
+                recordingMode={recordingMode}
+                recordedVideoUrl={recordedVideoUrl}
+                exportAudioStatus={exportAudioStatus}
+                formatTime={formatTime}
+              />
+            </div>
+            <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3"><PresetPanel presetList={presetList} activePreset={activePreset} applyPreset={applyPreset} /></div>
+            <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
+              <SettingsPanel
+                switchMode={switchMode}
+                setSwitchMode={setSwitchMode}
+                wasAboveThresholdRef={wasAboveThresholdRef}
+                lastLowEnergyRef={lastLowEnergyRef}
+                setActivePreset={setActivePreset}
+                imageDuration={imageDuration}
+                setImageDuration={setImageDuration}
+                handleAutoDuration={handleAutoDuration}
+                peakSensitivity={peakSensitivity}
+                setPeakSensitivity={setPeakSensitivity}
+                kickSensitivity={kickSensitivity}
+                setKickSensitivity={setKickSensitivity}
+                minSwitchInterval={minSwitchInterval}
+                setMinSwitchInterval={setMinSwitchInterval}
+                idealSwitchInterval={idealSwitchInterval}
+                setIdealSwitchInterval={setIdealSwitchInterval}
+                fallbackSwitchInterval={fallbackSwitchInterval}
+                setFallbackSwitchInterval={setFallbackSwitchInterval}
+                showBubble={showBubble}
+                setShowBubble={setShowBubble}
+                bubbleText={bubbleText}
+                setBubbleText={setBubbleText}
+                autoBubble={autoBubble}
+                setAutoBubble={setAutoBubble}
+                textMode={textMode}
+                setTextMode={setTextMode}
+                audioMood={audioMood}
+                showSfx={showSfx}
+                setShowSfx={setShowSfx}
+                sfxText={sfxText}
+                setSfxText={setSfxText}
+                autoSfx={autoSfx}
+                setAutoSfx={setAutoSfx}
+                setBubblePosition={setBubblePosition}
+                setSfxPosition={setSfxPosition}
+                bubbleTexts={bubbleTexts}
+                sfxTexts={sfxTexts}
+                positions={positions}
+                randomItem={randomItem}
+                showGlitch={showGlitch}
+                setShowGlitch={setShowGlitch}
+                showEqualizer={showEqualizer}
+                setShowEqualizer={setShowEqualizer}
+                showFlash={showFlash}
+                setShowFlash={setShowFlash}
+                showPanels={showPanels}
+                setShowPanels={setShowPanels}
+                panelMode={panelMode}
+                setPanelMode={setPanelMode}
+                panelPattern={panelPattern}
+                setPanelPattern={setPanelPattern}
+                chorusBoost={chorusBoost}
+                chorusSensitivity={chorusSensitivity}
+                setChorusSensitivity={setChorusSensitivity}
+                selectedMotion={selectedMotion}
+                setSelectedMotion={setSelectedMotion}
+                applyMotionToCurrent={applyMotionToCurrent}
+                applyRandomMotions={applyRandomMotions}
+                randomMotionApplied={randomMotionApplied}
+              />
+            </div>
+          </div>
+        </div>
         {audioUrl && (
           <audio
             ref={audioRef}
@@ -1272,129 +1389,6 @@ export default function Home() {
             onEnded={handleReset}
           />
         )}
-      </div>
-
-      <div className="w-72 border-l border-cyan-500 p-4 overflow-y-auto">
-        <h2 className="text-xl font-bold mb-4 text-cyan-400">
-          演出設定
-        </h2>
-
-        <div className="space-y-3">
-          <div className="pt-1 pb-3 border-b border-zinc-700">
-            <p className="text-sm mb-2 text-pink-300 font-bold">
-              画角プリセット
-            </p>
-
-            <div className="grid grid-cols-2 gap-2">
-              {aspectList.map((ratio) => (
-                <button
-                  key={ratio}
-                  onClick={() => setAspectRatio(ratio)}
-                  className={`p-2 rounded text-xs font-bold ${
-                    aspectRatio === ratio
-                      ? "bg-yellow-400 text-black"
-                      : "bg-zinc-800 hover:bg-zinc-700"
-                  }`}
-                >
-                  {ratio}
-                </button>
-              ))}
-            </div>
-
-            <p className="text-xs text-zinc-400 mt-2">
-              16:9=YouTube / 9:16=Shorts・TikTok / 1:1=正方形 / 4:5=Instagram
-            </p>
-          </div>
-
-          <ExportPanel
-            aspectRatio={aspectRatio}
-            audioDuration={audioDuration}
-            imageCount={images.length}
-            exportMode={exportMode}
-            exportQuality={exportQuality}
-            setExportQuality={setExportQuality}
-            exportStatus={exportStatus}
-            exportMessage={exportMessage}
-            handlePrepareExport={handlePrepareExport}
-            handleStartRecording={handleStartRecording}
-            handleStartSyncedRecording={handleStartSyncedRecording}
-            handleStopRecording={handleStopRecording}
-            isRecording={isRecording}
-            hasAudioSource={Boolean(audioUrl)}
-            recordingMode={recordingMode}
-            recordedVideoUrl={recordedVideoUrl}
-            exportAudioStatus={exportAudioStatus}
-            formatTime={formatTime}
-          />
-
-          <PresetPanel
-            presetList={presetList}
-            activePreset={activePreset}
-            applyPreset={applyPreset}
-          />
-
-          <SettingsPanel
-            switchMode={switchMode}
-            setSwitchMode={setSwitchMode}
-            wasAboveThresholdRef={wasAboveThresholdRef}
-            lastLowEnergyRef={lastLowEnergyRef}
-            setActivePreset={setActivePreset}
-            imageDuration={imageDuration}
-            setImageDuration={setImageDuration}
-            handleAutoDuration={handleAutoDuration}
-            peakSensitivity={peakSensitivity}
-            setPeakSensitivity={setPeakSensitivity}
-            kickSensitivity={kickSensitivity}
-            setKickSensitivity={setKickSensitivity}
-            minSwitchInterval={minSwitchInterval}
-            setMinSwitchInterval={setMinSwitchInterval}
-            idealSwitchInterval={idealSwitchInterval}
-            setIdealSwitchInterval={setIdealSwitchInterval}
-            fallbackSwitchInterval={fallbackSwitchInterval}
-            setFallbackSwitchInterval={setFallbackSwitchInterval}
-            showBubble={showBubble}
-            setShowBubble={setShowBubble}
-            bubbleText={bubbleText}
-            setBubbleText={setBubbleText}
-            autoBubble={autoBubble}
-            setAutoBubble={setAutoBubble}
-            textMode={textMode}
-            setTextMode={setTextMode}
-            audioMood={audioMood}
-            showSfx={showSfx}
-            setShowSfx={setShowSfx}
-            sfxText={sfxText}
-            setSfxText={setSfxText}
-            autoSfx={autoSfx}
-            setAutoSfx={setAutoSfx}
-            setBubblePosition={setBubblePosition}
-            setSfxPosition={setSfxPosition}
-            bubbleTexts={bubbleTexts}
-            sfxTexts={sfxTexts}
-            positions={positions}
-            randomItem={randomItem}
-            showGlitch={showGlitch}
-            setShowGlitch={setShowGlitch}
-            showEqualizer={showEqualizer}
-            setShowEqualizer={setShowEqualizer}
-            showFlash={showFlash}
-            setShowFlash={setShowFlash}
-            showPanels={showPanels}
-            setShowPanels={setShowPanels}
-            panelMode={panelMode}
-            setPanelMode={setPanelMode}
-            panelPattern={panelPattern}
-            setPanelPattern={setPanelPattern}
-            chorusBoost={chorusBoost}
-            chorusSensitivity={chorusSensitivity}
-            setChorusSensitivity={setChorusSensitivity}
-            selectedMotion={selectedMotion}
-            setSelectedMotion={setSelectedMotion}
-            applyMotionToCurrent={applyMotionToCurrent}
-            applyRandomMotions={applyRandomMotions}
-            randomMotionApplied={randomMotionApplied}
-          />
-        </div>
       </div>
     </main>
   );

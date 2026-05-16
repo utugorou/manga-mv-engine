@@ -16,6 +16,7 @@ import {
   smartSfxTexts,
 } from "../src/lib/textEngine";
 import { getExportResolution } from "../src/lib/exportHelpers";
+import { runAutoDirectionEngine } from "../src/lib/autoDirectionEngine";
 import {
   createExportCanvas,
   drawImageToCanvas,
@@ -156,6 +157,7 @@ export default function Home() {
     useState<MotionType>("zoomIn");
 
   const [activePreset, setActivePreset] = useState<PresetName | null>(null);
+  const [autoDirectionEnabled, setAutoDirectionEnabled] = useState(false);
 
   useEffect(() => {
     latestSelectedImageRef.current = selectedImage;
@@ -414,6 +416,39 @@ export default function Home() {
         setSfxText(pickSfxText());
         setSfxPosition(randomItem(positions));
         randomizeSfxScale();
+      }
+
+      if (autoDirectionEnabled) {
+        const decision = runAutoDirectionEngine({
+          activePreset,
+          audioMood: audioMoodRef.current,
+          chorusBoost,
+          eqBars,
+          currentImageIndex: nextIndex,
+          switchMode,
+          showSfx,
+          showBubble,
+          showGlitch,
+          showPanels,
+        });
+
+        if (showSfx) {
+          setSfxText(decision.sfxText);
+          setSfxScale(decision.sfxScale);
+          setSfxPosition(decision.sfxPosition);
+        }
+
+        if (showPanels) {
+          setPanelPattern(decision.panelPattern);
+        }
+
+        setSelectedMotion(decision.motionType);
+        setImageMotions((prev) => {
+          if (prev.length === 0) return prev;
+          const next = [...prev];
+          next[nextIndex] = decision.motionType;
+          return next;
+        });
       }
 
       return nextIndex;
@@ -1508,6 +1543,8 @@ export default function Home() {
                 applyMotionToCurrent={applyMotionToCurrent}
                 applyRandomMotions={applyRandomMotions}
                 randomMotionApplied={randomMotionApplied}
+                autoDirectionEnabled={autoDirectionEnabled}
+                setAutoDirectionEnabled={setAutoDirectionEnabled}
               />
             </div>
           </div>

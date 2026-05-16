@@ -15,3 +15,28 @@ export type RecordingMode = "manual" | "synced";
 export type PresetName = "ROCK" | "POP" | "FUNK" | "JAZZ" | "DANCE" | "DISCO" | "Synth Vocal" | "BALLADE" | "漫画BATTLE" | "SIMPLE";
 
 export type TimelineMarker = { index: number; percent: number };
+
+export type AutoDirectionInput = {
+  activePreset: PresetName | null;
+  audioMood: AudioMood;
+  chorusBoost: boolean;
+  eqBars: number[];
+  currentImageIndex: number;
+  switchMode: SwitchMode;
+  showSfx: boolean;
+  showBubble: boolean;
+  showGlitch: boolean;
+  showPanels: boolean;
+};
+
+export type AutoDirectionDecision = {
+  motionType: MotionType;
+  sfxText: string;
+  sfxScale: number;
+  sfxPosition: PositionType;
+  bubbleText: string;
+  bubblePosition: PositionType;
+  panelPattern: PanelPattern;
+  flashEnabled: boolean;
+  glitchEnabled: boolean;
+};

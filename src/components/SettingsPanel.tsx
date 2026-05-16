@@ -75,6 +75,8 @@ type SettingsPanelProps = {
   applyMotionToCurrent: () => void;
   applyRandomMotions: () => void;
   randomMotionApplied: boolean;
+  autoDirectionEnabled: boolean;
+  setAutoDirectionEnabled: (value: boolean) => void;
 };
 
 export default function SettingsPanel({
@@ -140,6 +142,8 @@ export default function SettingsPanel({
   applyMotionToCurrent,
   applyRandomMotions,
   randomMotionApplied,
+  autoDirectionEnabled,
+  setAutoDirectionEnabled,
 }: SettingsPanelProps) {
   return (
     <>
@@ -331,6 +335,20 @@ export default function SettingsPanel({
           </div>
         </div>
       )}
+
+      <button
+        onClick={() => {
+          setAutoDirectionEnabled(!autoDirectionEnabled);
+          setActivePreset(null);
+        }}
+        className={`w-full p-2 rounded ${
+          autoDirectionEnabled
+            ? "bg-cyan-500 text-black font-bold"
+            : "bg-zinc-800 hover:bg-zinc-700"
+        }`}
+      >
+        AI自動演出 {autoDirectionEnabled ? "ON" : "OFF"}
+      </button>
 
       <button
         onClick={() => {

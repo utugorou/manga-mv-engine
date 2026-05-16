@@ -1,6 +1,6 @@
 "use client";
 
-import { getExportModeLabel, getExportResolution, getExportStatusLabel } from "../lib/exportHelpers";
+import { getExportModeLabel, getExportResolution } from "../lib/exportHelpers";
 import type {
   AspectRatio,
   ExportAudioStatus,
@@ -52,6 +52,22 @@ export default function ExportPanel({
   formatTime,
 }: ExportPanelProps) {
   const resolution = getExportResolution(aspectRatio, exportQuality);
+  const isRecordingNow = isRecording || exportStatus === "recording";
+  const statusText =
+    exportStatus === "recording"
+      ? "録画中"
+      : exportStatus === "finished"
+        ? "録画完了"
+        : exportStatus === "error"
+          ? "エラー"
+          : "未録画";
+  const recordingText = isRecordingNow
+    ? recordingMode === "synced"
+      ? "音源尺で録画中"
+      : "録画中"
+    : exportStatus === "finished"
+      ? "録画完了"
+      : "録画準備中";
 
   return (
     <div className="pt-3 pb-3 border-b border-zinc-700">
@@ -118,17 +134,10 @@ export default function ExportPanel({
       </button>
 
       <p className="text-xs text-zinc-400 mt-2">
-        状態：{getExportStatusLabel(exportStatus)}
+        状態：{statusText}
       </p>
       <p className="text-xs text-cyan-400 mt-1">
-        録画状態：
-        {isRecording
-          ? recordingMode === "synced"
-            ? "音源尺で録画中"
-            : "録画中"
-          : exportStatus === "finished"
-            ? "録画完了"
-            : "録画準備中"}
+        録画状態：{recordingText}
       </p>
       <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{exportMessage}</p>
       <p className="text-xs text-zinc-500 mt-1">
@@ -143,14 +152,14 @@ export default function ExportPanel({
       <div className="grid grid-cols-2 gap-2 mt-3">
         <button
           onClick={handleStartRecording}
-          disabled={isRecording}
+          disabled={isRecordingNow}
           className="p-2 rounded text-xs font-bold bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-700 disabled:text-zinc-400 text-black"
         >
-          録画開始
+          {exportStatus === "finished" ? "もう一度録画する" : "録画開始"}
         </button>
         <button
           onClick={handleStartSyncedRecording}
-          disabled={isRecording || !hasAudioSource}
+          disabled={isRecordingNow || !hasAudioSource}
           className="p-2 rounded text-xs font-bold bg-cyan-500 hover:bg-cyan-400 disabled:bg-zinc-700 disabled:text-zinc-400 text-black"
         >
           音源尺で自動録画
@@ -168,23 +177,46 @@ export default function ExportPanel({
       </div>
 
       {recordedVideoUrl && (
-        <div className="mt-3 text-xs space-y-2">
-          <a
-            href={recordedVideoUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="block text-cyan-300 underline"
-          >
-            録画結果を開く
-          </a>
+        <div className="mt-3 rounded border border-zinc-700 bg-zinc-900/70 p-3 text-xs space-y-3">
+          <p className="text-emerald-300 font-bold">録画完了</p>
+          <div className="space-y-2">
+            <p className="text-zinc-300">WebMプレビュー</p>
+            <video
+              src={recordedVideoUrl}
+              controls
+              className="w-full rounded border border-zinc-700 bg-black"
+            />
+          </div>
           <a
             href={recordedVideoUrl}
             download="manga-mv-export.webm"
-            className="block text-lime-300 underline"
+            className="inline-block text-lime-300 underline"
           >
-            WebMをダウンロード
+            WebMをダウンロード（manga-mv-export.webm）
           </a>
         </div>
+      )}
+
+      <div className="mt-3 rounded border border-zinc-700 bg-zinc-900/60 p-3 text-xs space-y-1">
+        <p className="text-pink-300 font-bold">MP4変換：準備中</p>
+        <p className="text-zinc-300">現在はWebMで保存できます</p>
+        <p className="text-zinc-400">MP4化は次の段階で対応予定</p>
+      </div>
+
+      {exportStatus === "error" && (
+        <p className="text-xs text-rose-300 mt-2">書き出し時にエラーが発生しました。</p>
+      )}
+
+      {exportStatus === "idle" && (
+        <p className="text-xs text-zinc-500 mt-2">まだ録画は実行されていません。</p>
+      )}
+
+      {exportStatus === "finished" && (
+        <p className="text-xs text-cyan-300 mt-2">再録画する場合は「もう一度録画する」を押してください。</p>
+      )}
+
+      {exportStatus === "ready" && (
+        <p className="text-xs text-zinc-400 mt-2">録画準備が完了しています。</p>
       )}
 
       <p className="text-xs text-zinc-500 mt-2 leading-relaxed">

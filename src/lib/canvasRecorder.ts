@@ -51,17 +51,53 @@ export const drawTextOverlay = (
   ctx.fillText(text, x, y);
 };
 
+const createComposedStream = (
+  canvas: HTMLCanvasElement,
+  fps: number,
+  audioElement?: HTMLAudioElement | null
+): { stream: MediaStream; hasAudio: boolean } => {
+  const canvasStream = canvas.captureStream(fps);
+  const composedStream = new MediaStream(canvasStream.getVideoTracks());
+
+  if (!audioElement) {
+    return { stream: composedStream, hasAudio: false };
+  }
+
+  const capture = (audioElement as HTMLAudioElement & {
+    mozCaptureStream?: () => MediaStream;
+    captureStream?: () => MediaStream;
+  }).captureStream
+    ?? (audioElement as HTMLAudioElement & {
+      mozCaptureStream?: () => MediaStream;
+      captureStream?: () => MediaStream;
+    }).mozCaptureStream;
+
+  if (!capture) {
+    return { stream: composedStream, hasAudio: false };
+  }
+
+  try {
+    const audioStream = capture.call(audioElement);
+    const audioTracks = audioStream.getAudioTracks();
+    audioTracks.forEach((track) => composedStream.addTrack(track));
+    return { stream: composedStream, hasAudio: audioTracks.length > 0 };
+  } catch {
+    return { stream: composedStream, hasAudio: false };
+  }
+};
+
 export const startCanvasRecording = (
   canvas: HTMLCanvasElement,
-  fps: number
-): MediaRecorder => {
-  const stream = canvas.captureStream(fps);
+  fps: number,
+  audioElement?: HTMLAudioElement | null
+): { recorder: MediaRecorder; hasAudio: boolean } => {
+  const { stream, hasAudio } = createComposedStream(canvas, fps, audioElement);
 
   const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
     ? "video/webm;codecs=vp9"
     : "video/webm";
 
-  return new MediaRecorder(stream, { mimeType });
+  return { recorder: new MediaRecorder(stream, { mimeType }), hasAudio };
 };
 
 export const stopCanvasRecording = async (

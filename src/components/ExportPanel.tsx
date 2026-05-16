@@ -31,6 +31,10 @@ type ExportPanelProps = {
   hasAudioSource: boolean;
   recordingMode: RecordingMode | null;
   recordedVideoUrl: string | null;
+  mp4VideoUrl: string | null;
+  isConvertingMp4: boolean;
+  mp4StatusMessage: string;
+  handleConvertToMp4: () => void;
   exportAudioStatus: ExportAudioStatus;
   formatTime: (time: number) => string;
 };
@@ -52,6 +56,10 @@ export default function ExportPanel({
   hasAudioSource,
   recordingMode,
   recordedVideoUrl,
+  mp4VideoUrl,
+  isConvertingMp4,
+  mp4StatusMessage,
+  handleConvertToMp4,
   exportAudioStatus,
   formatTime,
 }: ExportPanelProps) {
@@ -195,10 +203,28 @@ export default function ExportPanel({
           </a>
           <p className="text-zinc-400">ファイル名：manga-mv-export.webm</p>
 
-          <div className="rounded border border-zinc-700 bg-zinc-900/60 p-3 text-xs space-y-1">
-            <p className="text-pink-300 font-bold">MP4変換：準備中</p>
-            <p className="text-zinc-300">現在はWebMで保存できます</p>
-            <p className="text-zinc-400">MP4化は次の段階で対応予定</p>
+          <div className="rounded border border-zinc-700 bg-zinc-900/60 p-3 text-xs space-y-2">
+            <p className="text-pink-300 font-bold">MP4変換</p>
+            <button
+              onClick={handleConvertToMp4}
+              disabled={isConvertingMp4}
+              className="w-full p-2 rounded text-xs font-bold bg-pink-500 hover:bg-pink-400 disabled:bg-zinc-700 disabled:text-zinc-400 text-white"
+            >
+              {isConvertingMp4 ? "MP4変換中..." : "MP4に変換"}
+            </button>
+            <p className="text-zinc-300">{mp4StatusMessage}</p>
+            {mp4VideoUrl && (
+              <>
+                <a
+                  href={mp4VideoUrl}
+                  download="manga-mv-export.mp4"
+                  className="inline-block text-cyan-300 underline"
+                >
+                  MP4でダウンロード
+                </a>
+                <p className="text-zinc-400">ファイル名：manga-mv-export.mp4</p>
+              </>
+            )}
           </div>
         </div>
       )}

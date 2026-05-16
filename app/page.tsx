@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { FFmpeg } from "@ffmpeg/ffmpeg";
+import { fetchFile, toBlobURL } from "@ffmpeg/util";
 import ControlButtons from "../src/components/ControlButtons";
 import Timeline from "../src/components/Timeline";
 import UploadPanel from "../src/components/UploadPanel";
@@ -83,6 +85,7 @@ export default function Home() {
   const latestImageMotionsRef = useRef<MotionType[]>([]);
   const recordingStartedAtRef = useRef<number | null>(null);
   const recordingElapsedMsRef = useRef(0);
+  const ffmpegRef = useRef<FFmpeg | null>(null);
 
   const lastSwitchTimeRef = useRef(0);
   const wasAboveThresholdRef = useRef(false);
@@ -113,6 +116,10 @@ export default function Home() {
   const [exportMessage, setExportMessage] = useState("未準備");
   const [isRecording, setIsRecording] = useState(false);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
+  const [recordedVideoBlob, setRecordedVideoBlob] = useState<Blob | null>(null);
+  const [mp4VideoUrl, setMp4VideoUrl] = useState<string | null>(null);
+  const [mp4StatusMessage, setMp4StatusMessage] = useState("MP4変換は未実行です");
+  const [isConvertingMp4, setIsConvertingMp4] = useState(false);
   const [exportAudioStatus, setExportAudioStatus] = useState<ExportAudioStatus>("unknown");
   const [recordingMode, setRecordingMode] = useState<RecordingMode | null>(null);
 
@@ -937,6 +944,12 @@ export default function Home() {
       URL.revokeObjectURL(recordedVideoUrl);
       setRecordedVideoUrl(null);
     }
+    if (mp4VideoUrl) {
+      URL.revokeObjectURL(mp4VideoUrl);
+      setMp4VideoUrl(null);
+    }
+    setRecordedVideoBlob(null);
+    setMp4StatusMessage("MP4変換は未実行です");
 
     try {
       const resolution = getExportResolution(aspectRatio, exportQuality);
@@ -1050,6 +1063,7 @@ export default function Home() {
       const blob = await stopCanvasRecording(mediaRecorderRef.current);
       const videoUrl = URL.createObjectURL(blob);
 
+      setRecordedVideoBlob(blob);
       setRecordedVideoUrl(videoUrl);
       setExportStatus("finished");
       setExportMessage("録画完了：WebMリンクを生成しました");
@@ -1071,6 +1085,49 @@ export default function Home() {
     }
   };
 
+
+  const handleConvertToMp4 = async () => {
+    if (!recordedVideoBlob || isConvertingMp4) return;
+
+    setIsConvertingMp4(true);
+    setMp4StatusMessage("MP4変換中...");
+
+    try {
+      if (!ffmpegRef.current) {
+        const ffmpeg = new FFmpeg();
+        const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.10/dist/esm";
+        await ffmpeg.load({
+          coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+          wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+        });
+        ffmpegRef.current = ffmpeg;
+      }
+
+      const ffmpeg = ffmpegRef.current;
+      await ffmpeg.writeFile("input.webm", await fetchFile(recordedVideoBlob));
+
+      try {
+        await ffmpeg.exec(["-i", "input.webm", "-c:v", "libx264", "-c:a", "aac", "-movflags", "+faststart", "output.mp4"]);
+      } catch {
+        await ffmpeg.exec(["-i", "input.webm", "-c:v", "libx264", "-an", "-movflags", "+faststart", "output.mp4"]);
+        setMp4StatusMessage("音声なしでMP4変換が完了しました");
+      }
+
+      const data = await ffmpeg.readFile("output.mp4");
+      const mp4Blob = new Blob([data], { type: "video/mp4" });
+      if (mp4VideoUrl) {
+        URL.revokeObjectURL(mp4VideoUrl);
+      }
+      setMp4VideoUrl(URL.createObjectURL(mp4Blob));
+      setMp4StatusMessage((prev) => prev.includes("音声なし") ? prev : "MP4変換が完了しました");
+    } catch (error) {
+      console.error("MP4変換に失敗:", error);
+      setMp4StatusMessage("MP4変換に失敗しました（ffmpeg.wasmの読み込みまたは変換エラー）");
+    } finally {
+      setIsConvertingMp4(false);
+    }
+  };
+
   const handleStartSyncedRecording = async () => {
     if (images.length === 0 || isRecording || (!audioRef.current && !videoRef.current) || (!audioUrl && !videoUrl)) return;
 
@@ -1078,6 +1135,12 @@ export default function Home() {
       URL.revokeObjectURL(recordedVideoUrl);
       setRecordedVideoUrl(null);
     }
+    if (mp4VideoUrl) {
+      URL.revokeObjectURL(mp4VideoUrl);
+      setMp4VideoUrl(null);
+    }
+    setRecordedVideoBlob(null);
+    setMp4StatusMessage("MP4変換は未実行です");
 
     audioRef.current.currentTime = 0;
     setCurrentImageIndex(0);
@@ -1584,6 +1647,10 @@ export default function Home() {
                 hasAudioSource={Boolean(audioUrl || videoUrl)}
                 recordingMode={recordingMode}
                 recordedVideoUrl={recordedVideoUrl}
+                mp4VideoUrl={mp4VideoUrl}
+                isConvertingMp4={isConvertingMp4}
+                mp4StatusMessage={mp4StatusMessage}
+                handleConvertToMp4={handleConvertToMp4}
                 exportAudioStatus={exportAudioStatus}
                 formatTime={formatTime}
               />

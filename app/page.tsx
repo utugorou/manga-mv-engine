@@ -49,6 +49,9 @@ export default function Home() {
   const recordingFrameRef = useRef<number | null>(null);
   const recordingCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const latestSelectedImageRef = useRef<string | null>(null);
+  const latestSfxTextRef = useRef("");
+  const latestBubbleTextRef = useRef("");
 
   const lastSwitchTimeRef = useRef(0);
   const wasAboveThresholdRef = useRef(false);
@@ -123,6 +126,18 @@ export default function Home() {
     useState<MotionType>("zoomIn");
 
   const [activePreset, setActivePreset] = useState<PresetName | null>(null);
+
+  useEffect(() => {
+    latestSelectedImageRef.current = selectedImage;
+  }, [selectedImage]);
+
+  useEffect(() => {
+    latestSfxTextRef.current = sfxText;
+  }, [sfxText]);
+
+  useEffect(() => {
+    latestBubbleTextRef.current = bubbleText;
+  }, [bubbleText]);
 
   const motionList: MotionType[] = [
     "zoomIn",
@@ -698,7 +713,7 @@ export default function Home() {
   };
 
   const handleStartRecording = async () => {
-    if (images.length === 0 || !selectedImage) {
+    if (images.length === 0) {
       setExportStatus("error");
       setExportMessage("録画対象の画像がありません");
       return;
@@ -745,7 +760,7 @@ export default function Home() {
         ctx.fillStyle = "#000000";
         ctx.fillRect(0, 0, resolution.width, resolution.height);
 
-        const activeImage = selectedImage || images[currentImageIndex];
+        const activeImage = latestSelectedImageRef.current || images[currentImageIndex];
         if (activeImage) {
           try {
             await drawImageToCanvas(ctx, activeImage, resolution.width, resolution.height);
@@ -754,8 +769,8 @@ export default function Home() {
           }
         }
 
-        drawTextOverlay(ctx, sfxText, resolution.width, Math.round(resolution.height * 0.8));
-        drawTextOverlay(ctx, bubbleText, resolution.width, resolution.height);
+        drawTextOverlay(ctx, latestSfxTextRef.current, resolution.width, Math.round(resolution.height * 0.8));
+        drawTextOverlay(ctx, latestBubbleTextRef.current, resolution.width, resolution.height);
 
         for (let i = 0; i < 3; i++) {
           const y = Math.random() * resolution.height;

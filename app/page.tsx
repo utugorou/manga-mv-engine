@@ -20,6 +20,7 @@ import { getExportResolution } from "../src/lib/exportHelpers";
 import {
   createExportCanvas,
   drawImageToCanvas,
+  drawCoverImage,
   drawComicPanels,
   drawEqualizerBars,
   drawFlash,
@@ -457,7 +458,8 @@ export default function Home() {
   };
 
   const setupAudioAnalysis = async () => {
-    if (!audioRef.current) return;
+    const mediaElement = videoRef.current ?? audioRef.current;
+    if (!mediaElement) return;
 
     const AudioContextClass =
       window.AudioContext ||
@@ -484,7 +486,7 @@ export default function Home() {
 
     if (!sourceRef.current) {
       sourceRef.current = audioContextRef.current.createMediaElementSource(
-        audioRef.current
+        mediaElement
       );
 
       sourceRef.current.connect(analyserRef.current);
@@ -493,12 +495,13 @@ export default function Home() {
   };
 
   const startAnalysisLoop = () => {
-    if (!analyserRef.current || !audioRef.current) return;
+    const mediaElement = videoRef.current ?? audioRef.current;
+    if (!analyserRef.current || !mediaElement) return;
 
     stopAnalysisLoop();
 
     const analyser = analyserRef.current;
-    const audio = audioRef.current;
+    const audio = mediaElement;
 
     const freqData = new Uint8Array(analyser.frequencyBinCount);
     const timeData = new Uint8Array(analyser.fftSize);
@@ -749,8 +752,6 @@ export default function Home() {
     const nextVideoUrl = URL.createObjectURL(file);
     setVideoUrl(nextVideoUrl);
     setVideoName(file.name);
-    setAudioUrl(nextVideoUrl);
-    setAudioName(file.name);
     setAudioDuration(0);
     setCurrentTime(0);
     setIsPlaying(false);
@@ -776,8 +777,17 @@ export default function Home() {
 
     if (videoRef.current && videoUrl) {
       try {
+        if (audioRef.current) {
+          audioRef.current.pause();
+        }
         await videoRef.current.play();
         setIsPlaying(true);
+        try {
+          await setupAudioAnalysis();
+          startAnalysisLoop();
+        } catch (error) {
+          console.warn("Video audio analysis failed:", error);
+        }
       } catch (error) {
         console.error("Video play failed:", error);
         setIsPlaying(false);
@@ -952,7 +962,7 @@ export default function Home() {
       const { recorder, hasAudio } = startCanvasRecording(
         canvas,
         30,
-        audioRef.current
+        videoRef.current ?? audioRef.current
       );
       mediaRecorderRef.current = recorder;
       recorder.start();
@@ -980,7 +990,7 @@ export default function Home() {
         const activeState = getRecordingActiveImage(recordingElapsedMsRef.current);
         const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";
         if (videoRef.current) {
-          ctx.drawImage(videoRef.current, 0, 0, resolution.width, resolution.height);
+          drawCoverImage(ctx, videoRef.current, resolution.width, resolution.height);
         }
         if (activeState.imageUrl && !videoRef.current) {
           try {
@@ -1079,7 +1089,9 @@ export default function Home() {
       setRecordedVideoUrl(null);
     }
 
-    audioRef.current.currentTime = 0;
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+    }
     setCurrentImageIndex(0);
     setSelectedImage(images[0]);
     setCurrentTime(0);
@@ -1098,7 +1110,7 @@ export default function Home() {
         throw new Error("Canvas context の作成に失敗しました");
       }
 
-      const { recorder, hasAudio } = startCanvasRecording(canvas, 30, audioRef.current);
+      const { recorder, hasAudio } = startCanvasRecording(canvas, 30, videoRef.current ?? audioRef.current);
       mediaRecorderRef.current = recorder;
       recorder.start();
       recordingStartedAtRef.current = performance.now();
@@ -1118,7 +1130,7 @@ export default function Home() {
         const activeState = getRecordingActiveImage(recordingElapsedMsRef.current);
         const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";
         if (videoRef.current) {
-          ctx.drawImage(videoRef.current, 0, 0, resolution.width, resolution.height);
+          drawCoverImage(ctx, videoRef.current, resolution.width, resolution.height);
         }
         if (activeState.imageUrl && !videoRef.current) {
           try {

@@ -69,7 +69,9 @@ const getAnchor = (position: CanvasOverlayPosition, width: number, height: numbe
   }
 };
 
-export const drawCoverImage = (ctx: CanvasRenderingContext2D, image: HTMLImageElement, canvasWidth: number, canvasHeight: number): void => {
+type SizedCanvasSource = CanvasImageSource & { width: number; height: number };
+
+export const drawCoverImage = (ctx: CanvasRenderingContext2D, image: SizedCanvasSource, canvasWidth: number, canvasHeight: number): void => {
   const scale = Math.max(canvasWidth / image.width, canvasHeight / image.height);
   const drawWidth = image.width * scale;
   const drawHeight = image.height * scale;
@@ -348,15 +350,15 @@ export const drawFlash = (ctx: CanvasRenderingContext2D, canvasWidth: number, ca
 };
 
 export const getAudioStreamFromElement = (
-  audioElement?: HTMLAudioElement | null
+  mediaElement?: HTMLMediaElement | null
 ): MediaStream | null => {
-  if (!audioElement) return null;
+  if (!mediaElement) return null;
 
-  const capture = (audioElement as HTMLAudioElement & {
+  const capture = (mediaElement as HTMLMediaElement & {
     mozCaptureStream?: () => MediaStream;
     captureStream?: () => MediaStream;
   }).captureStream
-    ?? (audioElement as HTMLAudioElement & {
+    ?? (mediaElement as HTMLMediaElement & {
       mozCaptureStream?: () => MediaStream;
       captureStream?: () => MediaStream;
     }).mozCaptureStream;
@@ -364,7 +366,7 @@ export const getAudioStreamFromElement = (
   if (!capture) return null;
 
   try {
-    return capture.call(audioElement);
+    return capture.call(mediaElement);
   } catch {
     return null;
   }
@@ -389,10 +391,10 @@ export const combineCanvasAndAudioStreams = (
 export const startCanvasRecording = (
   canvas: HTMLCanvasElement,
   fps: number,
-  audioElement?: HTMLAudioElement | null
+  mediaElement?: HTMLMediaElement | null
 ): { recorder: MediaRecorder; hasAudio: boolean } => {
   const canvasStream = canvas.captureStream(fps);
-  const audioStream = getAudioStreamFromElement(audioElement);
+  const audioStream = getAudioStreamFromElement(mediaElement);
   const { stream, hasAudio } = combineCanvasAndAudioStreams(canvasStream, audioStream);
 
   const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")

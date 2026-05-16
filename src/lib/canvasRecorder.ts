@@ -236,10 +236,26 @@ export const drawSpeechBubble = (ctx: CanvasRenderingContext2D, text: string, po
   ctx.textAlign = "start";
 };
 
-export const drawSfxText = (ctx: CanvasRenderingContext2D, text: string, position: CanvasOverlayPosition, canvasWidth: number, canvasHeight: number): void => {
+export type CanvasSfxDrawOptions = {
+  chorusBoost?: boolean;
+  sfxScale?: number;
+};
+
+export const drawSfxText = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  position: CanvasOverlayPosition,
+  canvasWidth: number,
+  canvasHeight: number,
+  options: CanvasSfxDrawOptions = {}
+): void => {
   if (!text) return;
   const p = getAnchor(position, canvasWidth, canvasHeight);
-  const fontSize = Math.max(42, Math.round(Math.min(canvasWidth, canvasHeight) * 0.13));
+  const baseSize = options.chorusBoost ? 64 : 48;
+  const scale = options.sfxScale ?? 1;
+  const shortSide = Math.min(canvasWidth, canvasHeight);
+  const maxFontSize = shortSide * 0.42;
+  const fontSize = Math.max(42, Math.min(baseSize * scale, maxFontSize));
   ctx.font = `900 italic ${fontSize}px sans-serif`;
   ctx.textAlign = position.includes("Right") ? "right" : position === "center" ? "center" : "left";
   ctx.textBaseline = "middle";
@@ -247,7 +263,11 @@ export const drawSfxText = (ctx: CanvasRenderingContext2D, text: string, positio
   ctx.strokeStyle = "rgba(0,0,0,0.95)";
   ctx.fillStyle = "#ffffff";
   ctx.save();
-  ctx.translate(p.x, p.y);
+  const textWidth = ctx.measureText(text).width;
+  const halfW = textWidth / 2;
+  const clampedX = Math.max(halfW + 20, Math.min(canvasWidth - halfW - 20, p.x));
+  const clampedY = Math.max(fontSize * 0.7, Math.min(canvasHeight - fontSize * 0.7, p.y));
+  ctx.translate(clampedX, clampedY);
   ctx.rotate(-0.08);
   ctx.strokeText(text, 0, 0);
   ctx.fillText(text, 0, 0);

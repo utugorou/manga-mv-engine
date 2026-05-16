@@ -245,12 +245,14 @@ export default function Home() {
   const sfxPositions = ["topLeft", "top", "topRight", "left", "center", "right", "bottomLeft", "bottom", "bottomRight", "random"] as const;
   const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
   const generateSfxItems = (): SfxItem[] => {
-    const count = randomSfxCountEnabled ? randomInt(1, 7) : 1;
+    const count = randomSfxCountEnabled ? randomInt(0, 4) : 1;
+    const unifiedText = pickSfxText();
+    const unifiedScale = randomSfxScaleEnabled ? randomItem([...sfxScaleOptions]) : 1;
     return Array.from({ length: count }, (_, i) => ({
       id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`,
-      text: pickSfxText(),
+      text: unifiedText,
       position: randomItem([...sfxPositions]),
-      scale: randomSfxScaleEnabled ? randomItem([...sfxScaleOptions]) : 1,
+      scale: unifiedScale,
       rotation: randomInt(-18, 18),
     }));
   };
@@ -1358,10 +1360,10 @@ export default function Home() {
                   height={72}
                   priority
                   onError={() => setIsLogoLoadError(true)}
-                  className="h-14 w-auto max-w-full opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
+                  className="h-[clamp(4.5rem,11vw,8.5rem)] w-auto max-w-full object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
                 />
               ) : (
-                <span className="text-2xl font-black tracking-[0.2em]">MANGA MV ENGINE</span>
+                <span className="text-4xl md:text-5xl font-black tracking-[0.2em]">MANGA MV ENGINE</span>
               )}
             </h1>
             <p className="text-xs text-zinc-400">Project: <span className="text-cyan-300">Untitled MV</span></p>

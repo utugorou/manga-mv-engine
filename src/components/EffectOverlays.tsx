@@ -169,7 +169,7 @@ export default function EffectOverlays({
         </div>
       )}
 
-      {showSfx && sfxItems.map((item) => (
+      {showSfx && sfxItems.slice(0, 4).map((item) => (
         <div key={item.id} className={`absolute ${getSfxPositionClass(item.position)} font-black text-white drop-shadow-[0_0_10px_#ec4899] text-center`}
           style={{ ...playOrNone("sfxShake 0.45s ease-in-out infinite"), fontSize: `${Math.min(baseSize * item.scale, maxFontSize)}px`, maxWidth: "82%", lineHeight: 1.05, transform: `rotate(${item.rotation}deg)` }}>
           {item.text}

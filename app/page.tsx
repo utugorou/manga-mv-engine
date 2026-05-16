@@ -71,6 +71,12 @@ export default function Home() {
   const latestPanelPatternRef = useRef<PanelPattern>("classic");
   const latestFlashActiveRef = useRef(false);
   const latestChorusBoostRef = useRef(false);
+  const latestCurrentImageIndexRef = useRef(0);
+  const latestImagesRef = useRef<string[]>([]);
+  const latestSwitchModeRef = useRef<SwitchMode>("equal");
+  const latestImageDurationRef = useRef(2000);
+  const recordingStartedAtRef = useRef<number | null>(null);
+  const recordingElapsedMsRef = useRef(0);
 
   const lastSwitchTimeRef = useRef(0);
   const wasAboveThresholdRef = useRef(false);
@@ -170,6 +176,10 @@ export default function Home() {
   useEffect(() => { latestPanelPatternRef.current = panelPattern; }, [panelPattern]);
   useEffect(() => { latestFlashActiveRef.current = flashActive; }, [flashActive]);
   useEffect(() => { latestChorusBoostRef.current = chorusBoost; }, [chorusBoost]);
+  useEffect(() => { latestCurrentImageIndexRef.current = currentImageIndex; }, [currentImageIndex]);
+  useEffect(() => { latestImagesRef.current = images; }, [images]);
+  useEffect(() => { latestSwitchModeRef.current = switchMode; }, [switchMode]);
+  useEffect(() => { latestImageDurationRef.current = imageDuration; }, [imageDuration]);
 
   const motionList: MotionType[] = [
     "zoomIn",
@@ -745,6 +755,25 @@ export default function Home() {
     );
   };
 
+  const getRecordingActiveImage = (elapsedMs: number) => {
+    const recordingImages = latestImagesRef.current;
+    if (recordingImages.length === 0) return latestSelectedImageRef.current;
+
+    const audioCurrentTimeMs = audioRef.current
+      ? audioRef.current.currentTime * 1000
+      : 0;
+    const playbackMs = audioCurrentTimeMs > 0 ? audioCurrentTimeMs : elapsedMs;
+
+    if (latestSwitchModeRef.current === "equal") {
+      const duration = Math.max(1, latestImageDurationRef.current);
+      const imageIndex = Math.floor(playbackMs / duration) % recordingImages.length;
+      return recordingImages[imageIndex] ?? latestSelectedImageRef.current;
+    }
+
+    const imageIndex = latestCurrentImageIndexRef.current;
+    return recordingImages[imageIndex] ?? latestSelectedImageRef.current;
+  };
+
   const handleStartRecording = async () => {
     if (images.length === 0) {
       setExportStatus("error");
@@ -777,6 +806,8 @@ export default function Home() {
       );
       mediaRecorderRef.current = recorder;
       recorder.start();
+      recordingStartedAtRef.current = performance.now();
+      recordingElapsedMsRef.current = 0;
 
       setIsRecording(true);
       setRecordingMode("manual");
@@ -794,7 +825,9 @@ export default function Home() {
         ctx.fillStyle = "#000000";
         ctx.fillRect(0, 0, resolution.width, resolution.height);
 
-        const activeImage = latestSelectedImageRef.current || images[currentImageIndex];
+        const startedAt = recordingStartedAtRef.current ?? performance.now();
+        recordingElapsedMsRef.current = performance.now() - startedAt;
+        const activeImage = getRecordingActiveImage(recordingElapsedMsRef.current);
         if (activeImage) {
           try {
             await drawImageToCanvas(ctx, activeImage, resolution.width, resolution.height);
@@ -868,6 +901,8 @@ export default function Home() {
       });
       mediaRecorderRef.current = null;
       recordingCanvasRef.current = null;
+      recordingStartedAtRef.current = null;
+      recordingElapsedMsRef.current = 0;
       setIsRecording(false);
       setRecordingMode(null);
       setIsPlaying(false);
@@ -904,6 +939,8 @@ export default function Home() {
       const { recorder, hasAudio } = startCanvasRecording(canvas, 30, audioRef.current);
       mediaRecorderRef.current = recorder;
       recorder.start();
+      recordingStartedAtRef.current = performance.now();
+      recordingElapsedMsRef.current = 0;
       setIsRecording(true);
       setRecordingMode("synced");
       setExportAudioStatus(hasAudio ? "with-audio" : "video-only");
@@ -914,7 +951,9 @@ export default function Home() {
         if (!recordingCanvasRef.current || !ctx) return;
         ctx.fillStyle = "#000000";
         ctx.fillRect(0, 0, resolution.width, resolution.height);
-        const activeImage = latestSelectedImageRef.current || images[currentImageIndex];
+        const startedAt = recordingStartedAtRef.current ?? performance.now();
+        recordingElapsedMsRef.current = performance.now() - startedAt;
+        const activeImage = getRecordingActiveImage(recordingElapsedMsRef.current);
         if (activeImage) {
           try {
             await drawImageToCanvas(ctx, activeImage, resolution.width, resolution.height);
@@ -980,6 +1019,8 @@ export default function Home() {
       }
       mediaRecorderRef.current = null;
       recordingCanvasRef.current = null;
+      recordingStartedAtRef.current = null;
+      recordingElapsedMsRef.current = 0;
       setIsRecording(false);
       setRecordingMode(null);
       setExportStatus("error");

@@ -3,6 +3,7 @@
 import { getExportModeLabel, getExportResolution, getExportStatusLabel } from "../lib/exportHelpers";
 import type {
   AspectRatio,
+  ExportAudioStatus,
   ExportMode,
   ExportQuality,
   ExportStatus,
@@ -22,7 +23,7 @@ type ExportPanelProps = {
   handleStopRecording: () => void;
   isRecording: boolean;
   recordedVideoUrl: string | null;
-  exportAudioStatus: "with-audio" | "video-only" | "unknown";
+  exportAudioStatus: ExportAudioStatus;
   formatTime: (time: number) => string;
 };
 
@@ -116,9 +117,9 @@ export default function ExportPanel({
       <p className="text-xs text-zinc-500 mt-1">
         音声録画状態：
         {exportAudioStatus === "with-audio"
-          ? "音声付き"
+          ? "ON"
           : exportAudioStatus === "video-only"
-            ? "映像のみ（環境非対応または音声トラックなし）"
+            ? "未対応のため映像のみ"
             : "未判定"}
       </p>
 

@@ -29,6 +29,7 @@ import type {
   ExportMode,
   ExportAudioStatus,
   ExportQuality,
+  RecordingMode,
   ExportStatus,
   MotionGroup,
   MotionType,
@@ -49,6 +50,8 @@ export default function Home() {
   const recordingFrameRef = useRef<number | null>(null);
   const recordingCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingStopTimeoutRef = useRef<number | null>(null);
+  const recordingEndedHandlerRef = useRef<(() => void) | null>(null);
   const latestSelectedImageRef = useRef<string | null>(null);
   const latestSfxTextRef = useRef("");
   const latestBubbleTextRef = useRef("");
@@ -80,6 +83,7 @@ export default function Home() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
   const [exportAudioStatus, setExportAudioStatus] = useState<ExportAudioStatus>("unknown");
+  const [recordingMode, setRecordingMode] = useState<RecordingMode | null>(null);
 
   const [showBubble, setShowBubble] = useState(false);
   const [bubbleText, setBubbleText] = useState("ここにセリフ");
@@ -746,6 +750,7 @@ export default function Home() {
       recorder.start();
 
       setIsRecording(true);
+      setRecordingMode("manual");
       setExportAudioStatus(hasAudio ? "with-audio" : "video-only");
       setExportStatus("recording");
       setExportMessage(
@@ -797,6 +802,15 @@ export default function Home() {
     if (!mediaRecorderRef.current || !isRecording) return;
 
     try {
+      if (recordingStopTimeoutRef.current !== null) {
+        clearTimeout(recordingStopTimeoutRef.current);
+        recordingStopTimeoutRef.current = null;
+      }
+      if (recordingEndedHandlerRef.current && audioRef.current) {
+        audioRef.current.removeEventListener("ended", recordingEndedHandlerRef.current);
+        recordingEndedHandlerRef.current = null;
+      }
+
       if (recordingFrameRef.current !== null) {
         clearTimeout(recordingFrameRef.current);
         recordingFrameRef.current = null;
@@ -819,6 +833,92 @@ export default function Home() {
       mediaRecorderRef.current = null;
       recordingCanvasRef.current = null;
       setIsRecording(false);
+      setRecordingMode(null);
+      setIsPlaying(false);
+    }
+  };
+
+  const handleStartSyncedRecording = async () => {
+    if (images.length === 0 || isRecording || !audioRef.current || !audioUrl) return;
+
+    if (recordedVideoUrl) {
+      URL.revokeObjectURL(recordedVideoUrl);
+      setRecordedVideoUrl(null);
+    }
+
+    audioRef.current.currentTime = 0;
+    setCurrentImageIndex(0);
+    setSelectedImage(images[0]);
+    setCurrentTime(0);
+    lastSwitchTimeRef.current = performance.now();
+    wasAboveThresholdRef.current = false;
+    lastLowEnergyRef.current = 0;
+    audioMoodRef.current = "quiet";
+
+    try {
+      const resolution = getExportResolution(aspectRatio, exportQuality);
+      const canvas = createExportCanvas(resolution.width, resolution.height);
+      recordingCanvasRef.current = canvas;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        throw new Error("Canvas context の作成に失敗しました");
+      }
+
+      const { recorder, hasAudio } = startCanvasRecording(canvas, 30, audioRef.current);
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+      setIsRecording(true);
+      setRecordingMode("synced");
+      setExportAudioStatus(hasAudio ? "with-audio" : "video-only");
+      setExportStatus("recording");
+      setExportMessage("音源尺で録画中です");
+
+      const drawFrame = async () => {
+        if (!recordingCanvasRef.current || !ctx) return;
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, resolution.width, resolution.height);
+        const activeImage = latestSelectedImageRef.current || images[currentImageIndex];
+        if (activeImage) {
+          try {
+            await drawImageToCanvas(ctx, activeImage, resolution.width, resolution.height);
+          } catch (error) {
+            console.warn("画像描画に失敗しました", error);
+          }
+        }
+        drawTextOverlay(ctx, latestSfxTextRef.current, resolution.width, Math.round(resolution.height * 0.8));
+        drawTextOverlay(ctx, latestBubbleTextRef.current, resolution.width, resolution.height);
+        recordingFrameRef.current = window.setTimeout(() => {
+          void drawFrame();
+        }, 1000 / 30) as unknown as number;
+      };
+      await drawFrame();
+
+      const stopOnEnded = () => {
+        void handleStopRecording();
+      };
+      recordingEndedHandlerRef.current = stopOnEnded;
+      audioRef.current.addEventListener("ended", stopOnEnded, { once: true });
+      if (audioDuration > 0) {
+        recordingStopTimeoutRef.current = window.setTimeout(() => {
+          void handleStopRecording();
+        }, audioDuration * 1000) as unknown as number;
+      }
+
+      await audioRef.current.play();
+      setIsPlaying(true);
+
+      try {
+        await setupAudioAnalysis();
+        startAnalysisLoop();
+      } catch (error) {
+        console.warn("音声解析の開始に失敗しました。録画は継続します:", error);
+      }
+    } catch (error) {
+      console.error("音源尺録画開始に失敗:", error);
+      setIsRecording(false);
+      setRecordingMode(null);
+      setExportStatus("error");
+      setExportMessage("音源尺録画の開始に失敗しました");
     }
   };
 
@@ -1111,8 +1211,11 @@ export default function Home() {
             exportMessage={exportMessage}
             handlePrepareExport={handlePrepareExport}
             handleStartRecording={handleStartRecording}
+            handleStartSyncedRecording={handleStartSyncedRecording}
             handleStopRecording={handleStopRecording}
             isRecording={isRecording}
+            hasAudioSource={Boolean(audioUrl)}
+            recordingMode={recordingMode}
             recordedVideoUrl={recordedVideoUrl}
             exportAudioStatus={exportAudioStatus}
             formatTime={formatTime}

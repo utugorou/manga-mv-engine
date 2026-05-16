@@ -7,6 +7,7 @@ import type {
   ExportMode,
   ExportQuality,
   ExportStatus,
+  RecordingMode,
 } from "../types/mv";
 
 type ExportPanelProps = {
@@ -20,8 +21,11 @@ type ExportPanelProps = {
   exportMessage: string;
   handlePrepareExport: () => void;
   handleStartRecording: () => void;
+  handleStartSyncedRecording: () => void;
   handleStopRecording: () => void;
   isRecording: boolean;
+  hasAudioSource: boolean;
+  recordingMode: RecordingMode | null;
   recordedVideoUrl: string | null;
   exportAudioStatus: ExportAudioStatus;
   formatTime: (time: number) => string;
@@ -38,8 +42,11 @@ export default function ExportPanel({
   exportMessage,
   handlePrepareExport,
   handleStartRecording,
+  handleStartSyncedRecording,
   handleStopRecording,
   isRecording,
+  hasAudioSource,
+  recordingMode,
   recordedVideoUrl,
   exportAudioStatus,
   formatTime,
@@ -113,6 +120,16 @@ export default function ExportPanel({
       <p className="text-xs text-zinc-400 mt-2">
         状態：{getExportStatusLabel(exportStatus)}
       </p>
+      <p className="text-xs text-cyan-400 mt-1">
+        録画状態：
+        {isRecording
+          ? recordingMode === "synced"
+            ? "音源尺で録画中"
+            : "録画中"
+          : exportStatus === "finished"
+            ? "録画完了"
+            : "録画準備中"}
+      </p>
       <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{exportMessage}</p>
       <p className="text-xs text-zinc-500 mt-1">
         音声録画状態：
@@ -131,7 +148,16 @@ export default function ExportPanel({
         >
           録画開始
         </button>
+        <button
+          onClick={handleStartSyncedRecording}
+          disabled={isRecording || !hasAudioSource}
+          className="p-2 rounded text-xs font-bold bg-cyan-500 hover:bg-cyan-400 disabled:bg-zinc-700 disabled:text-zinc-400 text-black"
+        >
+          音源尺で自動録画
+        </button>
+      </div>
 
+      <div className="grid grid-cols-1 gap-2 mt-2">
         <button
           onClick={handleStopRecording}
           disabled={!isRecording}

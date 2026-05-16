@@ -50,6 +50,7 @@ import type {
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
@@ -96,6 +97,9 @@ export default function Home() {
   const [randomMotionApplied, setRandomMotionApplied] = useState(false);
 
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoName, setVideoName] = useState("");
+  const [videoFitMode, setVideoFitMode] = useState<"cover" | "contain">("cover");
   const [audioName, setAudioName] = useState("");
   const [audioDuration, setAudioDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -644,6 +648,42 @@ export default function Home() {
   }, [isPlaying]);
 
   useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !videoUrl) return;
+
+    const onLoadedMetadata = () => setAudioDuration(video.duration || 0);
+    const onTimeUpdate = () => setCurrentTime(video.currentTime);
+    const onEnded = () => {
+      setIsPlaying(false);
+      setCurrentImageIndex(0);
+      setCurrentTime(0);
+      setChorusBoost(false);
+      setAudioMood("quiet");
+      if (images.length > 0) {
+        setSelectedImage(images[0]);
+      }
+      video.currentTime = 0;
+      stopAnalysisLoop();
+    };
+    const onPause = () => {
+      if (!video.ended) {
+        setIsPlaying(false);
+      }
+    };
+
+    video.addEventListener("loadedmetadata", onLoadedMetadata);
+    video.addEventListener("timeupdate", onTimeUpdate);
+    video.addEventListener("ended", onEnded);
+    video.addEventListener("pause", onPause);
+    return () => {
+      video.removeEventListener("loadedmetadata", onLoadedMetadata);
+      video.removeEventListener("timeupdate", onTimeUpdate);
+      video.removeEventListener("ended", onEnded);
+      video.removeEventListener("pause", onPause);
+    };
+  }, [videoUrl, images]);
+
+  useEffect(() => {
     return () => {
       if (recordingFrameRef.current !== null) {
         clearTimeout(recordingFrameRef.current);
@@ -701,6 +741,24 @@ export default function Home() {
     audioMoodRef.current = "quiet";
   };
 
+  const handleVideoUpload = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const nextVideoUrl = URL.createObjectURL(file);
+    setVideoUrl(nextVideoUrl);
+    setVideoName(file.name);
+    setAudioUrl(nextVideoUrl);
+    setAudioName(file.name);
+    setAudioDuration(0);
+    setCurrentTime(0);
+    setIsPlaying(false);
+    sourceRef.current = null;
+    analyserRef.current = null;
+    audioContextRef.current = null;
+  };
+
   const handleAutoDuration = () => {
     if (audioDuration <= 0 || images.length === 0) return;
 
@@ -710,11 +768,22 @@ export default function Home() {
   };
 
   const handlePlay = async () => {
-    if (images.length === 0 && !audioUrl) return;
+    if (images.length === 0 && !audioUrl && !videoUrl) return;
 
     lastSwitchTimeRef.current = performance.now();
     wasAboveThresholdRef.current = false;
     lastLowEnergyRef.current = 0;
+
+    if (videoRef.current && videoUrl) {
+      try {
+        await videoRef.current.play();
+        setIsPlaying(true);
+      } catch (error) {
+        console.error("Video play failed:", error);
+        setIsPlaying(false);
+      }
+      return;
+    }
 
     if (audioRef.current && audioUrl) {
       try {
@@ -748,6 +817,9 @@ export default function Home() {
     if (audioRef.current) {
       audioRef.current.pause();
     }
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
   };
 
   const handleReset = () => {
@@ -770,14 +842,21 @@ export default function Home() {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
     }
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
 
     stopAnalysisLoop();
   };
 
   const handleSeek = (value: number) => {
-    if (!audioRef.current || audioDuration <= 0) return;
-
-    audioRef.current.currentTime = value;
+    if (videoRef.current) {
+      videoRef.current.currentTime = value;
+    }
+    if (audioRef.current) {
+      audioRef.current.currentTime = value;
+    }
     setCurrentTime(value);
 
     if (images.length > 0) {
@@ -800,7 +879,7 @@ export default function Home() {
   };
 
   const handlePrepareExport = () => {
-    if (!audioUrl || images.length === 0) {
+    if ((!audioUrl && !videoUrl) || images.length === 0) {
       setExportStatus("error");
       setExportMessage("画像と音楽をアップロードしてください");
       return;
@@ -822,10 +901,12 @@ export default function Home() {
       return { imageUrl: latestSelectedImageRef.current, imageIndex: latestCurrentImageIndexRef.current };
     }
 
-    const audioCurrentTimeMs = audioRef.current
+    const mediaCurrentTimeMs = videoRef.current
+      ? videoRef.current.currentTime * 1000
+      : audioRef.current
       ? audioRef.current.currentTime * 1000
       : 0;
-    const playbackMs = audioCurrentTimeMs > 0 ? audioCurrentTimeMs : elapsedMs;
+    const playbackMs = mediaCurrentTimeMs > 0 ? mediaCurrentTimeMs : elapsedMs;
 
     if (latestSwitchModeRef.current === "equal") {
       const duration = Math.max(1, latestImageDurationRef.current);
@@ -898,7 +979,10 @@ export default function Home() {
         recordingElapsedMsRef.current = performance.now() - startedAt;
         const activeState = getRecordingActiveImage(recordingElapsedMsRef.current);
         const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";
-        if (activeState.imageUrl) {
+        if (videoRef.current) {
+          ctx.drawImage(videoRef.current, 0, 0, resolution.width, resolution.height);
+        }
+        if (activeState.imageUrl && !videoRef.current) {
           try {
             await drawImageToCanvas(ctx, activeState.imageUrl, resolution.width, resolution.height, {
               motionType: activeMotion,
@@ -988,7 +1072,7 @@ export default function Home() {
   };
 
   const handleStartSyncedRecording = async () => {
-    if (images.length === 0 || isRecording || !audioRef.current || !audioUrl) return;
+    if (images.length === 0 || isRecording || (!audioRef.current && !videoRef.current) || (!audioUrl && !videoUrl)) return;
 
     if (recordedVideoUrl) {
       URL.revokeObjectURL(recordedVideoUrl);
@@ -1033,7 +1117,10 @@ export default function Home() {
         recordingElapsedMsRef.current = performance.now() - startedAt;
         const activeState = getRecordingActiveImage(recordingElapsedMsRef.current);
         const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";
-        if (activeState.imageUrl) {
+        if (videoRef.current) {
+          ctx.drawImage(videoRef.current, 0, 0, resolution.width, resolution.height);
+        }
+        if (activeState.imageUrl && !videoRef.current) {
           try {
             await drawImageToCanvas(ctx, activeState.imageUrl, resolution.width, resolution.height, {
               motionType: activeMotion,
@@ -1074,14 +1161,22 @@ export default function Home() {
         void handleStopRecording();
       };
       recordingEndedHandlerRef.current = stopOnEnded;
-      audioRef.current.addEventListener("ended", stopOnEnded, { once: true });
+      if (videoRef.current) {
+        videoRef.current.addEventListener("ended", stopOnEnded, { once: true });
+      } else {
+        audioRef.current.addEventListener("ended", stopOnEnded, { once: true });
+      }
       if (audioDuration > 0) {
         recordingStopTimeoutRef.current = window.setTimeout(() => {
           void handleStopRecording();
         }, audioDuration * 1000) as unknown as number;
       }
 
-      await audioRef.current.play();
+      if (videoRef.current) {
+        await videoRef.current.play();
+      } else {
+        await audioRef.current.play();
+      }
       setIsPlaying(true);
 
       try {
@@ -1378,7 +1473,11 @@ export default function Home() {
         <UploadPanel
           handleImageUpload={handleImageUpload}
           handleAudioUpload={handleAudioUpload}
+          handleVideoUpload={handleVideoUpload}
           audioName={audioName}
+          videoName={videoName}
+          videoFitMode={videoFitMode}
+          setVideoFitMode={setVideoFitMode}
           aspectRatio={aspectRatio}
           formatTime={formatTime}
           audioDuration={audioDuration}
@@ -1402,6 +1501,9 @@ export default function Home() {
               chorusBoost={chorusBoost}
               showGlitch={showGlitch}
               selectedImage={selectedImage}
+              videoUrl={videoUrl}
+              videoFitMode={videoFitMode}
+              videoRef={videoRef}
               isPlaying={isPlaying}
               isRecording={isRecording}
               getMotionStyle={getMotionStyle}
@@ -1430,7 +1532,7 @@ export default function Home() {
               onReset={handleReset}
             />
             <Timeline
-              audioUrl={audioUrl}
+              audioUrl={audioUrl || videoUrl}
               currentTime={currentTime}
               audioDuration={audioDuration}
               onSeek={handleSeek}
@@ -1479,7 +1581,7 @@ export default function Home() {
                 handleStartSyncedRecording={handleStartSyncedRecording}
                 handleStopRecording={handleStopRecording}
                 isRecording={isRecording}
-                hasAudioSource={Boolean(audioUrl)}
+                hasAudioSource={Boolean(audioUrl || videoUrl)}
                 recordingMode={recordingMode}
                 recordedVideoUrl={recordedVideoUrl}
                 exportAudioStatus={exportAudioStatus}
@@ -1562,6 +1664,7 @@ export default function Home() {
             ref={audioRef}
             src={audioUrl}
             className="hidden"
+            muted={Boolean(videoUrl)}
             onLoadedMetadata={(e) =>
               setAudioDuration(e.currentTarget.duration)
             }

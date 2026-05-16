@@ -51,17 +51,10 @@ export const drawTextOverlay = (
   ctx.fillText(text, x, y);
 };
 
-const createComposedStream = (
-  canvas: HTMLCanvasElement,
-  fps: number,
+export const getAudioStreamFromElement = (
   audioElement?: HTMLAudioElement | null
-): { stream: MediaStream; hasAudio: boolean } => {
-  const canvasStream = canvas.captureStream(fps);
-  const composedStream = new MediaStream(canvasStream.getVideoTracks());
-
-  if (!audioElement) {
-    return { stream: composedStream, hasAudio: false };
-  }
+): MediaStream | null => {
+  if (!audioElement) return null;
 
   const capture = (audioElement as HTMLAudioElement & {
     mozCaptureStream?: () => MediaStream;
@@ -72,18 +65,29 @@ const createComposedStream = (
       captureStream?: () => MediaStream;
     }).mozCaptureStream;
 
-  if (!capture) {
+  if (!capture) return null;
+
+  try {
+    return capture.call(audioElement);
+  } catch {
+    return null;
+  }
+};
+
+export const combineCanvasAndAudioStreams = (
+  canvasStream: MediaStream,
+  audioStream?: MediaStream | null
+): { stream: MediaStream; hasAudio: boolean } => {
+  const composedStream = new MediaStream(canvasStream.getVideoTracks());
+
+  if (!audioStream) {
     return { stream: composedStream, hasAudio: false };
   }
 
-  try {
-    const audioStream = capture.call(audioElement);
-    const audioTracks = audioStream.getAudioTracks();
-    audioTracks.forEach((track) => composedStream.addTrack(track));
-    return { stream: composedStream, hasAudio: audioTracks.length > 0 };
-  } catch {
-    return { stream: composedStream, hasAudio: false };
-  }
+  const audioTracks = audioStream.getAudioTracks();
+  audioTracks.forEach((track) => composedStream.addTrack(track));
+
+  return { stream: composedStream, hasAudio: audioTracks.length > 0 };
 };
 
 export const startCanvasRecording = (
@@ -91,7 +95,9 @@ export const startCanvasRecording = (
   fps: number,
   audioElement?: HTMLAudioElement | null
 ): { recorder: MediaRecorder; hasAudio: boolean } => {
-  const { stream, hasAudio } = createComposedStream(canvas, fps, audioElement);
+  const canvasStream = canvas.captureStream(fps);
+  const audioStream = getAudioStreamFromElement(audioElement);
+  const { stream, hasAudio } = combineCanvasAndAudioStreams(canvasStream, audioStream);
 
   const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
     ? "video/webm;codecs=vp9"

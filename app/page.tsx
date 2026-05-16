@@ -75,6 +75,9 @@ export default function Home() {
   const [exportMessage, setExportMessage] = useState("未準備");
   const [isRecording, setIsRecording] = useState(false);
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
+  const [exportAudioStatus, setExportAudioStatus] = useState<
+    "with-audio" | "video-only" | "unknown"
+  >("unknown");
 
   const [showBubble, setShowBubble] = useState(false);
   const [bubbleText, setBubbleText] = useState("ここにセリフ");
@@ -720,6 +723,7 @@ export default function Home() {
       recorder.start();
 
       setIsRecording(true);
+      setExportAudioStatus(hasAudio ? "with-audio" : "video-only");
       setExportStatus("recording");
       setExportMessage(
         hasAudio
@@ -1087,6 +1091,7 @@ export default function Home() {
             handleStopRecording={handleStopRecording}
             isRecording={isRecording}
             recordedVideoUrl={recordedVideoUrl}
+            exportAudioStatus={exportAudioStatus}
             formatTime={formatTime}
           />
 

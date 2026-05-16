@@ -22,6 +22,7 @@ type ExportPanelProps = {
   handleStopRecording: () => void;
   isRecording: boolean;
   recordedVideoUrl: string | null;
+  exportAudioStatus: "with-audio" | "video-only" | "unknown";
   formatTime: (time: number) => string;
 };
 
@@ -39,6 +40,7 @@ export default function ExportPanel({
   handleStopRecording,
   isRecording,
   recordedVideoUrl,
+  exportAudioStatus,
   formatTime,
 }: ExportPanelProps) {
   const resolution = getExportResolution(aspectRatio, exportQuality);
@@ -111,6 +113,14 @@ export default function ExportPanel({
         状態：{getExportStatusLabel(exportStatus)}
       </p>
       <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{exportMessage}</p>
+      <p className="text-xs text-zinc-500 mt-1">
+        音声録画状態：
+        {exportAudioStatus === "with-audio"
+          ? "音声付き"
+          : exportAudioStatus === "video-only"
+            ? "映像のみ（環境非対応または音声トラックなし）"
+            : "未判定"}
+      </p>
 
       <div className="grid grid-cols-2 gap-2 mt-3">
         <button

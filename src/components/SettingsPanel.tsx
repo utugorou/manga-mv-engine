@@ -1,27 +1,16 @@
 "use client";
 
 import { MutableRefObject } from "react";
-
-type SwitchMode = "equal" | "peak" | "kick";
-type TextMode = "fixed" | "random" | "smart";
-type AudioMood = "quiet" | "peak" | "bass" | "chorus";
-type PositionType =
-  | "topLeft"
-  | "topRight"
-  | "bottomLeft"
-  | "bottomRight"
-  | "center";
-type PresetName =
-  | "ROCK"
-  | "POP"
-  | "FUNK"
-  | "JAZZ"
-  | "DANCE"
-  | "DISCO"
-  | "Synth Vocal"
-  | "BALLADE"
-  | "漫画BATTLE"
-  | "SIMPLE";
+import {
+  AudioMood,
+  MotionType,
+  PanelMode,
+  PanelPattern,
+  PositionType,
+  PresetName,
+  SwitchMode,
+  TextMode,
+} from "../types/mv";
 
 type SettingsPanelProps = {
   switchMode: SwitchMode;
@@ -63,6 +52,26 @@ type SettingsPanelProps = {
   sfxTexts: string[];
   positions: PositionType[];
   randomItem: <T>(list: T[]) => T;
+  showGlitch: boolean;
+  setShowGlitch: (value: boolean) => void;
+  showEqualizer: boolean;
+  setShowEqualizer: (value: boolean) => void;
+  showFlash: boolean;
+  setShowFlash: (value: boolean) => void;
+  showPanels: boolean;
+  setShowPanels: (value: boolean) => void;
+  panelMode: PanelMode;
+  setPanelMode: (mode: PanelMode) => void;
+  panelPattern: PanelPattern;
+  setPanelPattern: (pattern: PanelPattern) => void;
+  chorusBoost: boolean;
+  chorusSensitivity: number;
+  setChorusSensitivity: (value: number) => void;
+  selectedMotion: MotionType;
+  setSelectedMotion: (motion: MotionType) => void;
+  applyMotionToCurrent: () => void;
+  applyRandomMotions: () => void;
+  randomMotionApplied: boolean;
 };
 
 export default function SettingsPanel({
@@ -105,6 +114,26 @@ export default function SettingsPanel({
   sfxTexts,
   positions,
   randomItem,
+  showGlitch,
+  setShowGlitch,
+  showEqualizer,
+  setShowEqualizer,
+  showFlash,
+  setShowFlash,
+  showPanels,
+  setShowPanels,
+  panelMode,
+  setPanelMode,
+  panelPattern,
+  setPanelPattern,
+  chorusBoost,
+  chorusSensitivity,
+  setChorusSensitivity,
+  selectedMotion,
+  setSelectedMotion,
+  applyMotionToCurrent,
+  applyRandomMotions,
+  randomMotionApplied,
 }: SettingsPanelProps) {
   return (
     <>
@@ -446,6 +475,168 @@ export default function SettingsPanel({
       >
         擬音だけランダム
       </button>
+
+      <button
+        onClick={() => {
+          setShowGlitch(!showGlitch);
+          setActivePreset(null);
+        }}
+        className={`w-full p-2 rounded ${
+          showGlitch
+            ? "bg-pink-600 hover:bg-pink-500"
+            : "bg-zinc-800 hover:bg-zinc-700"
+        }`}
+      >
+        グリッチ {showGlitch ? "ON" : "OFF"}
+      </button>
+
+      <button
+        onClick={() => {
+          setShowEqualizer(!showEqualizer);
+          setActivePreset(null);
+        }}
+        className={`w-full p-2 rounded ${
+          showEqualizer
+            ? "bg-cyan-600 hover:bg-cyan-500 text-black"
+            : "bg-zinc-800 hover:bg-zinc-700"
+        }`}
+      >
+        イコライザー {showEqualizer ? "ON" : "OFF"}
+      </button>
+
+      <button
+        onClick={() => {
+          setShowFlash(!showFlash);
+          setActivePreset(null);
+        }}
+        className={`w-full p-2 rounded ${
+          showFlash
+            ? "bg-yellow-400 text-black font-bold"
+            : "bg-zinc-800 hover:bg-zinc-700"
+        }`}
+      >
+        カメラフラッシュ {showFlash ? "ON" : "OFF"}
+      </button>
+
+      <button
+        onClick={() => {
+          setShowPanels(!showPanels);
+          setActivePreset(null);
+        }}
+        className={`w-full p-2 rounded ${
+          showPanels
+            ? "bg-white text-black font-bold"
+            : "bg-zinc-800 hover:bg-zinc-700"
+        }`}
+      >
+        漫画コマ割り {showPanels ? "ON" : "OFF"}
+      </button>
+
+      <div className="pt-3 pb-3 border-b border-zinc-700">
+        <p className="text-sm mb-2 text-cyan-300">コマ割り方式</p>
+        <div className="grid grid-cols-1 gap-2">
+          <button
+            onClick={() => {
+              setPanelMode("fixed");
+              setPanelPattern("classic");
+              setActivePreset(null);
+            }}
+            className={`p-2 rounded text-sm ${
+              panelMode === "fixed"
+                ? "bg-white text-black font-bold"
+                : "bg-zinc-800 hover:bg-zinc-700"
+            }`}
+          >
+            固定
+          </button>
+          <button
+            onClick={() => {
+              setPanelMode("random");
+              setActivePreset(null);
+            }}
+            className={`p-2 rounded text-sm ${
+              panelMode === "random"
+                ? "bg-cyan-500 text-black font-bold"
+                : "bg-zinc-800 hover:bg-zinc-700"
+            }`}
+          >
+            画像切替ごとにランダム
+          </button>
+          <button
+            onClick={() => {
+              setPanelMode("chorus");
+              setActivePreset(null);
+            }}
+            className={`p-2 rounded text-sm ${
+              panelMode === "chorus"
+                ? "bg-pink-600 font-bold"
+                : "bg-zinc-800 hover:bg-zinc-700"
+            }`}
+          >
+            サビだけランダム
+          </button>
+        </div>
+        <p className="text-xs text-zinc-400 mt-2">現在：{panelPattern}</p>
+      </div>
+
+      <div className="pt-4 border-t border-zinc-700">
+        <p className="text-sm mb-2 text-pink-300">サビ暴走モード</p>
+        <div
+          className={`w-full p-2 rounded text-center font-bold mb-3 ${
+            chorusBoost ? "bg-pink-600" : "bg-zinc-800 text-zinc-400"
+          }`}
+        >
+          {chorusBoost ? "暴走中" : "待機中"}
+        </div>
+        <p className="text-xs text-zinc-400 mb-1">暴走感度：{chorusSensitivity}%</p>
+        <input
+          type="range"
+          min="10"
+          max="45"
+          step="1"
+          value={chorusSensitivity}
+          onChange={(e) => {
+            setChorusSensitivity(Number(e.target.value));
+            setActivePreset(null);
+          }}
+          className="w-full"
+        />
+      </div>
+
+      <div className="pt-4 border-t border-zinc-700">
+        <p className="text-sm mb-2 text-cyan-300">現在画像のモーション</p>
+        <select
+          value={selectedMotion}
+          onChange={(e) => {
+            setSelectedMotion(e.target.value as MotionType);
+            setActivePreset(null);
+          }}
+          className="w-full bg-black border border-zinc-600 p-2 rounded text-white"
+        >
+          <option value="zoomIn">ズームイン</option>
+          <option value="zoomOut">ズームアウト</option>
+          <option value="panLeft">左パン</option>
+          <option value="panRight">右パン</option>
+          <option value="shake">シェイク</option>
+          <option value="comic">漫画揺れ</option>
+        </select>
+        <button
+          onClick={applyMotionToCurrent}
+          className="w-full bg-pink-600 hover:bg-pink-500 p-2 rounded mt-3"
+        >
+          この画像に適用
+        </button>
+        <button
+          onClick={applyRandomMotions}
+          className={`w-full p-2 rounded mt-3 ${
+            randomMotionApplied
+              ? "bg-cyan-500 text-black font-bold"
+              : "bg-zinc-800 hover:bg-zinc-700"
+          }`}
+        >
+          全画像ランダム {randomMotionApplied ? "適用中" : "未適用"}
+        </button>
+      </div>
     </>
   );
 }

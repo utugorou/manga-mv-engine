@@ -57,6 +57,7 @@ export default function ExportPanel({
 }: ExportPanelProps) {
   const resolution = getExportResolution(aspectRatio, exportQuality);
   const isRecordingNow = isRecording || exportStatus === "recording";
+  const hasRecordingResult = Boolean(recordedVideoUrl);
   const statusText = getExportResultStatusMessage(exportStatus);
   const recordingText = isRecordingNow
     ? recordingMode === "synced"
@@ -83,7 +84,9 @@ export default function ExportPanel({
 
         <div className="flex justify-between">
           <span>出力解像度</span>
-          <span className="text-emerald-300">{resolution.width} x {resolution.height}</span>
+          <span className="text-emerald-300">
+            {resolution.width} x {resolution.height}
+          </span>
         </div>
 
         <div className="flex justify-between">
@@ -130,12 +133,8 @@ export default function ExportPanel({
         書き出し準備
       </button>
 
-      <p className="text-xs text-zinc-400 mt-2">
-        状態：{statusText}
-      </p>
-      <p className="text-xs text-cyan-400 mt-1">
-        録画状態：{recordingText}
-      </p>
+      <p className="text-xs text-zinc-400 mt-2">状態：{statusText}</p>
+      <p className="text-xs text-cyan-400 mt-1">録画状態：{recordingText}</p>
       <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{exportMessage}</p>
       <p className="text-xs text-zinc-500 mt-1">
         音声録画状態：
@@ -173,10 +172,11 @@ export default function ExportPanel({
         </button>
       </div>
 
-      {recordedVideoUrl && (
+      {hasRecordingResult && recordedVideoUrl && (
         <div className="mt-3 rounded border border-zinc-700 bg-zinc-900/70 p-3 text-xs space-y-3">
           <p className="text-emerald-300 font-bold">書き出し結果パネル</p>
           <p className="text-zinc-300">録画完了</p>
+
           <div className="space-y-2">
             <p className="text-zinc-300">WebMプレビュー</p>
             <video
@@ -185,6 +185,7 @@ export default function ExportPanel({
               className="w-full rounded border border-zinc-700 bg-black"
             />
           </div>
+
           <a
             href={recordedVideoUrl}
             download="manga-mv-export.webm"
@@ -211,7 +212,9 @@ export default function ExportPanel({
       )}
 
       {exportStatus === "finished" && (
-        <p className="text-xs text-cyan-300 mt-2">再録画する場合は「もう一度録画する」を押してください。</p>
+        <p className="text-xs text-cyan-300 mt-2">
+          再録画する場合は「もう一度録画する」を押してください。
+        </p>
       )}
 
       {exportStatus === "ready" && (

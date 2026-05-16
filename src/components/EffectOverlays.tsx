@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { SfxItem } from "../types/mv";
 
 type PositionType =
   | "topLeft"
@@ -25,9 +26,7 @@ type EffectOverlaysProps = {
   showEqualizer: boolean;
   eqBars: number[];
   showSfx: boolean;
-  sfxPosition: PositionType;
-  sfxText: string;
-  sfxScale: number;
+  sfxItems: SfxItem[];
   getPositionClass: (position: PositionType) => string;
   showBubble: boolean;
   bubblePosition: PositionType;
@@ -46,9 +45,7 @@ export default function EffectOverlays({
   showEqualizer,
   eqBars,
   showSfx,
-  sfxPosition,
-  sfxText,
-  sfxScale,
+  sfxItems,
   getPositionClass,
   showBubble,
   bubblePosition,
@@ -61,7 +58,21 @@ export default function EffectOverlays({
   const minSide = selectedImage ? 405 : 360;
   const baseSize = chorusBoost ? 64 : 48;
   const maxFontSize = minSide * 0.4;
-  const computedFontSize = Math.min(baseSize * sfxScale, maxFontSize);
+  const getSfxPositionClass = (position: SfxItem["position"]) => {
+    const map: Record<SfxItem["position"], PositionType> = {
+      topLeft: "topLeft",
+      top: "topLeft",
+      topRight: "topRight",
+      left: "bottomLeft",
+      center: "center",
+      right: "bottomRight",
+      bottomLeft: "bottomLeft",
+      bottom: "bottomRight",
+      bottomRight: "bottomRight",
+      random: "center",
+    };
+    return getPositionClass(map[position]);
+  };
 
   return (
     <>
@@ -158,20 +169,12 @@ export default function EffectOverlays({
         </div>
       )}
 
-      {showSfx && (
-        <div
-          className={`absolute ${getPositionClass(sfxPosition)} font-black text-white drop-shadow-[0_0_10px_#ec4899] text-center`}
-          style={{
-            ...playOrNone("sfxShake 0.45s ease-in-out infinite"),
-            fontSize: `${computedFontSize}px`,
-            maxWidth: "82%",
-            lineHeight: 1.05,
-            transformOrigin: sfxPosition === "center" ? "center center" : "50% 50%",
-          }}
-        >
-          {sfxText}
+      {showSfx && sfxItems.map((item) => (
+        <div key={item.id} className={`absolute ${getSfxPositionClass(item.position)} font-black text-white drop-shadow-[0_0_10px_#ec4899] text-center`}
+          style={{ ...playOrNone("sfxShake 0.45s ease-in-out infinite"), fontSize: `${Math.min(baseSize * item.scale, maxFontSize)}px`, maxWidth: "82%", lineHeight: 1.05, transform: `rotate(${item.rotation}deg)` }}>
+          {item.text}
         </div>
-      )}
+      ))}
 
       {showBubble && (
         <div

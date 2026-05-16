@@ -42,6 +42,7 @@ import type {
   PanelPattern,
   PositionType,
   PresetName,
+  SfxItem,
   SwitchMode,
   TextMode,
 } from "../src/types/mv";
@@ -59,6 +60,7 @@ export default function Home() {
   const recordingEndedHandlerRef = useRef<(() => void) | null>(null);
   const latestSelectedImageRef = useRef<string | null>(null);
   const latestSfxTextRef = useRef("");
+  const latestSfxItemsRef = useRef<SfxItem[]>([]);
   const latestBubbleTextRef = useRef("");
   const latestSfxPositionRef = useRef<PositionType>("bottomLeft");
   const latestBubblePositionRef = useRef<PositionType>("topRight");
@@ -117,10 +119,12 @@ export default function Home() {
 
   const [showSfx, setShowSfx] = useState(true);
   const [sfxText, setSfxText] = useState("ドン!!");
+  const [sfxItems, setSfxItems] = useState<SfxItem[]>([]);
   const [sfxPosition, setSfxPosition] =
     useState<PositionType>("bottomLeft");
   const [autoSfx, setAutoSfx] = useState(false);
   const [randomSfxScaleEnabled, setRandomSfxScaleEnabled] = useState(true);
+  const [randomSfxCountEnabled, setRandomSfxCountEnabled] = useState(true);
   const [sfxScale, setSfxScale] = useState(1);
 
   const [textMode, setTextMode] = useState<TextMode>("random");
@@ -164,6 +168,7 @@ export default function Home() {
   useEffect(() => {
     latestSfxTextRef.current = sfxText;
   }, [sfxText]);
+  useEffect(() => { latestSfxItemsRef.current = sfxItems; }, [sfxItems]);
 
   useEffect(() => {
     latestBubbleTextRef.current = bubbleText;
@@ -233,6 +238,20 @@ export default function Home() {
   ];
   const sfxScaleOptions = [1, 2, 3, 4, 5, 7] as const;
 
+
+
+  const sfxPositions = ["topLeft", "top", "topRight", "left", "center", "right", "bottomLeft", "bottom", "bottomRight", "random"] as const;
+  const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const generateSfxItems = (): SfxItem[] => {
+    const count = randomSfxCountEnabled ? randomInt(1, 7) : 1;
+    return Array.from({ length: count }, (_, i) => ({
+      id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+      text: pickSfxText(),
+      position: randomItem([...sfxPositions]),
+      scale: randomSfxScaleEnabled ? randomItem([...sfxScaleOptions]) : 1,
+      rotation: randomInt(-18, 18),
+    }));
+  };
   const aspectList: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5"];
 
   const randomItem = <T,>(list: T[]): T => {
@@ -411,9 +430,11 @@ export default function Home() {
 
       if (autoSfx) {
         setShowSfx(true);
-        setSfxText(pickSfxText());
-        setSfxPosition(randomItem(positions));
-        randomizeSfxScale();
+        const items = generateSfxItems();
+        setSfxItems(items);
+        setSfxText(items[0]?.text ?? pickSfxText());
+        setSfxPosition((items[0]?.position === "random" ? "center" : (items[0]?.position ?? "bottomLeft")) as PositionType);
+        setSfxScale(items[0]?.scale ?? 1);
       }
 
       return nextIndex;
@@ -895,6 +916,7 @@ export default function Home() {
           drawSfxText(ctx, latestSfxTextRef.current, latestSfxPositionRef.current, resolution.width, resolution.height, {
             sfxScale: latestSfxScaleRef.current,
             chorusBoost: latestChorusBoostRef.current,
+            sfxItems: latestSfxItemsRef.current,
           });
         }
         if (latestShowBubbleRef.current) {
@@ -1028,6 +1050,7 @@ export default function Home() {
           drawSfxText(ctx, latestSfxTextRef.current, latestSfxPositionRef.current, resolution.width, resolution.height, {
             sfxScale: latestSfxScaleRef.current,
             chorusBoost: latestChorusBoostRef.current,
+            sfxItems: latestSfxItemsRef.current,
           });
         }
         if (latestShowBubbleRef.current) {
@@ -1370,6 +1393,7 @@ export default function Home() {
               showEqualizer={showEqualizer}
               eqBars={eqBars}
               showSfx={showSfx}
+              sfxItems={sfxItems}
               sfxPosition={sfxPosition}
               sfxText={sfxText}
               sfxScale={sfxScale}
@@ -1480,7 +1504,10 @@ export default function Home() {
                 autoSfx={autoSfx}
                 setAutoSfx={setAutoSfx}
                 randomSfxScaleEnabled={randomSfxScaleEnabled}
+                randomSfxCountEnabled={randomSfxCountEnabled}
                 setRandomSfxScaleEnabled={handleRandomSfxScaleEnabled}
+                setRandomSfxCountEnabled={setRandomSfxCountEnabled}
+                regenerateSfxItems={() => { const items = generateSfxItems(); setSfxItems(items); setSfxText(items[0]?.text ?? sfxText); setSfxScale(items[0]?.scale ?? 1); }}
                 randomizeSfxScale={randomizeSfxScale}
                 setBubblePosition={setBubblePosition}
                 setSfxPosition={setSfxPosition}

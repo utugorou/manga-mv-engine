@@ -47,8 +47,11 @@ type SettingsPanelProps = {
   autoSfx: boolean;
   setAutoSfx: (value: boolean) => void;
   randomSfxScaleEnabled: boolean;
+  randomSfxCountEnabled: boolean;
   setRandomSfxScaleEnabled: (value: boolean) => void;
+  setRandomSfxCountEnabled: (value: boolean) => void;
   randomizeSfxScale: () => void;
+  regenerateSfxItems: () => void;
   setBubblePosition: (position: PositionType) => void;
   setSfxPosition: (position: PositionType) => void;
   bubbleTexts: string[];
@@ -112,8 +115,11 @@ export default function SettingsPanel({
   autoSfx,
   setAutoSfx,
   randomSfxScaleEnabled,
+  randomSfxCountEnabled,
   setRandomSfxScaleEnabled,
+  setRandomSfxCountEnabled,
   randomizeSfxScale,
+  regenerateSfxItems,
   setBubblePosition,
   setSfxPosition,
   bubbleTexts,
@@ -473,14 +479,21 @@ export default function SettingsPanel({
       <button
         onClick={() => {
           setShowSfx(true);
-          setSfxText(randomItem(sfxTexts));
-          setSfxPosition(randomItem(positions));
-          randomizeSfxScale();
+          regenerateSfxItems();
           setActivePreset(null);
         }}
         className="w-full bg-zinc-800 hover:bg-zinc-700 p-2 rounded"
       >
         擬音だけランダム
+      </button>
+      <button
+        onClick={() => {
+          setRandomSfxCountEnabled(!randomSfxCountEnabled);
+          setActivePreset(null);
+        }}
+        className={`w-full p-2 rounded ${randomSfxCountEnabled ? "bg-yellow-400 text-black font-bold" : "bg-zinc-800 hover:bg-zinc-700"}`}
+      >
+        擬音数ランダム {randomSfxCountEnabled ? "ON" : "OFF"}
       </button>
 
       <button

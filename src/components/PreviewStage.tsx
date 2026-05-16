@@ -1,4 +1,5 @@
 import EffectOverlays from "./EffectOverlays";
+import type { SfxItem } from "../types/mv";
 
 type PositionType = "topLeft" | "topRight" | "bottomLeft" | "bottomRight" | "center";
 type PanelPattern = "classic" | "vertical" | "horizontal" | "diagonal" | "action";
@@ -17,6 +18,7 @@ type PreviewStageProps = {
   showEqualizer: boolean;
   eqBars: number[];
   showSfx: boolean;
+  sfxItems: SfxItem[];
   sfxPosition: PositionType;
   sfxText: string;
   sfxScale: number;

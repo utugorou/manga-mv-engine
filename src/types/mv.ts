@@ -15,3 +15,11 @@ export type RecordingMode = "manual" | "synced";
 export type PresetName = "ROCK" | "POP" | "FUNK" | "JAZZ" | "DANCE" | "DISCO" | "Synth Vocal" | "BALLADE" | "漫画BATTLE" | "SIMPLE";
 
 export type TimelineMarker = { index: number; percent: number };
+
+export type SfxItem = {
+  id: string;
+  text: string;
+  position: "topLeft" | "top" | "topRight" | "left" | "center" | "right" | "bottomLeft" | "bottom" | "bottomRight" | "random";
+  scale: number;
+  rotation: number;
+};

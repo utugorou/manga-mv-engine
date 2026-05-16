@@ -52,7 +52,7 @@ export type CanvasOverlayDrawOptions = {
 };
 
 export type CanvasImageMotionDrawOptions = {
-  motionType?: "zoomIn" | "zoomOut" | "panLeft" | "panRight" | "shake" | "comic";
+  motionType?: "zoomIn" | "zoomOut" | "panLeft" | "panRight" | "shake" | "comic" | "panUp" | "panDown" | "diagonalPan" | "slowZoomIn" | "breathZoom" | "impactZoom" | "glitchJump" | "grooveBounce" | "sideGroove" | "handheld";
   chorusBoost?: boolean;
   recordingElapsedMs?: number;
 };
@@ -131,6 +131,46 @@ export const drawCoverImageWithMotion = (
         scale = 1.03 + ((fastSin + 1) / 2) * 0.03;
         rotation = Math.sin((elapsedMs / 800) * Math.PI * 2) * 0.018;
         translateX = Math.cos((elapsedMs / 700) * Math.PI * 2) * canvasWidth * 0.003;
+        break;
+      case "panUp":
+        scale = 1.08;
+        translateY = -((slowSin + 1) / 2) * canvasHeight * 0.05;
+        break;
+      case "panDown":
+        scale = 1.08;
+        translateY = ((slowSin + 1) / 2) * canvasHeight * 0.05;
+        break;
+      case "diagonalPan":
+        scale = 1.1;
+        translateX = slowSin * canvasWidth * 0.04;
+        translateY = -slowSin * canvasHeight * 0.035;
+        break;
+      case "slowZoomIn":
+        scale = 1 + ((Math.sin((elapsedMs / 10000) * Math.PI * 2) + 1) / 2) * 0.08;
+        break;
+      case "breathZoom":
+        scale = 1.02 + Math.sin((elapsedMs / 6000) * Math.PI * 2) * 0.02;
+        break;
+      case "impactZoom":
+        scale = 1 + Math.max(0, Math.sin((elapsedMs / 900) * Math.PI * 2)) * 0.12;
+        break;
+      case "glitchJump":
+        translateX = ((Math.floor(elapsedMs / 110) % 3) - 1) * canvasWidth * 0.006;
+        translateY = ((Math.floor(elapsedMs / 140) % 3) - 1) * canvasHeight * 0.004;
+        break;
+      case "grooveBounce":
+        scale = 1.04;
+        translateY = Math.sin((elapsedMs / 1100) * Math.PI * 2) * canvasHeight * 0.02;
+        break;
+      case "sideGroove":
+        scale = 1.04;
+        translateX = Math.sin((elapsedMs / 1000) * Math.PI * 2) * canvasWidth * 0.018;
+        break;
+      case "handheld":
+        scale = 1.05;
+        translateX = Math.sin((elapsedMs / 900) * Math.PI * 2) * canvasWidth * 0.008;
+        translateY = Math.cos((elapsedMs / 780) * Math.PI * 2) * canvasHeight * 0.007;
+        rotation = Math.sin((elapsedMs / 1200) * Math.PI * 2) * 0.012;
         break;
       default:
         break;

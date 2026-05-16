@@ -19,8 +19,10 @@ type ExportPanelProps = {
   exportMessage: string;
   handlePrepareExport: () => void;
   handleStartRecording: () => void;
+  handleStartSyncedRecording: () => void;
   handleStopRecording: () => void;
   isRecording: boolean;
+  isSyncedRecording: boolean;
   recordedVideoUrl: string | null;
   formatTime: (time: number) => string;
 };
@@ -36,8 +38,10 @@ export default function ExportPanel({
   exportMessage,
   handlePrepareExport,
   handleStartRecording,
+  handleStartSyncedRecording,
   handleStopRecording,
   isRecording,
+  isSyncedRecording,
   recordedVideoUrl,
   formatTime,
 }: ExportPanelProps) {
@@ -129,6 +133,18 @@ export default function ExportPanel({
           録画停止
         </button>
       </div>
+
+      <button
+        onClick={handleStartSyncedRecording}
+        disabled={isRecording}
+        className="w-full p-2 rounded text-xs font-bold bg-cyan-500 hover:bg-cyan-400 disabled:bg-zinc-700 disabled:text-zinc-400 text-black mt-2"
+      >
+        音源尺で自動録画
+      </button>
+
+      {isSyncedRecording && (
+        <p className="text-xs text-cyan-300 mt-2">音源尺で録画中…</p>
+      )}
 
       {recordedVideoUrl && (
         <div className="mt-3 text-xs space-y-2">

@@ -29,6 +29,7 @@ import type {
   ExportMode,
   ExportQuality,
   ExportStatus,
+  RecordingMode,
   MotionGroup,
   MotionType,
   PanelMode,
@@ -48,6 +49,8 @@ export default function Home() {
   const recordingFrameRef = useRef<number | null>(null);
   const recordingCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const syncedStopTimeoutRef = useRef<number | null>(null);
+  const recordingModeRef = useRef<RecordingMode | null>(null);
 
   const lastSwitchTimeRef = useRef(0);
   const wasAboveThresholdRef = useRef(false);
@@ -711,11 +714,12 @@ export default function Home() {
         throw new Error("Canvas context の作成に失敗しました");
       }
 
-      const recorder = startCanvasRecording(canvas, 30);
+      const recorder = startCanvasRecording(canvas, 30, audioRef.current);
       mediaRecorderRef.current = recorder;
       recorder.start();
 
       setIsRecording(true);
+      recordingModeRef.current = "manual";
       setExportStatus("recording");
       setExportMessage("録画中です（WebM）");
 
@@ -766,6 +770,10 @@ export default function Home() {
         clearTimeout(recordingFrameRef.current);
         recordingFrameRef.current = null;
       }
+      if (syncedStopTimeoutRef.current !== null) {
+        clearTimeout(syncedStopTimeoutRef.current);
+        syncedStopTimeoutRef.current = null;
+      }
 
       const blob = await stopCanvasRecording(mediaRecorderRef.current);
       const videoUrl = URL.createObjectURL(blob);
@@ -780,7 +788,105 @@ export default function Home() {
     } finally {
       mediaRecorderRef.current = null;
       recordingCanvasRef.current = null;
+      recordingModeRef.current = null;
       setIsRecording(false);
+    }
+  };
+
+  const handleStartSyncedRecording = async () => {
+    if (images.length === 0 || !images[0]) {
+      setExportStatus("error");
+      setExportMessage("録画対象の画像がありません");
+      return;
+    }
+    if (isRecording) return;
+
+    if (recordedVideoUrl) {
+      URL.revokeObjectURL(recordedVideoUrl);
+      setRecordedVideoUrl(null);
+    }
+
+    if (audioRef.current && audioUrl) {
+      audioRef.current.currentTime = 0;
+    }
+
+    setCurrentImageIndex(0);
+    setSelectedImage(images[0]);
+    setCurrentTime(0);
+
+    try {
+      const resolution = getExportResolution(aspectRatio, exportQuality);
+      const canvas = createExportCanvas(resolution.width, resolution.height);
+      recordingCanvasRef.current = canvas;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        throw new Error("Canvas context の作成に失敗しました");
+      }
+
+      const recorder = startCanvasRecording(canvas, 30, audioRef.current);
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+
+      setIsRecording(true);
+      recordingModeRef.current = "synced";
+      setExportStatus("recording");
+      setExportMessage("音源尺で録画中（WebM）");
+
+      const drawFrame = async () => {
+        if (!recordingCanvasRef.current || !ctx) return;
+
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, resolution.width, resolution.height);
+
+        const activeImage = images[currentImageIndex] || images[0];
+        if (activeImage) {
+          try {
+            await drawImageToCanvas(ctx, activeImage, resolution.width, resolution.height);
+          } catch (error) {
+            console.warn("画像描画に失敗しました", error);
+          }
+        }
+
+        drawTextOverlay(ctx, sfxText, resolution.width, Math.round(resolution.height * 0.8));
+        drawTextOverlay(ctx, bubbleText, resolution.width, resolution.height);
+
+        for (let i = 0; i < 3; i++) {
+          const y = Math.random() * resolution.height;
+          const h = 2 + Math.random() * 5;
+          ctx.fillStyle = `rgba(255,255,255,${0.15 + Math.random() * 0.2})`;
+          ctx.fillRect(0, y, resolution.width, h);
+        }
+
+        recordingFrameRef.current = window.setTimeout(() => {
+          void drawFrame();
+        }, 1000 / 30) as unknown as number;
+      };
+      await drawFrame();
+
+      if (audioRef.current && audioUrl) {
+        try {
+          await audioRef.current.play();
+          setIsPlaying(true);
+          await setupAudioAnalysis();
+          startAnalysisLoop();
+        } catch (error) {
+          console.warn("同期録画の再生開始に失敗しました", error);
+        }
+      }
+
+      if (audioDuration > 0) {
+        syncedStopTimeoutRef.current = window.setTimeout(() => {
+          void handleStopRecording();
+          setIsPlaying(false);
+        }, audioDuration * 1000) as unknown as number;
+      }
+    } catch (error) {
+      console.error("同期録画開始に失敗:", error);
+      setIsRecording(false);
+      recordingModeRef.current = null;
+      setExportStatus("error");
+      setExportMessage("同期録画の開始に失敗しました");
     }
   };
 
@@ -1025,7 +1131,12 @@ export default function Home() {
             onTimeUpdate={(e) =>
               setCurrentTime(e.currentTarget.currentTime)
             }
-            onEnded={handleReset}
+            onEnded={() => {
+              handleReset();
+              if (isRecording && recordingModeRef.current === "synced") {
+                void handleStopRecording();
+              }
+            }}
           />
         )}
       </div>
@@ -1073,10 +1184,12 @@ export default function Home() {
             exportMessage={exportMessage}
             handlePrepareExport={handlePrepareExport}
             handleStartRecording={handleStartRecording}
+            handleStartSyncedRecording={handleStartSyncedRecording}
             handleStopRecording={handleStopRecording}
             isRecording={isRecording}
             recordedVideoUrl={recordedVideoUrl}
             formatTime={formatTime}
+            isSyncedRecording={isRecording && recordingModeRef.current === "synced"}
           />
 
           <PresetPanel

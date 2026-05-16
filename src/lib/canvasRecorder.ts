@@ -53,15 +53,31 @@ export const drawTextOverlay = (
 
 export const startCanvasRecording = (
   canvas: HTMLCanvasElement,
-  fps: number
+  fps: number,
+  audioElement?: HTMLAudioElement | null
 ): MediaRecorder => {
-  const stream = canvas.captureStream(fps);
+  const canvasStream = canvas.captureStream(fps);
+  const combinedStream = new MediaStream();
+
+  canvasStream.getVideoTracks().forEach((track) => {
+    combinedStream.addTrack(track);
+  });
+
+  if (audioElement) {
+    const captureFn = audioElement.captureStream || (audioElement as any).mozCaptureStream;
+    if (captureFn) {
+      const audioStream = captureFn.call(audioElement) as MediaStream;
+      audioStream.getAudioTracks().forEach((track) => {
+        combinedStream.addTrack(track);
+      });
+    }
+  }
 
   const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
     ? "video/webm;codecs=vp9"
     : "video/webm";
 
-  return new MediaRecorder(stream, { mimeType });
+  return new MediaRecorder(combinedStream, { mimeType });
 };
 
 export const stopCanvasRecording = async (

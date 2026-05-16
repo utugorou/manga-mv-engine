@@ -6,12 +6,13 @@ export const createExportCanvas = (width: number, height: number): HTMLCanvasEle
   return canvas;
 };
 
-export const drawImageToCanvas = async (
-  ctx: CanvasRenderingContext2D,
-  imageUrl: string,
-  width: number,
-  height: number
-): Promise<void> => {
+const imageCache = new Map<string, HTMLImageElement>();
+
+const loadImage = async (imageUrl: string): Promise<HTMLImageElement> => {
+  const cachedImage = imageCache.get(imageUrl);
+
+  if (cachedImage) return cachedImage;
+
   const image = new Image();
   image.src = imageUrl;
 
@@ -19,6 +20,19 @@ export const drawImageToCanvas = async (
     image.onload = () => resolve();
     image.onerror = () => reject(new Error("画像の読み込みに失敗しました"));
   });
+
+  imageCache.set(imageUrl, image);
+
+  return image;
+};
+
+export const drawImageToCanvas = async (
+  ctx: CanvasRenderingContext2D,
+  imageUrl: string,
+  width: number,
+  height: number
+): Promise<void> => {
+  const image = await loadImage(imageUrl);
 
   const scale = Math.max(width / image.width, height / image.height);
   const drawWidth = image.width * scale;

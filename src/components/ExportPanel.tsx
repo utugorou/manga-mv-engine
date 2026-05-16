@@ -162,8 +162,7 @@ export default function ExportPanel({
       )}
 
       <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
-        ※現在は書き出し準備モードです。MP4保存は次の段階で Remotion
-        または Canvas録画方式を接続します。
+        ※現在は Canvas 録画による WebM 書き出しに対応しています。
       </p>
     </div>
   );

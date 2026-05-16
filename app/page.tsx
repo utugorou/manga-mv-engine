@@ -1294,12 +1294,19 @@ export default function Home() {
         }
       `}</style>
 
-      <div className="px-4 py-4 border-b border-zinc-800 bg-gradient-to-r from-zinc-950 via-black to-zinc-950">
-        <h1 className="text-3xl font-black tracking-wide text-pink-300">Manga MV Engine</h1>
-        <p className="text-sm text-cyan-300 mt-1">音で動く、漫画MVジェネレーター</p>
-        <p className="text-xs text-yellow-300 mt-1">WebM Export Ready</p>
-      </div>
-      <div className="grid grid-cols-1 xl:grid-cols-[280px_1fr_360px] gap-4 p-4">
+      <header className="sticky top-0 z-30 border-b border-fuchsia-500/30 bg-black/90 px-6 py-4 backdrop-blur">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black tracking-[0.2em] text-fuchsia-300">MANGA MV ENGINE</h1>
+            <p className="text-xs text-zinc-400">Project: <span className="text-cyan-300">Untitled MV</span></p>
+          </div>
+          <div className="flex gap-2">
+            <button className="rounded-xl border border-cyan-300/70 bg-cyan-500/15 px-4 py-2 text-sm font-bold text-cyan-100 shadow-[0_0_16px_rgba(34,211,238,0.25)]">プレビュー</button>
+            <button className="rounded-xl border border-fuchsia-300/70 bg-fuchsia-500/15 px-4 py-2 text-sm font-bold text-fuchsia-100 shadow-[0_0_16px_rgba(217,70,239,0.3)]">書き出し</button>
+          </div>
+        </div>
+      </header>
+      <div className="grid grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)_360px] gap-4 p-4">
         <UploadPanel
           handleImageUpload={handleImageUpload}
           handleAudioUpload={handleAudioUpload}
@@ -1321,7 +1328,7 @@ export default function Home() {
           }}
         />
         <div className="flex flex-col rounded-2xl border border-cyan-500/30 bg-zinc-950/70 p-4">
-          <div className="flex-1 flex items-center justify-center p-4">
+          <div className="flex-1 rounded-2xl border border-fuchsia-500/20 bg-zinc-900/50 p-4 flex items-center justify-center">
             <PreviewStage
               previewSizeClass={getPreviewSizeClass()}
               chorusBoost={chorusBoost}
@@ -1363,6 +1370,7 @@ export default function Home() {
               switchMode={switchMode}
               formatTime={formatTime}
             />
+            <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3"><PresetPanel presetList={presetList} activePreset={activePreset} applyPreset={applyPreset} /></div>
           </div>
         </div>
         <div className="max-h-[calc(100vh-140px)] overflow-y-auto rounded-2xl border border-cyan-500/30 bg-zinc-950/90 p-4">
@@ -1408,7 +1416,6 @@ export default function Home() {
                 formatTime={formatTime}
               />
             </div>
-            <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3"><PresetPanel presetList={presetList} activePreset={activePreset} applyPreset={applyPreset} /></div>
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
               <SettingsPanel
                 switchMode={switchMode}

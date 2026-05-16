@@ -68,7 +68,7 @@ export default function ExportPanel({
       : "録画準備中";
 
   return (
-    <div className="pt-3 pb-3 border-b border-zinc-700">
+    <div className="pt-1">
       <p className="text-sm mb-2 text-yellow-300 font-bold">出力設定</p>
 
       <div className="bg-zinc-900 border border-zinc-700 rounded p-3 text-xs text-zinc-300 space-y-2">
@@ -156,9 +156,9 @@ export default function ExportPanel({
         <button
           onClick={handleStartSyncedRecording}
           disabled={isRecordingNow || !hasAudioSource}
-          className="p-2 rounded text-xs font-bold bg-cyan-500 hover:bg-cyan-400 disabled:bg-zinc-700 disabled:text-zinc-400 text-black"
+          className="p-2 rounded text-xs font-bold border border-cyan-300 bg-cyan-400 hover:bg-cyan-300 shadow-[0_0_12px_#22d3ee] disabled:bg-zinc-700 disabled:text-zinc-400 disabled:border-zinc-700 text-black"
         >
-          音源尺で自動録画
+          ★ 音源尺で自動録画
         </button>
       </div>
 

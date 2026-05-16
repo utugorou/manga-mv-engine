@@ -711,13 +711,21 @@ export default function Home() {
         throw new Error("Canvas context の作成に失敗しました");
       }
 
-      const recorder = startCanvasRecording(canvas, 30);
+      const { recorder, hasAudio } = startCanvasRecording(
+        canvas,
+        30,
+        audioRef.current
+      );
       mediaRecorderRef.current = recorder;
       recorder.start();
 
       setIsRecording(true);
       setExportStatus("recording");
-      setExportMessage("録画中です（WebM）");
+      setExportMessage(
+        hasAudio
+          ? "録画中です（WebM・音声付き）"
+          : "録画中です（WebM・映像のみ）"
+      );
 
       const drawFrame = async () => {
         if (!recordingCanvasRef.current || !ctx) return;
@@ -778,6 +786,9 @@ export default function Home() {
       setExportStatus("error");
       setExportMessage("録画停止に失敗しました");
     } finally {
+      mediaRecorderRef.current?.stream.getTracks().forEach((track) => {
+        track.stop();
+      });
       mediaRecorderRef.current = null;
       recordingCanvasRef.current = null;
       setIsRecording(false);

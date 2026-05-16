@@ -50,7 +50,7 @@ type SettingsPanelProps = {
   setAutoBubble: (value: boolean) => void;
   textMode: TextMode;
   setTextMode: (mode: TextMode) => void;
-  audioMoodRef: MutableRefObject<AudioMood>;
+  audioMood: AudioMood;
   showSfx: boolean;
   setShowSfx: (value: boolean) => void;
   sfxText: string;
@@ -92,7 +92,7 @@ export default function SettingsPanel({
   setAutoBubble,
   textMode,
   setTextMode,
-  audioMoodRef,
+  audioMood,
   showSfx,
   setShowSfx,
   sfxText,
@@ -382,7 +382,7 @@ export default function SettingsPanel({
         </div>
 
         <p className="text-xs text-zinc-400 mt-2">
-          現在：{textMode} / 状態：{audioMoodRef.current}
+          現在：{textMode} / 状態：{audioMood}
         </p>
       </div>
 

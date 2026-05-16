@@ -8,52 +8,26 @@ import PreviewStage from "../src/components/PreviewStage";
 import ExportPanel from "../src/components/ExportPanel";
 import PresetPanel from "../src/components/PresetPanel";
 import SettingsPanel from "../src/components/SettingsPanel";
-
-type MotionType =
-  | "zoomIn"
-  | "zoomOut"
-  | "panLeft"
-  | "panRight"
-  | "shake"
-  | "comic";
-
-type PositionType =
-  | "topLeft"
-  | "topRight"
-  | "bottomLeft"
-  | "bottomRight"
-  | "center";
-
-type SwitchMode = "equal" | "peak" | "kick";
-
-type PanelPattern =
-  | "classic"
-  | "vertical"
-  | "horizontal"
-  | "diagonal"
-  | "action";
-
-type PanelMode = "fixed" | "random" | "chorus";
-
-type AspectRatio = "16:9" | "9:16" | "1:1" | "4:5";
-
-type TextMode = "fixed" | "random" | "smart";
-
-type AudioMood = "quiet" | "peak" | "bass" | "chorus";
-
-type ExportQuality = "standard" | "high";
-
-type PresetName =
-  | "ROCK"
-  | "POP"
-  | "FUNK"
-  | "JAZZ"
-  | "DANCE"
-  | "DISCO"
-  | "Synth Vocal"
-  | "BALLADE"
-  | "漫画BATTLE"
-  | "SIMPLE";
+import { presetConfigs, presetList } from "../src/lib/presets";
+import {
+  bubbleTexts,
+  sfxTexts,
+  smartBubbleTexts,
+  smartSfxTexts,
+} from "../src/lib/textEngine";
+import type {
+  AspectRatio,
+  AudioMood,
+  ExportQuality,
+  MotionGroup,
+  MotionType,
+  PanelMode,
+  PanelPattern,
+  PositionType,
+  PresetName,
+  SwitchMode,
+  TextMode,
+} from "../src/types/mv";
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -156,91 +130,12 @@ export default function Home() {
     "action",
   ];
 
-  const bubbleTexts = [
-    "まだ鳴ってる",
-    "止まらない",
-    "見えてる？",
-    "ここからだ",
-    "ノイズごと踊れ",
-    "心臓が先に走る",
-    "その音、刺さってる",
-    "まだ終わらない",
-    "この瞬間だけ",
-    "見逃すな",
-  ];
-
-  const smartBubbleTexts: Record<AudioMood, string[]> = {
-    quiet: [
-      "聞こえる？",
-      "まだ、ここにいる",
-      "静かに燃えてる",
-      "この余白が鳴ってる",
-      "見えてる？",
-    ],
-    peak: [
-      "ここからだ",
-      "刺さった",
-      "止まらない",
-      "この瞬間だけ",
-      "見逃すな",
-    ],
-    bass: [
-      "低音が走る",
-      "心臓が先に鳴る",
-      "床まで震えろ",
-      "このビートで跳ねろ",
-      "まだ沈まない",
-    ],
-    chorus: [
-      "ノイズごと踊れ",
-      "まだ止まらない",
-      "全部、鳴らせ",
-      "心臓ごと光れ",
-      "ここで壊れろ",
-    ],
-  };
-
-  const sfxTexts = [
-    "ドン!!",
-    "ザザッ",
-    "バチッ",
-    "ギュン",
-    "BOOM",
-    "ERROR",
-    "PULSE",
-    "NOISE",
-    "BANG",
-    "VIBE",
-    "FLASH",
-    "CRASH",
-  ];
-
-  const smartSfxTexts: Record<AudioMood, string[]> = {
-    quiet: ["スッ", "...", "ふわっ", "しん", "tone"],
-    peak: ["バチッ", "FLASH", "CRASH", "BANG", "ギュン"],
-    bass: ["ドン!!", "ズン!!", "BOOM", "BASS", "ドッ"],
-    chorus: ["PULSE", "NOISE", "ERROR", "BURST", "BREAK"],
-  };
-
   const positions: PositionType[] = [
     "topLeft",
     "topRight",
     "bottomLeft",
     "bottomRight",
     "center",
-  ];
-
-  const presetList: PresetName[] = [
-    "ROCK",
-    "POP",
-    "FUNK",
-    "JAZZ",
-    "DANCE",
-    "DISCO",
-    "Synth Vocal",
-    "BALLADE",
-    "漫画BATTLE",
-    "SIMPLE",
   ];
 
   const aspectList: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5"];
@@ -317,214 +212,43 @@ export default function Home() {
     lastSwitchTimeRef.current = performance.now();
     audioMoodRef.current = "quiet";
 
-    if (preset === "ROCK") {
-      setSwitchMode("peak");
-      setPeakSensitivity(9);
-      setMinSwitchInterval(500);
-      setIdealSwitchInterval(1000);
-      setFallbackSwitchInterval(1500);
-      setShowGlitch(true);
-      setShowEqualizer(true);
-      setShowFlash(true);
-      setShowPanels(true);
-      setPanelMode("random");
-      setAutoBubble(false);
-      setShowBubble(false);
-      setAutoSfx(true);
-      setShowSfx(true);
-      setTextMode("smart");
-      setChorusSensitivity(20);
-      randomizeMotionsFromList(motionList);
-      return;
-    }
+    const config = presetConfigs[preset];
 
-    if (preset === "POP") {
-      setSwitchMode("equal");
-      setImageDuration(2200);
-      setIdealSwitchInterval(2200);
-      setFallbackSwitchInterval(2200);
-      setShowGlitch(false);
-      setShowEqualizer(true);
-      setShowFlash(true);
-      setShowPanels(false);
-      setPanelMode("fixed");
-      setAutoBubble(true);
-      setShowBubble(true);
-      setAutoSfx(false);
-      setShowSfx(false);
-      setTextMode("random");
-      setChorusSensitivity(28);
-      randomizeMotionsFromList(calmMotionList);
-      return;
-    }
+    setSwitchMode(config.switchMode);
+    setPeakSensitivity(config.peakSensitivity);
+    setKickSensitivity(config.kickSensitivity);
+    setMinSwitchInterval(config.minSwitchInterval);
+    setIdealSwitchInterval(config.idealSwitchInterval);
+    setFallbackSwitchInterval(config.fallbackSwitchInterval);
+    setImageDuration(config.imageDuration);
+    setShowGlitch(config.showGlitch);
+    setShowEqualizer(config.showEqualizer);
+    setShowFlash(config.showFlash);
+    setShowPanels(config.showPanels);
+    setPanelMode(config.panelMode);
+    setAutoBubble(config.autoBubble);
+    setShowBubble(config.showBubble);
+    setAutoSfx(config.autoSfx);
+    setShowSfx(config.showSfx);
+    setTextMode(config.textMode);
+    setChorusSensitivity(config.chorusSensitivity);
 
-    if (preset === "FUNK") {
-      setSwitchMode("peak");
-      setPeakSensitivity(8);
-      setMinSwitchInterval(450);
-      setIdealSwitchInterval(900);
-      setFallbackSwitchInterval(1300);
-      setShowGlitch(true);
-      setShowEqualizer(true);
-      setShowFlash(true);
-      setShowPanels(true);
-      setPanelMode("random");
-      setAutoBubble(true);
-      setShowBubble(true);
-      setAutoSfx(true);
-      setShowSfx(true);
-      setTextMode("smart");
-      setChorusSensitivity(21);
-      randomizeMotionsFromList(motionList);
-      return;
-    }
-
-    if (preset === "JAZZ") {
-      setSwitchMode("equal");
-      setImageDuration(3500);
-      setIdealSwitchInterval(3500);
-      setFallbackSwitchInterval(3500);
-      setShowGlitch(false);
-      setShowEqualizer(true);
-      setShowFlash(false);
-      setShowPanels(false);
-      setPanelMode("fixed");
-      setAutoBubble(true);
-      setShowBubble(true);
-      setAutoSfx(false);
-      setShowSfx(false);
-      setTextMode("random");
-      setChorusSensitivity(35);
-      randomizeMotionsFromList(calmMotionList);
-      return;
-    }
-
-    if (preset === "DANCE") {
-      setSwitchMode("peak");
-      setPeakSensitivity(8);
-      setMinSwitchInterval(400);
-      setIdealSwitchInterval(800);
-      setFallbackSwitchInterval(1200);
-      setShowGlitch(true);
-      setShowEqualizer(true);
-      setShowFlash(true);
-      setShowPanels(true);
-      setPanelMode("chorus");
-      setAutoBubble(false);
-      setShowBubble(false);
-      setAutoSfx(true);
-      setShowSfx(true);
-      setTextMode("smart");
-      setChorusSensitivity(20);
-      randomizeMotionsFromList(motionList);
-      return;
-    }
-
-    if (preset === "DISCO") {
-      setSwitchMode("peak");
-      setPeakSensitivity(9);
-      setMinSwitchInterval(450);
-      setIdealSwitchInterval(900);
-      setFallbackSwitchInterval(1300);
-      setShowGlitch(true);
-      setShowEqualizer(true);
-      setShowFlash(true);
-      setShowPanels(true);
-      setPanelMode("chorus");
-      setAutoBubble(true);
-      setShowBubble(true);
-      setAutoSfx(true);
-      setShowSfx(true);
-      setTextMode("smart");
-      setChorusSensitivity(24);
-      randomizeMotionsFromList(motionList);
-      return;
-    }
-
-    if (preset === "Synth Vocal") {
-      setSwitchMode("peak");
-      setPeakSensitivity(8);
-      setMinSwitchInterval(400);
-      setIdealSwitchInterval(800);
-      setFallbackSwitchInterval(1200);
-      setShowGlitch(true);
-      setShowEqualizer(true);
-      setShowFlash(true);
-      setShowPanels(true);
-      setPanelMode("random");
-      setAutoBubble(true);
-      setShowBubble(true);
-      setAutoSfx(true);
-      setShowSfx(true);
-      setTextMode("smart");
-      setChorusSensitivity(20);
-      randomizeMotionsFromList(motionList);
-      return;
-    }
-
-    if (preset === "BALLADE") {
-      setSwitchMode("equal");
-      setImageDuration(4200);
-      setIdealSwitchInterval(4200);
-      setFallbackSwitchInterval(4200);
-      setShowGlitch(false);
-      setShowEqualizer(false);
-      setShowFlash(false);
-      setShowPanels(false);
-      setPanelMode("fixed");
-      setAutoBubble(true);
-      setShowBubble(true);
-      setAutoSfx(false);
-      setShowSfx(false);
-      setTextMode("random");
-      setChorusSensitivity(38);
-      randomizeMotionsFromList(["zoomIn", "zoomOut"]);
-      return;
-    }
-
-    if (preset === "漫画BATTLE") {
-      setSwitchMode("peak");
-      setPeakSensitivity(7);
-      setMinSwitchInterval(350);
-      setIdealSwitchInterval(700);
-      setFallbackSwitchInterval(1000);
-      setShowGlitch(true);
-      setShowEqualizer(true);
-      setShowFlash(true);
-      setShowPanels(true);
-      setPanelMode("random");
-      setAutoBubble(true);
-      setShowBubble(true);
-      setAutoSfx(true);
-      setShowSfx(true);
-      setTextMode("smart");
-      setChorusSensitivity(18);
-      randomizeMotionsFromList(battleMotionList);
-      return;
-    }
+    const motionMap: Record<MotionGroup, MotionType[]> = {
+      all: motionList,
+      calm: calmMotionList,
+      battle: battleMotionList,
+      simpleZoom: ["zoomIn", "zoomOut"],
+    };
 
     if (preset === "SIMPLE") {
-      setSwitchMode("equal");
-      setImageDuration(2500);
-      setIdealSwitchInterval(2500);
-      setFallbackSwitchInterval(2500);
-      setShowGlitch(false);
-      setShowEqualizer(false);
-      setShowFlash(false);
-      setShowPanels(false);
-      setPanelMode("fixed");
-      setAutoBubble(false);
-      setShowBubble(false);
-      setAutoSfx(false);
-      setShowSfx(false);
-      setTextMode("fixed");
-      setChorusSensitivity(45);
-
       if (images.length > 0) {
         setImageMotions(images.map(() => "zoomIn"));
         setRandomMotionApplied(false);
       }
+      return;
     }
+
+    randomizeMotionsFromList(motionMap[config.motionGroup]);
   };
 
   const triggerFlash = () => {

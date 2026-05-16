@@ -391,10 +391,11 @@ export const combineCanvasAndAudioStreams = (
 export const startCanvasRecording = (
   canvas: HTMLCanvasElement,
   fps: number,
-  mediaElement?: HTMLMediaElement | null
+  mediaElement?: HTMLMediaElement | null,
+  includeAudio = true
 ): { recorder: MediaRecorder; hasAudio: boolean } => {
   const canvasStream = canvas.captureStream(fps);
-  const audioStream = getAudioStreamFromElement(mediaElement);
+  const audioStream = includeAudio ? getAudioStreamFromElement(mediaElement) : null;
   const { stream, hasAudio } = combineCanvasAndAudioStreams(canvasStream, audioStream);
 
   const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")

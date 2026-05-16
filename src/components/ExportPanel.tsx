@@ -1,6 +1,10 @@
 "use client";
 
-import { getExportModeLabel, getExportResolution } from "../lib/exportHelpers";
+import {
+  getExportModeLabel,
+  getExportResultStatusMessage,
+  getExportResolution,
+} from "../lib/exportHelpers";
 import type {
   AspectRatio,
   ExportAudioStatus,
@@ -53,14 +57,7 @@ export default function ExportPanel({
 }: ExportPanelProps) {
   const resolution = getExportResolution(aspectRatio, exportQuality);
   const isRecordingNow = isRecording || exportStatus === "recording";
-  const statusText =
-    exportStatus === "recording"
-      ? "録画中"
-      : exportStatus === "finished"
-        ? "録画完了"
-        : exportStatus === "error"
-          ? "エラー"
-          : "未録画";
+  const statusText = getExportResultStatusMessage(exportStatus);
   const recordingText = isRecordingNow
     ? recordingMode === "synced"
       ? "音源尺で録画中"
@@ -178,7 +175,8 @@ export default function ExportPanel({
 
       {recordedVideoUrl && (
         <div className="mt-3 rounded border border-zinc-700 bg-zinc-900/70 p-3 text-xs space-y-3">
-          <p className="text-emerald-300 font-bold">録画完了</p>
+          <p className="text-emerald-300 font-bold">書き出し結果パネル</p>
+          <p className="text-zinc-300">録画完了</p>
           <div className="space-y-2">
             <p className="text-zinc-300">WebMプレビュー</p>
             <video
@@ -192,16 +190,17 @@ export default function ExportPanel({
             download="manga-mv-export.webm"
             className="inline-block text-lime-300 underline"
           >
-            WebMをダウンロード（manga-mv-export.webm）
+            WebMをダウンロード
           </a>
+          <p className="text-zinc-400">ファイル名：manga-mv-export.webm</p>
+
+          <div className="rounded border border-zinc-700 bg-zinc-900/60 p-3 text-xs space-y-1">
+            <p className="text-pink-300 font-bold">MP4変換：準備中</p>
+            <p className="text-zinc-300">現在はWebMで保存できます</p>
+            <p className="text-zinc-400">MP4化は次の段階で対応予定</p>
+          </div>
         </div>
       )}
-
-      <div className="mt-3 rounded border border-zinc-700 bg-zinc-900/60 p-3 text-xs space-y-1">
-        <p className="text-pink-300 font-bold">MP4変換：準備中</p>
-        <p className="text-zinc-300">現在はWebMで保存できます</p>
-        <p className="text-zinc-400">MP4化は次の段階で対応予定</p>
-      </div>
 
       {exportStatus === "error" && (
         <p className="text-xs text-rose-300 mt-2">書き出し時にエラーが発生しました。</p>

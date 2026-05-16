@@ -239,6 +239,7 @@ export const drawSpeechBubble = (ctx: CanvasRenderingContext2D, text: string, po
 export type CanvasSfxDrawOptions = {
   chorusBoost?: boolean;
   sfxScale?: number;
+  sfxItems?: Array<{ text: string; position: "topLeft" | "top" | "topRight" | "left" | "center" | "right" | "bottomLeft" | "bottom" | "bottomRight" | "random"; scale: number; rotation: number }>;
 };
 
 export const drawSfxText = (
@@ -262,16 +263,27 @@ export const drawSfxText = (
   ctx.lineWidth = Math.max(5, Math.round(fontSize * 0.11));
   ctx.strokeStyle = "rgba(0,0,0,0.95)";
   ctx.fillStyle = "#ffffff";
-  ctx.save();
-  const textWidth = ctx.measureText(text).width;
-  const halfW = textWidth / 2;
-  const clampedX = Math.max(halfW + 20, Math.min(canvasWidth - halfW - 20, p.x));
-  const clampedY = Math.max(fontSize * 0.7, Math.min(canvasHeight - fontSize * 0.7, p.y));
-  ctx.translate(clampedX, clampedY);
-  ctx.rotate(-0.08);
-  ctx.strokeText(text, 0, 0);
-  ctx.fillText(text, 0, 0);
-  ctx.restore();
+  const drawOne = (label: string, pos: CanvasOverlayPosition, scaleOverride: number, rotateDeg: number) => {
+    const anchor = getAnchor(pos, canvasWidth, canvasHeight);
+    const localSize = Math.max(42, Math.min(baseSize * scaleOverride, maxFontSize));
+    ctx.font = `900 italic ${localSize}px sans-serif`;
+    ctx.textAlign = pos.includes("Right") ? "right" : pos === "center" ? "center" : "left";
+    const textWidth = ctx.measureText(label).width;
+    const halfW = textWidth / 2;
+    const clampedX = Math.max(halfW + 20, Math.min(canvasWidth - halfW - 20, anchor.x));
+    const clampedY = Math.max(localSize * 0.7, Math.min(canvasHeight - localSize * 0.7, anchor.y));
+    ctx.save();
+    ctx.translate(clampedX, clampedY);
+    ctx.rotate((rotateDeg * Math.PI) / 180);
+    ctx.strokeText(label, 0, 0);
+    ctx.fillText(label, 0, 0);
+    ctx.restore();
+  };
+  if (options.sfxItems && options.sfxItems.length > 0) {
+    options.sfxItems.forEach((item) => drawOne(item.text, (item.position === "top" ? "topLeft" : item.position === "right" ? "bottomRight" : item.position === "left" ? "bottomLeft" : item.position === "bottom" ? "bottomRight" : item.position === "random" ? "center" : item.position) as CanvasOverlayPosition, item.scale, item.rotation));
+  } else {
+    drawOne(text, position, scale, -4.5);
+  }
   ctx.textAlign = "start";
 };
 

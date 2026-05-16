@@ -190,16 +190,28 @@ export default function Home() {
     "panRight",
     "shake",
     "comic",
+    "panUp",
+    "panDown",
+    "diagonalPan",
+    "slowZoomIn",
+    "breathZoom",
+    "impactZoom",
+    "glitchJump",
+    "grooveBounce",
+    "sideGroove",
+    "handheld",
   ];
 
   const calmMotionList: MotionType[] = [
+    "slowZoomIn",
+    "breathZoom",
     "zoomIn",
     "zoomOut",
-    "panLeft",
-    "panRight",
+    "panDown",
   ];
 
-  const battleMotionList: MotionType[] = ["shake", "comic", "zoomIn"];
+  const battleMotionList: MotionType[] = ["shake", "comic", "impactZoom", "glitchJump"];
+  const grooveMotionList: MotionType[] = ["grooveBounce", "sideGroove", "diagonalPan", "panUp"];
 
   const panelPatterns: PanelPattern[] = [
     "classic",
@@ -318,6 +330,7 @@ export default function Home() {
       calm: calmMotionList,
       battle: battleMotionList,
       simpleZoom: ["zoomIn", "zoomOut"],
+      groove: grooveMotionList,
     };
 
     if (preset === "SIMPLE") {
@@ -1100,6 +1113,26 @@ export default function Home() {
         return "shakeAnim 0.4s infinite";
       case "comic":
         return "comicAnim 0.8s infinite";
+      case "panUp":
+        return "panUpAnim 8s ease-in-out infinite";
+      case "panDown":
+        return "panDownAnim 8s ease-in-out infinite";
+      case "diagonalPan":
+        return "diagonalPanAnim 9s ease-in-out infinite";
+      case "slowZoomIn":
+        return "slowZoomInAnim 10s ease-in-out infinite";
+      case "breathZoom":
+        return "breathZoomAnim 6s ease-in-out infinite";
+      case "impactZoom":
+        return "impactZoomAnim 0.9s ease-out infinite";
+      case "glitchJump":
+        return "glitchJumpAnim 0.65s steps(1, end) infinite";
+      case "grooveBounce":
+        return "grooveBounceAnim 1.1s ease-in-out infinite";
+      case "sideGroove":
+        return "sideGrooveAnim 1s ease-in-out infinite";
+      case "handheld":
+        return "handheldAnim 1.3s ease-in-out infinite";
       default:
         return "zoomInAnim 8s ease-in-out infinite";
     }
@@ -1159,6 +1192,52 @@ export default function Home() {
           25% { transform: scale(1.03) rotate(-1deg); }
           50% { transform: scale(1.06) rotate(1deg); }
           75% { transform: scale(1.03) rotate(-1deg); }
+        }
+        @keyframes panUpAnim {
+          0%,100% { transform: scale(1.08) translateY(16px); }
+          50% { transform: scale(1.08) translateY(-22px); }
+        }
+        @keyframes panDownAnim {
+          0%,100% { transform: scale(1.08) translateY(-16px); }
+          50% { transform: scale(1.08) translateY(22px); }
+        }
+        @keyframes diagonalPanAnim {
+          0%,100% { transform: scale(1.1) translate(-20px,18px); }
+          50% { transform: scale(1.1) translate(20px,-18px); }
+        }
+        @keyframes slowZoomInAnim {
+          0%,100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+        @keyframes breathZoomAnim {
+          0%,100% { transform: scale(1); }
+          50% { transform: scale(1.04); }
+        }
+        @keyframes impactZoomAnim {
+          0%,100% { transform: scale(1); }
+          20% { transform: scale(1.13); }
+          35% { transform: scale(1.02); }
+        }
+        @keyframes glitchJumpAnim {
+          0%,100% { transform: translate(0,0); }
+          20% { transform: translate(6px,-3px); }
+          22% { transform: translate(-5px,2px); }
+          24% { transform: translate(2px,-1px); }
+        }
+        @keyframes grooveBounceAnim {
+          0%,100% { transform: translateY(0) scale(1.03); }
+          50% { transform: translateY(-12px) scale(1.05); }
+        }
+        @keyframes sideGrooveAnim {
+          0%,100% { transform: translateX(0) scale(1.04); }
+          25% { transform: translateX(-10px) scale(1.03); }
+          75% { transform: translateX(10px) scale(1.05); }
+        }
+        @keyframes handheldAnim {
+          0%,100% { transform: translate(0,0) rotate(0deg) scale(1.04); }
+          25% { transform: translate(-4px,2px) rotate(-0.5deg) scale(1.045); }
+          50% { transform: translate(3px,-3px) rotate(0.5deg) scale(1.05); }
+          75% { transform: translate(-2px,3px) rotate(-0.3deg) scale(1.043); }
         }
 
         @keyframes chorusImageAnim {

@@ -40,6 +40,29 @@ export default function UploadPanel({
   imageMotions,
   onSelectImage,
 }: UploadPanelProps) {
+  const getMotionLabel = (motion?: MotionType) => {
+    const labels: Record<MotionType, string> = {
+      zoomIn: "ズームイン",
+      zoomOut: "ズームアウト",
+      panLeft: "左パン",
+      panRight: "右パン",
+      shake: "シェイク",
+      comic: "漫画揺れ",
+      panUp: "上パン",
+      panDown: "下パン",
+      diagonalPan: "斜めパン",
+      slowZoomIn: "ゆっくりズームイン",
+      breathZoom: "呼吸ズーム",
+      impactZoom: "インパクトズーム",
+      glitchJump: "グリッチジャンプ",
+      grooveBounce: "グルーヴバウンス",
+      sideGroove: "横ノリ",
+      handheld: "手持ちカメラ風",
+    };
+    if (!motion) return "ズームイン";
+    return labels[motion];
+  };
+
   return (
     <div className="h-full rounded-2xl border border-pink-500/30 bg-zinc-950/90 p-4 overflow-y-auto">
       <h2 className="mb-3 text-lg font-black text-pink-300">素材</h2>
@@ -70,7 +93,7 @@ export default function UploadPanel({
         {images.map((image, index) => (
           <button key={index} className={`block w-full text-left rounded-lg border p-1 ${currentImageIndex === index ? "border-yellow-300 shadow-[0_0_14px_#facc15]" : "border-zinc-700"}`} onClick={() => onSelectImage(image, index)}>
             <img src={image} alt="" className="h-24 w-full rounded object-cover" />
-            <p className="mt-1 text-xs text-zinc-400">#{index + 1} / {imageMotions[index]}</p>
+            <p className="mt-1 text-xs text-zinc-400">#{index + 1} / {getMotionLabel(imageMotions[index])}</p>
           </button>
         ))}
       </div>

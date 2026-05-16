@@ -619,6 +619,16 @@ export default function SettingsPanel({
           <option value="panRight">右パン</option>
           <option value="shake">シェイク</option>
           <option value="comic">漫画揺れ</option>
+          <option value="panUp">上パン</option>
+          <option value="panDown">下パン</option>
+          <option value="diagonalPan">斜めパン</option>
+          <option value="slowZoomIn">ゆっくりズームイン</option>
+          <option value="breathZoom">呼吸ズーム</option>
+          <option value="impactZoom">インパクトズーム</option>
+          <option value="glitchJump">グリッチジャンプ</option>
+          <option value="grooveBounce">グルーヴバウンス</option>
+          <option value="sideGroove">横ノリ</option>
+          <option value="handheld">手持ちカメラ風</option>
         </select>
         <button
           onClick={applyMotionToCurrent}

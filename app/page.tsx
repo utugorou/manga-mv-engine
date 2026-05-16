@@ -250,6 +250,7 @@ export default function Home() {
     lastLowEnergyRef.current = 0;
     lastSwitchTimeRef.current = performance.now();
     audioMoodRef.current = "quiet";
+    setAudioMood("quiet");
 
     const config = presetConfigs[preset];
 
@@ -854,6 +855,7 @@ export default function Home() {
     wasAboveThresholdRef.current = false;
     lastLowEnergyRef.current = 0;
     audioMoodRef.current = "quiet";
+    setAudioMood("quiet");
 
     try {
       const resolution = getExportResolution(aspectRatio, exportQuality);
@@ -915,6 +917,20 @@ export default function Home() {
       }
     } catch (error) {
       console.error("音源尺録画開始に失敗:", error);
+      if (recordingStopTimeoutRef.current !== null) {
+        clearTimeout(recordingStopTimeoutRef.current);
+        recordingStopTimeoutRef.current = null;
+      }
+      if (recordingEndedHandlerRef.current && audioRef.current) {
+        audioRef.current.removeEventListener("ended", recordingEndedHandlerRef.current);
+        recordingEndedHandlerRef.current = null;
+      }
+      if (recordingFrameRef.current !== null) {
+        clearTimeout(recordingFrameRef.current);
+        recordingFrameRef.current = null;
+      }
+      mediaRecorderRef.current = null;
+      recordingCanvasRef.current = null;
       setIsRecording(false);
       setRecordingMode(null);
       setExportStatus("error");

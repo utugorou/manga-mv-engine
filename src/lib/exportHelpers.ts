@@ -60,3 +60,21 @@ export const getExportStatusLabel = (exportStatus: ExportStatus): string => {
       return "未準備";
   }
 };
+
+
+export const getExportResultStatusMessage = (exportStatus: ExportStatus): string => {
+  switch (exportStatus) {
+    case "idle":
+      return "未録画";
+    case "recording":
+      return "録画中";
+    case "finished":
+      return "録画完了";
+    case "error":
+      return "エラー";
+    case "ready":
+      return "録画準備完了";
+    default:
+      return "未録画";
+  }
+};

@@ -1243,159 +1243,28 @@ export default function Home() {
             setIdealSwitchInterval={setIdealSwitchInterval}
             fallbackSwitchInterval={fallbackSwitchInterval}
             setFallbackSwitchInterval={setFallbackSwitchInterval}
+            showBubble={showBubble}
+            setShowBubble={setShowBubble}
+            bubbleText={bubbleText}
+            setBubbleText={setBubbleText}
+            autoBubble={autoBubble}
+            setAutoBubble={setAutoBubble}
+            textMode={textMode}
+            setTextMode={setTextMode}
+            audioMoodRef={audioMoodRef}
+            showSfx={showSfx}
+            setShowSfx={setShowSfx}
+            sfxText={sfxText}
+            setSfxText={setSfxText}
+            autoSfx={autoSfx}
+            setAutoSfx={setAutoSfx}
+            setBubblePosition={setBubblePosition}
+            setSfxPosition={setSfxPosition}
+            bubbleTexts={bubbleTexts}
+            sfxTexts={sfxTexts}
+            positions={positions}
+            randomItem={randomItem}
           />
-
-          <button
-            onClick={() => {
-              setShowBubble(true);
-              setActivePreset(null);
-            }}
-            className={`w-full p-2 rounded ${
-              showBubble
-                ? "bg-pink-600 hover:bg-pink-500"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            吹き出し {showBubble ? "ON" : "追加"}
-          </button>
-
-          <input
-            value={bubbleText}
-            onChange={(e) => {
-              setBubbleText(e.target.value);
-              setActivePreset(null);
-            }}
-            className="w-full bg-black border border-zinc-600 p-2 rounded text-white"
-          />
-
-          <button
-            onClick={() => {
-              setAutoBubble(!autoBubble);
-              setActivePreset(null);
-            }}
-            className={`w-full p-2 rounded ${
-              autoBubble
-                ? "bg-pink-600 hover:bg-pink-500"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            セリフ全自動 {autoBubble ? "ON" : "OFF"}
-          </button>
-
-          <div className="pt-3 pb-3 border-b border-zinc-700">
-            <p className="text-sm mb-2 text-pink-300 font-bold">
-              文字生成モード
-            </p>
-
-            <div className="grid grid-cols-1 gap-2">
-              <button
-                onClick={() => {
-                  setTextMode("fixed");
-                  setActivePreset(null);
-                }}
-                className={`p-2 rounded text-sm ${
-                  textMode === "fixed"
-                    ? "bg-white text-black font-bold"
-                    : "bg-zinc-800 hover:bg-zinc-700"
-                }`}
-              >
-                固定
-              </button>
-
-              <button
-                onClick={() => {
-                  setTextMode("random");
-                  setActivePreset(null);
-                }}
-                className={`p-2 rounded text-sm ${
-                  textMode === "random"
-                    ? "bg-cyan-500 text-black font-bold"
-                    : "bg-zinc-800 hover:bg-zinc-700"
-                }`}
-              >
-                ランダム
-              </button>
-
-              <button
-                onClick={() => {
-                  setTextMode("smart");
-                  setActivePreset(null);
-                }}
-                className={`p-2 rounded text-sm ${
-                  textMode === "smart"
-                    ? "bg-pink-600 font-bold"
-                    : "bg-zinc-800 hover:bg-zinc-700"
-                }`}
-              >
-                スマート
-              </button>
-            </div>
-
-            <p className="text-xs text-zinc-400 mt-2">
-              現在：{textMode} / 状態：{audioMoodRef.current}
-            </p>
-          </div>
-
-          <button
-            onClick={() => {
-              setShowBubble(true);
-              setBubbleText(randomItem(bubbleTexts));
-              setBubblePosition(randomItem(positions));
-              setActivePreset(null);
-            }}
-            className="w-full bg-zinc-800 hover:bg-zinc-700 p-2 rounded"
-          >
-            セリフだけランダム
-          </button>
-
-          <button
-            onClick={() => {
-              setShowSfx(!showSfx);
-              setActivePreset(null);
-            }}
-            className={`w-full p-2 rounded ${
-              showSfx
-                ? "bg-pink-600 hover:bg-pink-500"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            擬音 {showSfx ? "ON" : "OFF"}
-          </button>
-
-          <input
-            value={sfxText}
-            onChange={(e) => {
-              setSfxText(e.target.value);
-              setActivePreset(null);
-            }}
-            className="w-full bg-black border border-zinc-600 p-2 rounded text-white"
-          />
-
-          <button
-            onClick={() => {
-              setAutoSfx(!autoSfx);
-              setActivePreset(null);
-            }}
-            className={`w-full p-2 rounded ${
-              autoSfx
-                ? "bg-pink-600 hover:bg-pink-500"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            擬音全自動 {autoSfx ? "ON" : "OFF"}
-          </button>
-
-          <button
-            onClick={() => {
-              setShowSfx(true);
-              setSfxText(randomItem(sfxTexts));
-              setSfxPosition(randomItem(positions));
-              setActivePreset(null);
-            }}
-            className="w-full bg-zinc-800 hover:bg-zinc-700 p-2 rounded"
-          >
-            擬音だけランダム
-          </button>
 
           <button
             onClick={() => {

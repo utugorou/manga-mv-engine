@@ -1455,10 +1455,10 @@ export default function Home() {
                   height={72}
                   priority
                   onError={() => setIsLogoLoadError(true)}
-                  className="h-[clamp(4.5rem,11vw,8.5rem)] w-auto max-w-full object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
+                  className="h-[clamp(9rem,22vw,17rem)] w-auto max-w-full object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
                 />
               ) : (
-                <span className="text-4xl md:text-5xl font-black tracking-[0.2em]">MANGA MV ENGINE</span>
+                <span className="text-7xl md:text-8xl font-black tracking-[0.2em] leading-none">MANGA MV ENGINE</span>
               )}
             </h1>
             <p className="text-xs text-zinc-400">Project: <span className="text-cyan-300">Untitled MV</span></p>

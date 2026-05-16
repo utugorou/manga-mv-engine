@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import ControlButtons from "../src/components/ControlButtons";
 import Timeline from "../src/components/Timeline";
@@ -147,6 +148,7 @@ export default function Home() {
   const [chorusSensitivity, setChorusSensitivity] = useState(22);
 
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isLogoLoadError, setIsLogoLoadError] = useState(false);
 
   const [switchMode, setSwitchMode] = useState<SwitchMode>("equal");
   const [imageDuration, setImageDuration] = useState(2000);
@@ -1347,7 +1349,21 @@ export default function Home() {
       <header className="sticky top-0 z-30 border-b border-fuchsia-500/30 bg-black/90 px-6 py-4 backdrop-blur">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-black tracking-[0.2em] text-fuchsia-300">MANGA MV ENGINE</h1>
+            <h1 className="text-fuchsia-300">
+              {!isLogoLoadError ? (
+                <Image
+                  src="/ui/manga-mv-engine-logo.png"
+                  alt="MANGA MV ENGINE"
+                  width={560}
+                  height={72}
+                  priority
+                  onError={() => setIsLogoLoadError(true)}
+                  className="h-14 w-auto max-w-full opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
+                />
+              ) : (
+                <span className="text-2xl font-black tracking-[0.2em]">MANGA MV ENGINE</span>
+              )}
+            </h1>
             <p className="text-xs text-zinc-400">Project: <span className="text-cyan-300">Untitled MV</span></p>
           </div>
           <div className="flex gap-2">

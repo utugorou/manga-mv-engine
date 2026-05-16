@@ -19,7 +19,12 @@ import { getExportResolution } from "../src/lib/exportHelpers";
 import {
   createExportCanvas,
   drawImageToCanvas,
-  drawTextOverlay,
+  drawComicPanels,
+  drawEqualizerBars,
+  drawFlash,
+  drawGlitchLines,
+  drawSfxText,
+  drawSpeechBubble,
   startCanvasRecording,
   stopCanvasRecording,
 } from "../src/lib/canvasRecorder";
@@ -55,6 +60,17 @@ export default function Home() {
   const latestSelectedImageRef = useRef<string | null>(null);
   const latestSfxTextRef = useRef("");
   const latestBubbleTextRef = useRef("");
+  const latestSfxPositionRef = useRef<PositionType>("bottomLeft");
+  const latestBubblePositionRef = useRef<PositionType>("topRight");
+  const latestShowSfxRef = useRef(true);
+  const latestShowBubbleRef = useRef(false);
+  const latestShowGlitchRef = useRef(false);
+  const latestShowEqualizerRef = useRef(false);
+  const latestEqBarsRef = useRef<number[]>(Array(12).fill(20));
+  const latestShowPanelsRef = useRef(true);
+  const latestPanelPatternRef = useRef<PanelPattern>("classic");
+  const latestFlashActiveRef = useRef(false);
+  const latestChorusBoostRef = useRef(false);
 
   const lastSwitchTimeRef = useRef(0);
   const wasAboveThresholdRef = useRef(false);
@@ -142,6 +158,18 @@ export default function Home() {
   useEffect(() => {
     latestBubbleTextRef.current = bubbleText;
   }, [bubbleText]);
+
+  useEffect(() => { latestSfxPositionRef.current = sfxPosition; }, [sfxPosition]);
+  useEffect(() => { latestBubblePositionRef.current = bubblePosition; }, [bubblePosition]);
+  useEffect(() => { latestShowSfxRef.current = showSfx; }, [showSfx]);
+  useEffect(() => { latestShowBubbleRef.current = showBubble; }, [showBubble]);
+  useEffect(() => { latestShowGlitchRef.current = showGlitch; }, [showGlitch]);
+  useEffect(() => { latestShowEqualizerRef.current = showEqualizer; }, [showEqualizer]);
+  useEffect(() => { latestEqBarsRef.current = eqBars; }, [eqBars]);
+  useEffect(() => { latestShowPanelsRef.current = showPanels; }, [showPanels]);
+  useEffect(() => { latestPanelPatternRef.current = panelPattern; }, [panelPattern]);
+  useEffect(() => { latestFlashActiveRef.current = flashActive; }, [flashActive]);
+  useEffect(() => { latestChorusBoostRef.current = chorusBoost; }, [chorusBoost]);
 
   const motionList: MotionType[] = [
     "zoomIn",
@@ -775,15 +803,22 @@ export default function Home() {
           }
         }
 
-        drawTextOverlay(ctx, latestSfxTextRef.current, resolution.width, Math.round(resolution.height * 0.8));
-        drawTextOverlay(ctx, latestBubbleTextRef.current, resolution.width, resolution.height);
-
-        for (let i = 0; i < 3; i++) {
-          const y = Math.random() * resolution.height;
-          const h = 2 + Math.random() * 5;
-          ctx.fillStyle = `rgba(255,255,255,${0.15 + Math.random() * 0.2})`;
-          ctx.fillRect(0, y, resolution.width, h);
+        if (latestShowPanelsRef.current) {
+          drawComicPanels(ctx, latestPanelPatternRef.current, resolution.width, resolution.height);
         }
+        if (latestShowEqualizerRef.current) {
+          drawEqualizerBars(ctx, latestEqBarsRef.current, resolution.width, resolution.height);
+        }
+        if (latestShowSfxRef.current) {
+          drawSfxText(ctx, latestSfxTextRef.current, latestSfxPositionRef.current, resolution.width, resolution.height);
+        }
+        if (latestShowBubbleRef.current) {
+          drawSpeechBubble(ctx, latestBubbleTextRef.current, latestBubblePositionRef.current, resolution.width, resolution.height);
+        }
+        if (latestShowGlitchRef.current) {
+          drawGlitchLines(ctx, resolution.width, resolution.height, Math.floor(performance.now() / 16));
+        }
+        drawFlash(ctx, resolution.width, resolution.height, latestFlashActiveRef.current || latestChorusBoostRef.current);
 
         recordingFrameRef.current = window.setTimeout(() => {
           void drawFrame();
@@ -887,8 +922,22 @@ export default function Home() {
             console.warn("画像描画に失敗しました", error);
           }
         }
-        drawTextOverlay(ctx, latestSfxTextRef.current, resolution.width, Math.round(resolution.height * 0.8));
-        drawTextOverlay(ctx, latestBubbleTextRef.current, resolution.width, resolution.height);
+        if (latestShowPanelsRef.current) {
+          drawComicPanels(ctx, latestPanelPatternRef.current, resolution.width, resolution.height);
+        }
+        if (latestShowEqualizerRef.current) {
+          drawEqualizerBars(ctx, latestEqBarsRef.current, resolution.width, resolution.height);
+        }
+        if (latestShowSfxRef.current) {
+          drawSfxText(ctx, latestSfxTextRef.current, latestSfxPositionRef.current, resolution.width, resolution.height);
+        }
+        if (latestShowBubbleRef.current) {
+          drawSpeechBubble(ctx, latestBubbleTextRef.current, latestBubblePositionRef.current, resolution.width, resolution.height);
+        }
+        if (latestShowGlitchRef.current) {
+          drawGlitchLines(ctx, resolution.width, resolution.height, Math.floor(performance.now() / 16));
+        }
+        drawFlash(ctx, resolution.width, resolution.height, latestFlashActiveRef.current || latestChorusBoostRef.current);
         recordingFrameRef.current = window.setTimeout(() => {
           void drawFrame();
         }, 1000 / 30) as unknown as number;

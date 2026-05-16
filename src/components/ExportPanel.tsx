@@ -18,6 +18,10 @@ type ExportPanelProps = {
   exportStatus: ExportStatus;
   exportMessage: string;
   handlePrepareExport: () => void;
+  handleStartRecording: () => void;
+  handleStopRecording: () => void;
+  isRecording: boolean;
+  recordedVideoUrl: string | null;
   formatTime: (time: number) => string;
 };
 
@@ -31,6 +35,10 @@ export default function ExportPanel({
   exportStatus,
   exportMessage,
   handlePrepareExport,
+  handleStartRecording,
+  handleStopRecording,
+  isRecording,
+  recordedVideoUrl,
   formatTime,
 }: ExportPanelProps) {
   const resolution = getExportResolution(aspectRatio, exportQuality);
@@ -103,6 +111,44 @@ export default function ExportPanel({
         状態：{getExportStatusLabel(exportStatus)}
       </p>
       <p className="text-xs text-zinc-400 mt-1 leading-relaxed">{exportMessage}</p>
+
+      <div className="grid grid-cols-2 gap-2 mt-3">
+        <button
+          onClick={handleStartRecording}
+          disabled={isRecording}
+          className="p-2 rounded text-xs font-bold bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-700 disabled:text-zinc-400 text-black"
+        >
+          録画開始
+        </button>
+
+        <button
+          onClick={handleStopRecording}
+          disabled={!isRecording}
+          className="p-2 rounded text-xs font-bold bg-rose-500 hover:bg-rose-400 disabled:bg-zinc-700 disabled:text-zinc-400 text-white"
+        >
+          録画停止
+        </button>
+      </div>
+
+      {recordedVideoUrl && (
+        <div className="mt-3 text-xs space-y-2">
+          <a
+            href={recordedVideoUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="block text-cyan-300 underline"
+          >
+            録画結果を開く
+          </a>
+          <a
+            href={recordedVideoUrl}
+            download="manga-mv-export.webm"
+            className="block text-lime-300 underline"
+          >
+            WebMをダウンロード
+          </a>
+        </div>
+      )}
 
       <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
         ※現在は書き出し準備モードです。MP4保存は次の段階で Remotion

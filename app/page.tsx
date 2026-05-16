@@ -16,6 +16,13 @@ import {
   smartSfxTexts,
 } from "../src/lib/textEngine";
 import { getExportResolution } from "../src/lib/exportHelpers";
+import {
+  createExportCanvas,
+  drawImageToCanvas,
+  drawTextOverlay,
+  startCanvasRecording,
+  stopCanvasRecording,
+} from "../src/lib/canvasRecorder";
 import type {
   AspectRatio,
   AudioMood,
@@ -38,6 +45,9 @@ export default function Home() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
   const rafRef = useRef<number | null>(null);
+  const recordingFrameRef = useRef<number | null>(null);
+  const recordingCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
 
   const lastSwitchTimeRef = useRef(0);
   const wasAboveThresholdRef = useRef(false);
@@ -63,6 +73,8 @@ export default function Home() {
     useState<ExportQuality>("standard");
   const [exportStatus, setExportStatus] = useState<ExportStatus>("idle");
   const [exportMessage, setExportMessage] = useState("未準備");
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
 
   const [showBubble, setShowBubble] = useState(false);
   const [bubbleText, setBubbleText] = useState("ここにセリフ");
@@ -503,6 +515,18 @@ export default function Home() {
     }
   }, [isPlaying]);
 
+  useEffect(() => {
+    return () => {
+      if (recordingFrameRef.current !== null) {
+        clearTimeout(recordingFrameRef.current);
+      }
+
+      if (recordedVideoUrl) {
+        URL.revokeObjectURL(recordedVideoUrl);
+      }
+    };
+  }, [recordedVideoUrl]);
+
   const handleImageUpload = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -660,6 +684,104 @@ export default function Home() {
         exportQuality === "high" ? "高画質" : "標準"
       } / ${resolution.width} x ${resolution.height} / ${formatTime(audioDuration)} / ${images.length}枚`
     );
+  };
+
+  const handleStartRecording = async () => {
+    if (images.length === 0 || !selectedImage) {
+      setExportStatus("error");
+      setExportMessage("録画対象の画像がありません");
+      return;
+    }
+
+    if (isRecording) return;
+
+    if (recordedVideoUrl) {
+      URL.revokeObjectURL(recordedVideoUrl);
+      setRecordedVideoUrl(null);
+    }
+
+    try {
+      const resolution = getExportResolution(aspectRatio, exportQuality);
+      const canvas = createExportCanvas(resolution.width, resolution.height);
+      recordingCanvasRef.current = canvas;
+
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        throw new Error("Canvas context の作成に失敗しました");
+      }
+
+      const recorder = startCanvasRecording(canvas, 30);
+      mediaRecorderRef.current = recorder;
+      recorder.start();
+
+      setIsRecording(true);
+      setExportStatus("recording");
+      setExportMessage("録画中です（WebM）");
+
+      const drawFrame = async () => {
+        if (!recordingCanvasRef.current || !ctx) return;
+
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(0, 0, resolution.width, resolution.height);
+
+        const activeImage = selectedImage || images[currentImageIndex];
+        if (activeImage) {
+          try {
+            await drawImageToCanvas(ctx, activeImage, resolution.width, resolution.height);
+          } catch (error) {
+            console.warn("画像描画に失敗しました", error);
+          }
+        }
+
+        drawTextOverlay(ctx, sfxText, resolution.width, Math.round(resolution.height * 0.8));
+        drawTextOverlay(ctx, bubbleText, resolution.width, resolution.height);
+
+        for (let i = 0; i < 3; i++) {
+          const y = Math.random() * resolution.height;
+          const h = 2 + Math.random() * 5;
+          ctx.fillStyle = `rgba(255,255,255,${0.15 + Math.random() * 0.2})`;
+          ctx.fillRect(0, y, resolution.width, h);
+        }
+
+        recordingFrameRef.current = window.setTimeout(() => {
+          void drawFrame();
+        }, 1000 / 30) as unknown as number;
+      };
+
+      await drawFrame();
+    } catch (error) {
+      console.error("録画開始に失敗:", error);
+      setIsRecording(false);
+      setExportStatus("error");
+      setExportMessage("録画開始に失敗しました");
+    }
+  };
+
+  const handleStopRecording = async () => {
+    if (!mediaRecorderRef.current || !isRecording) return;
+
+    try {
+      if (recordingFrameRef.current !== null) {
+        clearTimeout(recordingFrameRef.current);
+        recordingFrameRef.current = null;
+      }
+
+      const blob = await stopCanvasRecording(mediaRecorderRef.current);
+      const videoUrl = URL.createObjectURL(blob);
+
+      setRecordedVideoUrl(videoUrl);
+      setExportStatus("finished");
+      setExportMessage("録画完了：WebMリンクを生成しました");
+    } catch (error) {
+      console.error("録画停止に失敗:", error);
+      setExportStatus("error");
+      setExportMessage("録画停止に失敗しました");
+    } finally {
+      mediaRecorderRef.current = null;
+      recordingCanvasRef.current = null;
+      setIsRecording(false);
+    }
   };
 
   const getTimelineMarkers = () => {
@@ -950,6 +1072,10 @@ export default function Home() {
             exportStatus={exportStatus}
             exportMessage={exportMessage}
             handlePrepareExport={handlePrepareExport}
+            handleStartRecording={handleStartRecording}
+            handleStopRecording={handleStopRecording}
+            isRecording={isRecording}
+            recordedVideoUrl={recordedVideoUrl}
             formatTime={formatTime}
           />
 

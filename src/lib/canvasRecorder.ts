@@ -51,6 +51,12 @@ export type CanvasOverlayDrawOptions = {
   frame: number;
 };
 
+export type CanvasImageMotionDrawOptions = {
+  motionType?: "zoomIn" | "zoomOut" | "panLeft" | "panRight" | "shake" | "comic";
+  chorusBoost?: boolean;
+  recordingElapsedMs?: number;
+};
+
 const getAnchor = (position: CanvasOverlayPosition, width: number, height: number) => {
   const paddingX = width * 0.08;
   const paddingY = height * 0.11;
@@ -72,13 +78,87 @@ export const drawCoverImage = (ctx: CanvasRenderingContext2D, image: HTMLImageEl
   ctx.drawImage(image, x, y, drawWidth, drawHeight);
 };
 
+export const drawCoverImageWithMotion = (
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  canvasWidth: number,
+  canvasHeight: number,
+  options: CanvasImageMotionDrawOptions = {}
+): void => {
+  const elapsedMs = options.recordingElapsedMs ?? 0;
+  const motionType = options.motionType ?? "zoomIn";
+  const chorusBoost = options.chorusBoost ?? false;
+
+  const slowCycle = elapsedMs / 7000;
+  const fastCycle = elapsedMs / 600;
+  const chorusCycle = elapsedMs / 700;
+  const slowSin = Math.sin(slowCycle * Math.PI * 2);
+  const fastSin = Math.sin(fastCycle * Math.PI * 2);
+  const chorusSin = Math.sin(chorusCycle * Math.PI * 2);
+  const chorusCos = Math.cos(chorusCycle * Math.PI * 2);
+
+  let scale = 1;
+  let translateX = 0;
+  let translateY = 0;
+  let rotation = 0;
+
+  if (chorusBoost) {
+    scale = 1.08 + ((chorusSin + 1) / 2) * 0.12; // 1.08 - 1.2
+    rotation = chorusCos * 0.016; // around +/- 0.9deg
+    translateX = chorusSin * canvasWidth * 0.004;
+    translateY = Math.sin((elapsedMs / 800) * Math.PI * 2) * canvasHeight * 0.003;
+  } else {
+    switch (motionType) {
+      case "zoomIn":
+        scale = 1 + ((slowSin + 1) / 2) * 0.12;
+        break;
+      case "zoomOut":
+        scale = 1.12 - ((slowSin + 1) / 2) * 0.12;
+        break;
+      case "panLeft":
+        scale = 1.1;
+        translateX = -((slowSin + 1) / 2) * canvasWidth * 0.06;
+        break;
+      case "panRight":
+        scale = 1.1;
+        translateX = ((slowSin + 1) / 2) * canvasWidth * 0.06;
+        break;
+      case "shake":
+        translateX = fastSin * canvasWidth * 0.006;
+        translateY = Math.cos((elapsedMs / 500) * Math.PI * 2) * canvasHeight * 0.004;
+        break;
+      case "comic":
+        scale = 1.03 + ((fastSin + 1) / 2) * 0.03;
+        rotation = Math.sin((elapsedMs / 800) * Math.PI * 2) * 0.018;
+        translateX = Math.cos((elapsedMs / 700) * Math.PI * 2) * canvasWidth * 0.003;
+        break;
+      default:
+        break;
+    }
+  }
+
+  ctx.save();
+  ctx.translate(canvasWidth / 2, canvasHeight / 2);
+  ctx.rotate(rotation);
+  ctx.scale(scale, scale);
+  ctx.translate(translateX, translateY);
+  ctx.translate(-canvasWidth / 2, -canvasHeight / 2);
+  drawCoverImage(ctx, image, canvasWidth, canvasHeight);
+  ctx.restore();
+};
+
 export const drawImageToCanvas = async (
   ctx: CanvasRenderingContext2D,
   imageUrl: string,
   width: number,
-  height: number
+  height: number,
+  motionOptions?: CanvasImageMotionDrawOptions
 ): Promise<void> => {
   const image = await loadImage(imageUrl);
+  if (motionOptions) {
+    drawCoverImageWithMotion(ctx, image, width, height, motionOptions);
+    return;
+  }
   drawCoverImage(ctx, image, width, height);
 };
 

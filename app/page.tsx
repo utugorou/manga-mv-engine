@@ -75,6 +75,7 @@ export default function Home() {
   const latestImagesRef = useRef<string[]>([]);
   const latestSwitchModeRef = useRef<SwitchMode>("equal");
   const latestImageDurationRef = useRef(2000);
+  const latestImageMotionsRef = useRef<MotionType[]>([]);
   const recordingStartedAtRef = useRef<number | null>(null);
   const recordingElapsedMsRef = useRef(0);
 
@@ -180,6 +181,7 @@ export default function Home() {
   useEffect(() => { latestImagesRef.current = images; }, [images]);
   useEffect(() => { latestSwitchModeRef.current = switchMode; }, [switchMode]);
   useEffect(() => { latestImageDurationRef.current = imageDuration; }, [imageDuration]);
+  useEffect(() => { latestImageMotionsRef.current = imageMotions; }, [imageMotions]);
 
   const motionList: MotionType[] = [
     "zoomIn",
@@ -755,9 +757,11 @@ export default function Home() {
     );
   };
 
-  const getRecordingActiveImage = (elapsedMs: number) => {
+  const getRecordingActiveImage = (elapsedMs: number): { imageUrl: string | null; imageIndex: number } => {
     const recordingImages = latestImagesRef.current;
-    if (recordingImages.length === 0) return latestSelectedImageRef.current;
+    if (recordingImages.length === 0) {
+      return { imageUrl: latestSelectedImageRef.current, imageIndex: latestCurrentImageIndexRef.current };
+    }
 
     const audioCurrentTimeMs = audioRef.current
       ? audioRef.current.currentTime * 1000
@@ -767,11 +771,17 @@ export default function Home() {
     if (latestSwitchModeRef.current === "equal") {
       const duration = Math.max(1, latestImageDurationRef.current);
       const imageIndex = Math.floor(playbackMs / duration) % recordingImages.length;
-      return recordingImages[imageIndex] ?? latestSelectedImageRef.current;
+      return {
+        imageUrl: recordingImages[imageIndex] ?? latestSelectedImageRef.current,
+        imageIndex,
+      };
     }
 
     const imageIndex = latestCurrentImageIndexRef.current;
-    return recordingImages[imageIndex] ?? latestSelectedImageRef.current;
+    return {
+      imageUrl: recordingImages[imageIndex] ?? latestSelectedImageRef.current,
+      imageIndex,
+    };
   };
 
   const handleStartRecording = async () => {
@@ -827,10 +837,15 @@ export default function Home() {
 
         const startedAt = recordingStartedAtRef.current ?? performance.now();
         recordingElapsedMsRef.current = performance.now() - startedAt;
-        const activeImage = getRecordingActiveImage(recordingElapsedMsRef.current);
-        if (activeImage) {
+        const activeState = getRecordingActiveImage(recordingElapsedMsRef.current);
+        const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";
+        if (activeState.imageUrl) {
           try {
-            await drawImageToCanvas(ctx, activeImage, resolution.width, resolution.height);
+            await drawImageToCanvas(ctx, activeState.imageUrl, resolution.width, resolution.height, {
+              motionType: activeMotion,
+              chorusBoost: latestChorusBoostRef.current,
+              recordingElapsedMs: recordingElapsedMsRef.current,
+            });
           } catch (error) {
             console.warn("画像描画に失敗しました", error);
           }
@@ -953,10 +968,15 @@ export default function Home() {
         ctx.fillRect(0, 0, resolution.width, resolution.height);
         const startedAt = recordingStartedAtRef.current ?? performance.now();
         recordingElapsedMsRef.current = performance.now() - startedAt;
-        const activeImage = getRecordingActiveImage(recordingElapsedMsRef.current);
-        if (activeImage) {
+        const activeState = getRecordingActiveImage(recordingElapsedMsRef.current);
+        const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";
+        if (activeState.imageUrl) {
           try {
-            await drawImageToCanvas(ctx, activeImage, resolution.width, resolution.height);
+            await drawImageToCanvas(ctx, activeState.imageUrl, resolution.width, resolution.height, {
+              motionType: activeMotion,
+              chorusBoost: latestChorusBoostRef.current,
+              recordingElapsedMs: recordingElapsedMsRef.current,
+            });
           } catch (error) {
             console.warn("画像描画に失敗しました", error);
           }

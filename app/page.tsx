@@ -1,0 +1,2165 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+
+type MotionType =
+  | "zoomIn"
+  | "zoomOut"
+  | "panLeft"
+  | "panRight"
+  | "shake"
+  | "comic";
+
+type PositionType =
+  | "topLeft"
+  | "topRight"
+  | "bottomLeft"
+  | "bottomRight"
+  | "center";
+
+type SwitchMode = "equal" | "peak" | "kick";
+
+type PanelPattern =
+  | "classic"
+  | "vertical"
+  | "horizontal"
+  | "diagonal"
+  | "action";
+
+type PanelMode = "fixed" | "random" | "chorus";
+
+type AspectRatio = "16:9" | "9:16" | "1:1" | "4:5";
+
+type TextMode = "fixed" | "random" | "smart";
+
+type AudioMood = "quiet" | "peak" | "bass" | "chorus";
+
+type ExportQuality = "standard" | "high";
+
+type PresetName =
+  | "ROCK"
+  | "POP"
+  | "FUNK"
+  | "JAZZ"
+  | "DANCE"
+  | "DISCO"
+  | "Synth Vocal"
+  | "BALLADE"
+  | "漫画BATTLE"
+  | "SIMPLE";
+
+export default function Home() {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const rafRef = useRef<number | null>(null);
+
+  const lastSwitchTimeRef = useRef(0);
+  const wasAboveThresholdRef = useRef(false);
+  const lastLowEnergyRef = useRef(0);
+  const audioMoodRef = useRef<AudioMood>("quiet");
+
+  const [images, setImages] = useState<string[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const [imageMotions, setImageMotions] = useState<MotionType[]>([]);
+  const [randomMotionApplied, setRandomMotionApplied] = useState(false);
+
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioName, setAudioName] = useState("");
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
+
+  const [exportQuality, setExportQuality] =
+    useState<ExportQuality>("standard");
+  const [exportStatus, setExportStatus] = useState("未書き出し");
+
+  const [showBubble, setShowBubble] = useState(false);
+  const [bubbleText, setBubbleText] = useState("ここにセリフ");
+  const [bubblePosition, setBubblePosition] =
+    useState<PositionType>("topRight");
+  const [autoBubble, setAutoBubble] = useState(false);
+
+  const [showSfx, setShowSfx] = useState(true);
+  const [sfxText, setSfxText] = useState("ドン!!");
+  const [sfxPosition, setSfxPosition] =
+    useState<PositionType>("bottomLeft");
+  const [autoSfx, setAutoSfx] = useState(false);
+
+  const [textMode, setTextMode] = useState<TextMode>("random");
+
+  const [showGlitch, setShowGlitch] = useState(false);
+  const [showEqualizer, setShowEqualizer] = useState(false);
+  const [eqBars, setEqBars] = useState<number[]>(Array(12).fill(20));
+
+  const [showFlash, setShowFlash] = useState(true);
+  const [flashActive, setFlashActive] = useState(false);
+
+  const [showPanels, setShowPanels] = useState(true);
+  const [panelBurst, setPanelBurst] = useState(false);
+  const [panelPattern, setPanelPattern] =
+    useState<PanelPattern>("classic");
+  const [panelMode, setPanelMode] = useState<PanelMode>("random");
+
+  const [chorusBoost, setChorusBoost] = useState(false);
+  const [chorusSensitivity, setChorusSensitivity] = useState(22);
+
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  const [switchMode, setSwitchMode] = useState<SwitchMode>("equal");
+  const [imageDuration, setImageDuration] = useState(2000);
+  const [peakSensitivity, setPeakSensitivity] = useState(8);
+  const [kickSensitivity, setKickSensitivity] = useState(3);
+  const [minSwitchInterval, setMinSwitchInterval] = useState(450);
+  const [idealSwitchInterval, setIdealSwitchInterval] = useState(900);
+  const [fallbackSwitchInterval, setFallbackSwitchInterval] = useState(1300);
+
+  const [selectedMotion, setSelectedMotion] =
+    useState<MotionType>("zoomIn");
+
+  const [activePreset, setActivePreset] = useState<PresetName | null>(null);
+
+  const motionList: MotionType[] = [
+    "zoomIn",
+    "zoomOut",
+    "panLeft",
+    "panRight",
+    "shake",
+    "comic",
+  ];
+
+  const calmMotionList: MotionType[] = [
+    "zoomIn",
+    "zoomOut",
+    "panLeft",
+    "panRight",
+  ];
+
+  const battleMotionList: MotionType[] = ["shake", "comic", "zoomIn"];
+
+  const panelPatterns: PanelPattern[] = [
+    "classic",
+    "vertical",
+    "horizontal",
+    "diagonal",
+    "action",
+  ];
+
+  const bubbleTexts = [
+    "まだ鳴ってる",
+    "止まらない",
+    "見えてる？",
+    "ここからだ",
+    "ノイズごと踊れ",
+    "心臓が先に走る",
+    "その音、刺さってる",
+    "まだ終わらない",
+    "この瞬間だけ",
+    "見逃すな",
+  ];
+
+  const smartBubbleTexts: Record<AudioMood, string[]> = {
+    quiet: [
+      "聞こえる？",
+      "まだ、ここにいる",
+      "静かに燃えてる",
+      "この余白が鳴ってる",
+      "見えてる？",
+    ],
+    peak: [
+      "ここからだ",
+      "刺さった",
+      "止まらない",
+      "この瞬間だけ",
+      "見逃すな",
+    ],
+    bass: [
+      "低音が走る",
+      "心臓が先に鳴る",
+      "床まで震えろ",
+      "このビートで跳ねろ",
+      "まだ沈まない",
+    ],
+    chorus: [
+      "ノイズごと踊れ",
+      "まだ止まらない",
+      "全部、鳴らせ",
+      "心臓ごと光れ",
+      "ここで壊れろ",
+    ],
+  };
+
+  const sfxTexts = [
+    "ドン!!",
+    "ザザッ",
+    "バチッ",
+    "ギュン",
+    "BOOM",
+    "ERROR",
+    "PULSE",
+    "NOISE",
+    "BANG",
+    "VIBE",
+    "FLASH",
+    "CRASH",
+  ];
+
+  const smartSfxTexts: Record<AudioMood, string[]> = {
+    quiet: ["スッ", "...", "ふわっ", "しん", "tone"],
+    peak: ["バチッ", "FLASH", "CRASH", "BANG", "ギュン"],
+    bass: ["ドン!!", "ズン!!", "BOOM", "BASS", "ドッ"],
+    chorus: ["PULSE", "NOISE", "ERROR", "BURST", "BREAK"],
+  };
+
+  const positions: PositionType[] = [
+    "topLeft",
+    "topRight",
+    "bottomLeft",
+    "bottomRight",
+    "center",
+  ];
+
+  const presetList: PresetName[] = [
+    "ROCK",
+    "POP",
+    "FUNK",
+    "JAZZ",
+    "DANCE",
+    "DISCO",
+    "Synth Vocal",
+    "BALLADE",
+    "漫画BATTLE",
+    "SIMPLE",
+  ];
+
+  const aspectList: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5"];
+
+  const randomItem = <T,>(list: T[]): T => {
+    return list[Math.floor(Math.random() * list.length)];
+  };
+
+  const formatTime = (time: number) => {
+    if (!Number.isFinite(time)) return "0:00";
+
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
+
+  const getPreviewSizeClass = () => {
+    switch (aspectRatio) {
+      case "16:9":
+        return "w-[720px] h-[405px]";
+      case "9:16":
+        return "w-[315px] h-[560px]";
+      case "1:1":
+        return "w-[500px] h-[500px]";
+      case "4:5":
+        return "w-[400px] h-[500px]";
+      default:
+        return "w-[720px] h-[405px]";
+    }
+  };
+
+  const pickBubbleText = () => {
+    if (textMode === "fixed") {
+      return bubbleText;
+    }
+
+    if (textMode === "smart") {
+      return randomItem(smartBubbleTexts[audioMoodRef.current]);
+    }
+
+    return randomItem(bubbleTexts);
+  };
+
+  const pickSfxText = () => {
+    if (textMode === "fixed") {
+      return sfxText;
+    }
+
+    if (textMode === "smart") {
+      return randomItem(smartSfxTexts[audioMoodRef.current]);
+    }
+
+    return randomItem(sfxTexts);
+  };
+
+  const randomizeMotionsFromList = (list: MotionType[]) => {
+    if (images.length === 0) {
+      setRandomMotionApplied(false);
+      return;
+    }
+
+    const updated = images.map(() => randomItem(list));
+    setImageMotions(updated);
+    setRandomMotionApplied(true);
+  };
+
+  const applyPreset = (preset: PresetName) => {
+    setActivePreset(preset);
+    setChorusBoost(false);
+
+    wasAboveThresholdRef.current = false;
+    lastLowEnergyRef.current = 0;
+    lastSwitchTimeRef.current = performance.now();
+    audioMoodRef.current = "quiet";
+
+    if (preset === "ROCK") {
+      setSwitchMode("peak");
+      setPeakSensitivity(9);
+      setMinSwitchInterval(500);
+      setIdealSwitchInterval(1000);
+      setFallbackSwitchInterval(1500);
+      setShowGlitch(true);
+      setShowEqualizer(true);
+      setShowFlash(true);
+      setShowPanels(true);
+      setPanelMode("random");
+      setAutoBubble(false);
+      setShowBubble(false);
+      setAutoSfx(true);
+      setShowSfx(true);
+      setTextMode("smart");
+      setChorusSensitivity(20);
+      randomizeMotionsFromList(motionList);
+      return;
+    }
+
+    if (preset === "POP") {
+      setSwitchMode("equal");
+      setImageDuration(2200);
+      setIdealSwitchInterval(2200);
+      setFallbackSwitchInterval(2200);
+      setShowGlitch(false);
+      setShowEqualizer(true);
+      setShowFlash(true);
+      setShowPanels(false);
+      setPanelMode("fixed");
+      setAutoBubble(true);
+      setShowBubble(true);
+      setAutoSfx(false);
+      setShowSfx(false);
+      setTextMode("random");
+      setChorusSensitivity(28);
+      randomizeMotionsFromList(calmMotionList);
+      return;
+    }
+
+    if (preset === "FUNK") {
+      setSwitchMode("peak");
+      setPeakSensitivity(8);
+      setMinSwitchInterval(450);
+      setIdealSwitchInterval(900);
+      setFallbackSwitchInterval(1300);
+      setShowGlitch(true);
+      setShowEqualizer(true);
+      setShowFlash(true);
+      setShowPanels(true);
+      setPanelMode("random");
+      setAutoBubble(true);
+      setShowBubble(true);
+      setAutoSfx(true);
+      setShowSfx(true);
+      setTextMode("smart");
+      setChorusSensitivity(21);
+      randomizeMotionsFromList(motionList);
+      return;
+    }
+
+    if (preset === "JAZZ") {
+      setSwitchMode("equal");
+      setImageDuration(3500);
+      setIdealSwitchInterval(3500);
+      setFallbackSwitchInterval(3500);
+      setShowGlitch(false);
+      setShowEqualizer(true);
+      setShowFlash(false);
+      setShowPanels(false);
+      setPanelMode("fixed");
+      setAutoBubble(true);
+      setShowBubble(true);
+      setAutoSfx(false);
+      setShowSfx(false);
+      setTextMode("random");
+      setChorusSensitivity(35);
+      randomizeMotionsFromList(calmMotionList);
+      return;
+    }
+
+    if (preset === "DANCE") {
+      setSwitchMode("peak");
+      setPeakSensitivity(8);
+      setMinSwitchInterval(400);
+      setIdealSwitchInterval(800);
+      setFallbackSwitchInterval(1200);
+      setShowGlitch(true);
+      setShowEqualizer(true);
+      setShowFlash(true);
+      setShowPanels(true);
+      setPanelMode("chorus");
+      setAutoBubble(false);
+      setShowBubble(false);
+      setAutoSfx(true);
+      setShowSfx(true);
+      setTextMode("smart");
+      setChorusSensitivity(20);
+      randomizeMotionsFromList(motionList);
+      return;
+    }
+
+    if (preset === "DISCO") {
+      setSwitchMode("peak");
+      setPeakSensitivity(9);
+      setMinSwitchInterval(450);
+      setIdealSwitchInterval(900);
+      setFallbackSwitchInterval(1300);
+      setShowGlitch(true);
+      setShowEqualizer(true);
+      setShowFlash(true);
+      setShowPanels(true);
+      setPanelMode("chorus");
+      setAutoBubble(true);
+      setShowBubble(true);
+      setAutoSfx(true);
+      setShowSfx(true);
+      setTextMode("smart");
+      setChorusSensitivity(24);
+      randomizeMotionsFromList(motionList);
+      return;
+    }
+
+    if (preset === "Synth Vocal") {
+      setSwitchMode("peak");
+      setPeakSensitivity(8);
+      setMinSwitchInterval(400);
+      setIdealSwitchInterval(800);
+      setFallbackSwitchInterval(1200);
+      setShowGlitch(true);
+      setShowEqualizer(true);
+      setShowFlash(true);
+      setShowPanels(true);
+      setPanelMode("random");
+      setAutoBubble(true);
+      setShowBubble(true);
+      setAutoSfx(true);
+      setShowSfx(true);
+      setTextMode("smart");
+      setChorusSensitivity(20);
+      randomizeMotionsFromList(motionList);
+      return;
+    }
+
+    if (preset === "BALLADE") {
+      setSwitchMode("equal");
+      setImageDuration(4200);
+      setIdealSwitchInterval(4200);
+      setFallbackSwitchInterval(4200);
+      setShowGlitch(false);
+      setShowEqualizer(false);
+      setShowFlash(false);
+      setShowPanels(false);
+      setPanelMode("fixed");
+      setAutoBubble(true);
+      setShowBubble(true);
+      setAutoSfx(false);
+      setShowSfx(false);
+      setTextMode("random");
+      setChorusSensitivity(38);
+      randomizeMotionsFromList(["zoomIn", "zoomOut"]);
+      return;
+    }
+
+    if (preset === "漫画BATTLE") {
+      setSwitchMode("peak");
+      setPeakSensitivity(7);
+      setMinSwitchInterval(350);
+      setIdealSwitchInterval(700);
+      setFallbackSwitchInterval(1000);
+      setShowGlitch(true);
+      setShowEqualizer(true);
+      setShowFlash(true);
+      setShowPanels(true);
+      setPanelMode("random");
+      setAutoBubble(true);
+      setShowBubble(true);
+      setAutoSfx(true);
+      setShowSfx(true);
+      setTextMode("smart");
+      setChorusSensitivity(18);
+      randomizeMotionsFromList(battleMotionList);
+      return;
+    }
+
+    if (preset === "SIMPLE") {
+      setSwitchMode("equal");
+      setImageDuration(2500);
+      setIdealSwitchInterval(2500);
+      setFallbackSwitchInterval(2500);
+      setShowGlitch(false);
+      setShowEqualizer(false);
+      setShowFlash(false);
+      setShowPanels(false);
+      setPanelMode("fixed");
+      setAutoBubble(false);
+      setShowBubble(false);
+      setAutoSfx(false);
+      setShowSfx(false);
+      setTextMode("fixed");
+      setChorusSensitivity(45);
+
+      if (images.length > 0) {
+        setImageMotions(images.map(() => "zoomIn"));
+        setRandomMotionApplied(false);
+      }
+    }
+  };
+
+  const triggerFlash = () => {
+    if (!showFlash) return;
+
+    setFlashActive(true);
+
+    setTimeout(() => {
+      setFlashActive(false);
+    }, chorusBoost ? 180 : 120);
+  };
+
+  const triggerPanelBurst = () => {
+    if (!showPanels) return;
+
+    if (panelMode === "random") {
+      setPanelPattern(randomItem(panelPatterns));
+    }
+
+    if (panelMode === "chorus" && chorusBoost) {
+      setPanelPattern(randomItem(panelPatterns));
+    }
+
+    setPanelBurst(true);
+
+    setTimeout(() => {
+      setPanelBurst(false);
+    }, 260);
+  };
+
+  const stepToNextImage = () => {
+    if (images.length === 0) return;
+
+    triggerFlash();
+    triggerPanelBurst();
+
+    setCurrentImageIndex((prev) => {
+      const nextIndex = (prev + 1) % images.length;
+
+      setSelectedImage(images[nextIndex]);
+
+      if (autoBubble) {
+        setShowBubble(true);
+        setBubbleText(pickBubbleText());
+        setBubblePosition(randomItem(positions));
+      }
+
+      if (autoSfx) {
+        setShowSfx(true);
+        setSfxText(pickSfxText());
+        setSfxPosition(randomItem(positions));
+      }
+
+      return nextIndex;
+    });
+  };
+
+  const stopAnalysisLoop = () => {
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  };
+
+  const setupAudioAnalysis = async () => {
+    if (!audioRef.current) return;
+
+    const AudioContextClass =
+      window.AudioContext || (window as any).webkitAudioContext;
+
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContextClass();
+    }
+
+    if (audioContextRef.current.state === "suspended") {
+      await audioContextRef.current.resume();
+    }
+
+    if (!analyserRef.current) {
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 2048;
+      analyserRef.current.smoothingTimeConstant = 0.82;
+    }
+
+    if (!sourceRef.current) {
+      sourceRef.current = audioContextRef.current.createMediaElementSource(
+        audioRef.current
+      );
+
+      sourceRef.current.connect(analyserRef.current);
+      analyserRef.current.connect(audioContextRef.current.destination);
+    }
+  };
+
+  const startAnalysisLoop = () => {
+    if (!analyserRef.current || !audioRef.current) return;
+
+    stopAnalysisLoop();
+
+    const analyser = analyserRef.current;
+    const audio = audioRef.current;
+
+    const freqData = new Uint8Array(analyser.frequencyBinCount);
+    const timeData = new Uint8Array(analyser.fftSize);
+
+    const tick = () => {
+      analyser.getByteFrequencyData(freqData);
+      analyser.getByteTimeDomainData(timeData);
+
+      const barCount = 12;
+      const chunkSize = Math.floor(freqData.length / barCount);
+
+      const nextBars = Array.from({ length: barCount }, (_, index) => {
+        const start = index * chunkSize;
+        const end = start + chunkSize;
+
+        let sum = 0;
+
+        for (let i = start; i < end; i++) {
+          sum += freqData[i];
+        }
+
+        const avg = sum / chunkSize;
+
+        return Math.max(8, Math.round((avg / 255) * 100));
+      });
+
+      setEqBars(nextBars);
+      setCurrentTime(audio.currentTime);
+
+      let sumSquares = 0;
+
+      for (let i = 0; i < timeData.length; i++) {
+        const normalized = (timeData[i] - 128) / 128;
+        sumSquares += normalized * normalized;
+      }
+
+      const rms = Math.sqrt(sumSquares / timeData.length);
+
+      const chorusThreshold = chorusSensitivity / 100;
+      const isChorusNow = rms > chorusThreshold;
+
+      setChorusBoost(isChorusNow);
+
+      const lowBinCount = Math.max(8, Math.floor(freqData.length * 0.06));
+
+      let lowSum = 0;
+
+      for (let i = 0; i < lowBinCount; i++) {
+        lowSum += freqData[i];
+      }
+
+      const lowEnergy = lowSum / lowBinCount / 255;
+      const lowSpike = lowEnergy - lastLowEnergyRef.current;
+
+      if (isChorusNow) {
+        audioMoodRef.current = "chorus";
+      } else if (lowEnergy > 0.22) {
+        audioMoodRef.current = "bass";
+      } else if (rms > peakSensitivity / 100) {
+        audioMoodRef.current = "peak";
+      } else {
+        audioMoodRef.current = "quiet";
+      }
+
+      lastLowEnergyRef.current =
+        lowEnergy * 0.45 + lastLowEnergyRef.current * 0.55;
+
+      const peakThreshold = peakSensitivity / 100;
+      const kickThreshold = kickSensitivity / 100;
+
+      const now = performance.now();
+
+      let isAbove = false;
+
+      if (switchMode === "peak") {
+        isAbove = rms > peakThreshold;
+      }
+
+      if (switchMode === "kick") {
+        isAbove =
+          lowSpike > kickThreshold || lowEnergy > kickThreshold * 2.2;
+      }
+
+      const timeSinceLastSwitch = now - lastSwitchTimeRef.current;
+
+      const passedMinInterval = timeSinceLastSwitch > minSwitchInterval;
+      const passedIdealInterval = timeSinceLastSwitch > idealSwitchInterval;
+      const passedFallbackInterval =
+        timeSinceLastSwitch > fallbackSwitchInterval;
+
+      const shouldSwitchByAudio =
+        isAbove &&
+        !wasAboveThresholdRef.current &&
+        passedMinInterval &&
+        passedIdealInterval;
+
+      const shouldSwitchByFallback =
+        (switchMode === "peak" || switchMode === "kick") &&
+        passedFallbackInterval;
+
+      if (
+        (switchMode === "peak" || switchMode === "kick") &&
+        (shouldSwitchByAudio || shouldSwitchByFallback)
+      ) {
+        stepToNextImage();
+        lastSwitchTimeRef.current = now;
+        wasAboveThresholdRef.current = false;
+      } else {
+        wasAboveThresholdRef.current = isAbove;
+      }
+
+      if (!audio.paused && !audio.ended) {
+        rafRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+  };
+
+  useEffect(() => {
+    if (!isPlaying || images.length === 0 || switchMode !== "equal") return;
+
+    const timer = setInterval(() => {
+      stepToNextImage();
+    }, imageDuration);
+
+    return () => clearInterval(timer);
+  }, [
+    isPlaying,
+    images,
+    switchMode,
+    imageDuration,
+    autoBubble,
+    autoSfx,
+    showFlash,
+    showPanels,
+    chorusBoost,
+    panelMode,
+    textMode,
+  ]);
+
+  useEffect(() => {
+    if (!isPlaying) {
+      stopAnalysisLoop();
+      setChorusBoost(false);
+    }
+  }, [isPlaying]);
+
+  const handleImageUpload = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const files = event.target.files;
+
+    if (!files) return;
+
+    const imageUrls = Array.from(files).map((file) =>
+      URL.createObjectURL(file)
+    );
+
+    setImages(imageUrls);
+    setImageMotions(imageUrls.map(() => "zoomIn"));
+    setRandomMotionApplied(false);
+    setCurrentImageIndex(0);
+
+    if (imageUrls.length > 0) {
+      setSelectedImage(imageUrls[0]);
+    }
+  };
+
+  const handleAudioUpload = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    setAudioUrl(URL.createObjectURL(file));
+    setAudioName(file.name);
+    setAudioDuration(0);
+    setCurrentTime(0);
+    setIsPlaying(false);
+    setChorusBoost(false);
+
+    sourceRef.current = null;
+    analyserRef.current = null;
+    audioContextRef.current = null;
+
+    lastSwitchTimeRef.current = 0;
+    wasAboveThresholdRef.current = false;
+    lastLowEnergyRef.current = 0;
+    audioMoodRef.current = "quiet";
+  };
+
+  const handleAutoDuration = () => {
+    if (audioDuration <= 0 || images.length === 0) return;
+
+    const durationMs = (audioDuration / images.length) * 1000;
+
+    setImageDuration(Math.round(durationMs));
+  };
+
+  const handlePlay = async () => {
+    if (images.length === 0 && !audioUrl) return;
+
+    lastSwitchTimeRef.current = performance.now();
+    wasAboveThresholdRef.current = false;
+    lastLowEnergyRef.current = 0;
+
+    if (audioRef.current && audioUrl) {
+      try {
+        await audioRef.current.play();
+        setIsPlaying(true);
+      } catch (error) {
+        console.error("Audio play failed:", error);
+        setIsPlaying(false);
+        return;
+      }
+
+      try {
+        await setupAudioAnalysis();
+        startAnalysisLoop();
+      } catch (error) {
+        console.warn(
+          "Audio analysis failed. Audio will continue without analysis:",
+          error
+        );
+      }
+
+      return;
+    }
+
+    setIsPlaying(true);
+  };
+
+  const handlePause = () => {
+    setIsPlaying(false);
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+  };
+
+  const handleReset = () => {
+    setIsPlaying(false);
+    setCurrentImageIndex(0);
+    setCurrentTime(0);
+    setChorusBoost(false);
+
+    lastSwitchTimeRef.current = 0;
+    wasAboveThresholdRef.current = false;
+    lastLowEnergyRef.current = 0;
+    audioMoodRef.current = "quiet";
+
+    if (images.length > 0) {
+      setSelectedImage(images[0]);
+    }
+
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+
+    stopAnalysisLoop();
+  };
+
+  const handleSeek = (value: number) => {
+    if (!audioRef.current || audioDuration <= 0) return;
+
+    audioRef.current.currentTime = value;
+    setCurrentTime(value);
+
+    if (images.length > 0) {
+      let nextIndex = 0;
+
+      if (switchMode === "equal") {
+        nextIndex = Math.floor((value * 1000) / imageDuration) % images.length;
+      } else {
+        nextIndex = Math.floor((value / audioDuration) * images.length);
+        nextIndex = Math.min(nextIndex, images.length - 1);
+      }
+
+      setCurrentImageIndex(nextIndex);
+      setSelectedImage(images[nextIndex]);
+    }
+
+    lastSwitchTimeRef.current = performance.now();
+    wasAboveThresholdRef.current = false;
+    lastLowEnergyRef.current = 0;
+  };
+
+  const handlePrepareExport = () => {
+    if (!audioUrl || images.length === 0) {
+      setExportStatus("画像と音楽をアップロードしてください");
+      return;
+    }
+
+    setExportStatus(
+      `準備OK：${aspectRatio} / ${
+        exportQuality === "high" ? "高画質" : "標準"
+      } / ${formatTime(audioDuration)}`
+    );
+  };
+
+  const getTimelineMarkers = () => {
+    if (audioDuration <= 0 || images.length === 0) return [];
+
+    return images.map((_, index) => {
+      const percent =
+        images.length === 1 ? 0 : (index / images.length) * 100;
+
+      return {
+        index,
+        percent: Math.min(100, Math.max(0, percent)),
+      };
+    });
+  };
+
+  const applyMotionToCurrent = () => {
+    const updated = [...imageMotions];
+
+    updated[currentImageIndex] = selectedMotion;
+
+    setImageMotions(updated);
+    setRandomMotionApplied(false);
+    setActivePreset(null);
+  };
+
+  const applyRandomMotions = () => {
+    const updated = images.map(() => randomItem(motionList));
+
+    setImageMotions(updated);
+    setRandomMotionApplied(true);
+    setActivePreset(null);
+  };
+
+  const getMotionStyle = () => {
+    const motion = imageMotions[currentImageIndex];
+
+    if (chorusBoost && isPlaying) {
+      return "chorusImageAnim 0.7s ease-in-out infinite";
+    }
+
+    switch (motion) {
+      case "zoomIn":
+        return "zoomInAnim 8s ease-in-out infinite";
+      case "zoomOut":
+        return "zoomOutAnim 8s ease-in-out infinite";
+      case "panLeft":
+        return "panLeftAnim 8s ease-in-out infinite";
+      case "panRight":
+        return "panRightAnim 8s ease-in-out infinite";
+      case "shake":
+        return "shakeAnim 0.4s infinite";
+      case "comic":
+        return "comicAnim 0.8s infinite";
+      default:
+        return "zoomInAnim 8s ease-in-out infinite";
+    }
+  };
+
+  const getPositionClass = (position: PositionType) => {
+    switch (position) {
+      case "topLeft":
+        return "top-8 left-8";
+      case "topRight":
+        return "top-8 right-8";
+      case "bottomLeft":
+        return "bottom-8 left-8";
+      case "bottomRight":
+        return "bottom-8 right-8";
+      case "center":
+        return "top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2";
+      default:
+        return "top-8 right-8";
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-black text-white flex">
+      <style>{`
+        @keyframes zoomInAnim {
+          0%,100% { transform: scale(1); }
+          50% { transform: scale(1.12); }
+        }
+
+        @keyframes zoomOutAnim {
+          0%,100% { transform: scale(1.12); }
+          50% { transform: scale(1); }
+        }
+
+        @keyframes panLeftAnim {
+          0% { transform: scale(1.1) translateX(0); }
+          50% { transform: scale(1.1) translateX(-40px); }
+          100% { transform: scale(1.1) translateX(0); }
+        }
+
+        @keyframes panRightAnim {
+          0% { transform: scale(1.1) translateX(0); }
+          50% { transform: scale(1.1) translateX(40px); }
+          100% { transform: scale(1.1) translateX(0); }
+        }
+
+        @keyframes shakeAnim {
+          0%,100% { transform: translate(0,0); }
+          25% { transform: translate(-6px,2px); }
+          50% { transform: translate(6px,-2px); }
+          75% { transform: translate(-4px,4px); }
+        }
+
+        @keyframes comicAnim {
+          0%,100% { transform: scale(1) rotate(0deg); }
+          25% { transform: scale(1.03) rotate(-1deg); }
+          50% { transform: scale(1.06) rotate(1deg); }
+          75% { transform: scale(1.03) rotate(-1deg); }
+        }
+
+        @keyframes chorusImageAnim {
+          0%,100% { transform: scale(1.08) rotate(0deg); }
+          25% { transform: scale(1.15) rotate(-0.8deg); }
+          50% { transform: scale(1.2) rotate(0.8deg); }
+          75% { transform: scale(1.12) rotate(-0.5deg); }
+        }
+
+        @keyframes sfxShake {
+          0%,100% { transform: rotate(-8deg) scale(1); }
+          50% { transform: rotate(-3deg) scale(1.1); }
+        }
+
+        @keyframes eqMove {
+          0%,100% { transform: scaleY(0.4); }
+          50% { transform: scaleY(1.2); }
+        }
+
+        @keyframes bubbleFloat {
+          0%,100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+
+        @keyframes glitchMove {
+          0% { transform: translateX(0); opacity: 0.15; }
+          25% { transform: translateX(6px); opacity: 0.35; }
+          50% { transform: translateX(-6px); opacity: 0.2; }
+          75% { transform: translateX(3px); opacity: 0.4; }
+          100% { transform: translateX(0); opacity: 0.15; }
+        }
+
+        @keyframes glitchLine {
+          0% { transform: translateX(-100%); opacity: 0; }
+          40% { opacity: 0.8; }
+          100% { transform: translateX(100%); opacity: 0; }
+        }
+
+        @keyframes flashAnim {
+          0% { opacity: 0; }
+          20% { opacity: 0.95; }
+          100% { opacity: 0; }
+        }
+
+        @keyframes panelBurstAnim {
+          0% { opacity: 0; transform: scale(0.96) rotate(-1deg); }
+          25% { opacity: 1; transform: scale(1.03) rotate(1deg); }
+          100% { opacity: 0.65; transform: scale(1) rotate(0deg); }
+        }
+
+        @keyframes panelSlideAnim {
+          0%,100% { transform: translateX(0); }
+          50% { transform: translateX(8px); }
+        }
+      `}</style>
+
+      <div className="w-64 border-r border-purple-500 p-4 overflow-y-auto">
+        <h2 className="text-xl font-bold mb-4 text-pink-400">
+          Manga MV Engine
+        </h2>
+
+        <label className="block mb-3">
+          <div className="w-full bg-pink-500 hover:bg-pink-600 p-2 rounded text-center cursor-pointer">
+            画像アップロード
+          </div>
+
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleImageUpload}
+          />
+        </label>
+
+        <label className="block mb-4">
+          <div className="w-full bg-cyan-500 hover:bg-cyan-600 p-2 rounded text-center cursor-pointer">
+            音楽アップロード
+          </div>
+
+          <input
+            type="file"
+            accept="audio/*"
+            className="hidden"
+            onChange={handleAudioUpload}
+          />
+        </label>
+
+        {audioName && (
+          <div className="mb-2 text-xs text-cyan-300 break-all">
+            音楽：{audioName}
+          </div>
+        )}
+
+        <div className="text-xs text-zinc-400 mb-2">
+          画角：{aspectRatio}
+        </div>
+
+        <div className="text-xs text-zinc-400 mb-2">
+          長さ：{formatTime(audioDuration)}
+        </div>
+
+        <div className="text-xs text-zinc-400 mb-2">
+          再生位置：{formatTime(currentTime)} / {formatTime(audioDuration)}
+        </div>
+
+        <div className="text-xs text-zinc-400 mb-3">
+          画像：{images.length > 0 ? currentImageIndex + 1 : 0} /{" "}
+          {images.length}
+        </div>
+
+        <div
+          className={`text-xs mb-2 font-bold ${
+            isPlaying ? "text-pink-400" : "text-zinc-500"
+          }`}
+        >
+          状態：{isPlaying ? "再生中" : "停止中"}
+        </div>
+
+        <div
+          className={`text-xs mb-2 font-bold ${
+            chorusBoost ? "text-yellow-300" : "text-zinc-500"
+          }`}
+        >
+          サビ暴走：{chorusBoost ? "発動中" : "待機中"}
+        </div>
+
+        <div className="text-xs mb-2 text-cyan-300">
+          プリセット：{activePreset ?? "手動設定"}
+        </div>
+
+        <div className="text-xs mb-3 text-pink-300">
+          文字状態：{audioMoodRef.current}
+        </div>
+
+        <div className="space-y-2">
+          {images.map((image, index) => (
+            <div key={index}>
+              <img
+                src={image}
+                alt=""
+                className={`w-full h-24 object-cover rounded cursor-pointer border ${
+                  currentImageIndex === index
+                    ? "border-pink-500"
+                    : "border-zinc-700"
+                }`}
+                onClick={() => {
+                  setSelectedImage(image);
+                  setCurrentImageIndex(index);
+                }}
+              />
+
+              <p className="text-xs text-zinc-400 mt-1">
+                {imageMotions[index]}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex-1 flex flex-col items-center justify-center gap-4 overflow-auto p-4">
+        <div
+          className={`${getPreviewSizeClass()} bg-zinc-900 border border-pink-500 rounded-xl relative overflow-hidden flex items-center justify-center transition-all duration-150 ${
+            chorusBoost
+              ? "shadow-[0_0_70px_#ec4899] scale-[1.02]"
+              : showGlitch
+              ? "shadow-[0_0_30px_#ec4899]"
+              : ""
+          }`}
+        >
+          {selectedImage ? (
+            <img
+              src={selectedImage}
+              alt=""
+              className={`w-full h-full object-cover ${
+                showGlitch || chorusBoost ? "contrast-125 saturate-150" : ""
+              }`}
+              style={{
+                animation: isPlaying ? getMotionStyle() : "none",
+              }}
+            />
+          ) : (
+            <p className="text-3xl text-pink-400">MV Preview</p>
+          )}
+
+          {showPanels && selectedImage && (
+            <div
+              className={`absolute inset-0 pointer-events-none ${
+                panelBurst ? "opacity-100" : "opacity-70"
+              }`}
+              style={{
+                animation:
+                  isPlaying && panelBurst
+                    ? "panelBurstAnim 0.26s ease-out"
+                    : "none",
+              }}
+            >
+              <div className="absolute inset-0 border-[10px] border-black/70" />
+
+              {panelPattern === "classic" && (
+                <>
+                  <div className="absolute top-0 left-[34%] w-[10px] h-full bg-black/80 rotate-[8deg]" />
+                  <div className="absolute top-[48%] left-0 w-full h-[9px] bg-black/75 rotate-[-4deg]" />
+                  <div className="absolute top-0 right-[18%] w-[7px] h-full bg-black/55 rotate-[-12deg]" />
+                </>
+              )}
+
+              {panelPattern === "vertical" && (
+                <>
+                  <div className="absolute top-0 left-[28%] w-[12px] h-full bg-black/85 rotate-[2deg]" />
+                  <div className="absolute top-0 left-[62%] w-[10px] h-full bg-black/80 rotate-[-3deg]" />
+                  <div className="absolute top-0 left-[82%] w-[7px] h-full bg-black/60 rotate-[5deg]" />
+                </>
+              )}
+
+              {panelPattern === "horizontal" && (
+                <>
+                  <div className="absolute top-[28%] left-0 w-full h-[11px] bg-black/85 rotate-[-2deg]" />
+                  <div className="absolute top-[63%] left-0 w-full h-[10px] bg-black/80 rotate-[3deg]" />
+                  <div className="absolute top-[82%] left-0 w-full h-[7px] bg-black/60 rotate-[-1deg]" />
+                </>
+              )}
+
+              {panelPattern === "diagonal" && (
+                <>
+                  <div className="absolute top-[15%] left-[-10%] w-[120%] h-[12px] bg-black/85 rotate-[18deg]" />
+                  <div className="absolute top-[55%] left-[-10%] w-[120%] h-[10px] bg-black/75 rotate-[-14deg]" />
+                  <div className="absolute top-0 left-[45%] w-[9px] h-full bg-black/70 rotate-[20deg]" />
+                </>
+              )}
+
+              {panelPattern === "action" && (
+                <>
+                  <div className="absolute top-[8%] left-[-10%] w-[120%] h-[9px] bg-black/90 rotate-[8deg]" />
+                  <div className="absolute top-[30%] left-[-10%] w-[120%] h-[8px] bg-black/80 rotate-[-12deg]" />
+                  <div className="absolute top-[55%] left-[-10%] w-[120%] h-[11px] bg-black/90 rotate-[16deg]" />
+                  <div className="absolute top-[76%] left-[-10%] w-[120%] h-[7px] bg-black/75 rotate-[-7deg]" />
+                  <div className="absolute top-0 left-[18%] w-[8px] h-full bg-black/70 rotate-[-18deg]" />
+                  <div className="absolute top-0 right-[22%] w-[8px] h-full bg-black/70 rotate-[14deg]" />
+                </>
+              )}
+
+              {chorusBoost && (
+                <>
+                  <div className="absolute top-[18%] left-0 w-full h-[5px] bg-white/30 rotate-[2deg]" />
+                  <div className="absolute bottom-[22%] left-0 w-full h-[5px] bg-pink-400/30 rotate-[-2deg]" />
+                </>
+              )}
+            </div>
+          )}
+
+          {showGlitch && (
+            <>
+              <div
+                className="absolute inset-0 bg-cyan-400/10 mix-blend-screen"
+                style={{
+                  animation: isPlaying
+                    ? "glitchMove 0.35s steps(2) infinite"
+                    : "none",
+                }}
+              />
+              <div
+                className="absolute inset-0 bg-pink-500/10 mix-blend-screen"
+                style={{
+                  animation: isPlaying
+                    ? "glitchMove 0.25s steps(2) infinite reverse"
+                    : "none",
+                }}
+              />
+              <div
+                className="absolute top-16 left-0 w-full h-2 bg-white/30"
+                style={{
+                  animation: isPlaying
+                    ? "glitchLine 0.8s linear infinite"
+                    : "none",
+                }}
+              />
+              <div
+                className="absolute top-44 left-0 w-full h-1 bg-cyan-300/50"
+                style={{
+                  animation: isPlaying
+                    ? "glitchLine 1.1s linear infinite"
+                    : "none",
+                }}
+              />
+              <div
+                className="absolute bottom-24 left-0 w-full h-2 bg-pink-400/40"
+                style={{
+                  animation: isPlaying
+                    ? "glitchLine 0.65s linear infinite"
+                    : "none",
+                }}
+              />
+            </>
+          )}
+
+          {showEqualizer && (
+            <div
+              className={`absolute bottom-4 right-4 flex items-end gap-1 ${
+                chorusBoost ? "h-32 scale-125" : "h-24"
+              } transition-all duration-150`}
+            >
+              {eqBars.map((height, index) => (
+                <div
+                  key={index}
+                  className="w-3 origin-bottom rounded-t bg-cyan-300 shadow-[0_0_12px_#22d3ee]"
+                  style={{
+                    height: `${height}px`,
+                    animation: isPlaying
+                      ? `eqMove ${0.3 + index * 0.05}s infinite`
+                      : "none",
+                  }}
+                />
+              ))}
+            </div>
+          )}
+
+          {showSfx && (
+            <div
+              className={`absolute ${getPositionClass(sfxPosition)} ${
+                chorusBoost ? "text-7xl" : "text-5xl"
+              } font-black text-white drop-shadow-[0_0_10px_#ec4899]`}
+              style={{
+                animation: isPlaying
+                  ? "sfxShake 0.45s ease-in-out infinite"
+                  : "none",
+              }}
+            >
+              {sfxText}
+            </div>
+          )}
+
+          {showBubble && (
+            <div
+              className={`absolute ${getPositionClass(
+                bubblePosition
+              )} bg-white text-black px-6 py-4 rounded-full border-4 border-black max-w-[260px] text-center font-bold`}
+              style={{
+                animation: isPlaying
+                  ? "bubbleFloat 1.4s ease-in-out infinite"
+                  : "none",
+              }}
+            >
+              {bubbleText}
+            </div>
+          )}
+
+          {flashActive && (
+            <div
+              className="absolute inset-0 bg-white pointer-events-none z-50"
+              style={{
+                animation: `flashAnim ${
+                  chorusBoost ? "0.18s" : "0.12s"
+                } ease-out`,
+              }}
+            />
+          )}
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={handlePlay}
+            className={`px-6 py-2 rounded font-bold ${
+              isPlaying
+                ? "bg-pink-700"
+                : "bg-pink-500 hover:bg-pink-600"
+            }`}
+          >
+            {isPlaying ? "再生中" : "再生"}
+          </button>
+
+          <button
+            onClick={handlePause}
+            className="bg-zinc-700 hover:bg-zinc-600 px-6 py-2 rounded font-bold"
+          >
+            一時停止
+          </button>
+
+          <button
+            onClick={handleReset}
+            className="bg-cyan-700 hover:bg-cyan-600 px-6 py-2 rounded font-bold"
+          >
+            最初から
+          </button>
+        </div>
+
+        {audioUrl && (
+          <div className="w-full max-w-[720px] bg-zinc-900 border border-zinc-700 rounded-xl p-4">
+            <div className="flex justify-between text-xs text-zinc-400 mb-2">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(audioDuration)}</span>
+            </div>
+
+            <input
+              type="range"
+              min="0"
+              max={audioDuration || 0}
+              step="0.01"
+              value={currentTime}
+              onChange={(e) => handleSeek(Number(e.target.value))}
+              className="w-full accent-pink-500"
+            />
+
+            <div className="mt-3 h-4 bg-zinc-800 rounded-full overflow-hidden relative">
+              <div
+                className="h-full bg-gradient-to-r from-pink-500 to-cyan-400"
+                style={{
+                  width:
+                    audioDuration > 0
+                      ? `${(currentTime / audioDuration) * 100}%`
+                      : "0%",
+                }}
+              />
+
+              {getTimelineMarkers().map((marker) => (
+                <div
+                  key={marker.index}
+                  className={`absolute top-0 h-full w-[3px] ${
+                    marker.index === currentImageIndex
+                      ? "bg-yellow-300"
+                      : "bg-white/70"
+                  }`}
+                  style={{
+                    left: `${marker.percent}%`,
+                  }}
+                  title={`画像 ${marker.index + 1}`}
+                />
+              ))}
+            </div>
+
+            <div className="flex justify-between text-xs text-zinc-500 mt-2">
+              <span>
+                画像 {images.length > 0 ? currentImageIndex + 1 : 0}
+              </span>
+
+              <span>
+                {switchMode === "equal"
+                  ? "均等タイムライン"
+                  : switchMode === "peak"
+                  ? "音量ピーク＋補助"
+                  : "低音キック＋補助"}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {audioUrl && (
+          <audio
+            ref={audioRef}
+            src={audioUrl}
+            className="hidden"
+            onLoadedMetadata={(e) =>
+              setAudioDuration(e.currentTarget.duration)
+            }
+            onTimeUpdate={(e) =>
+              setCurrentTime(e.currentTarget.currentTime)
+            }
+            onEnded={handleReset}
+          />
+        )}
+      </div>
+
+      <div className="w-72 border-l border-cyan-500 p-4 overflow-y-auto">
+        <h2 className="text-xl font-bold mb-4 text-cyan-400">
+          演出設定
+        </h2>
+
+        <div className="space-y-3">
+          <div className="pt-1 pb-3 border-b border-zinc-700">
+            <p className="text-sm mb-2 text-pink-300 font-bold">
+              画角プリセット
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              {aspectList.map((ratio) => (
+                <button
+                  key={ratio}
+                  onClick={() => setAspectRatio(ratio)}
+                  className={`p-2 rounded text-xs font-bold ${
+                    aspectRatio === ratio
+                      ? "bg-yellow-400 text-black"
+                      : "bg-zinc-800 hover:bg-zinc-700"
+                  }`}
+                >
+                  {ratio}
+                </button>
+              ))}
+            </div>
+
+            <p className="text-xs text-zinc-400 mt-2">
+              16:9=YouTube / 9:16=Shorts・TikTok / 1:1=正方形 / 4:5=Instagram
+            </p>
+          </div>
+
+          <div className="pt-3 pb-3 border-b border-zinc-700">
+            <p className="text-sm mb-2 text-yellow-300 font-bold">
+              出力設定
+            </p>
+
+            <div className="bg-zinc-900 border border-zinc-700 rounded p-3 text-xs text-zinc-300 space-y-2">
+              <div className="flex justify-between">
+                <span>出力画角</span>
+                <span className="text-yellow-300">{aspectRatio}</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span>音源尺</span>
+                <span className="text-cyan-300">
+                  {formatTime(audioDuration)}
+                </span>
+              </div>
+
+              <div className="flex justify-between">
+                <span>画像枚数</span>
+                <span className="text-pink-300">{images.length}枚</span>
+              </div>
+            </div>
+
+            <p className="text-sm mt-3 mb-2 text-cyan-300">
+              書き出し品質
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setExportQuality("standard")}
+                className={`p-2 rounded text-xs font-bold ${
+                  exportQuality === "standard"
+                    ? "bg-cyan-500 text-black"
+                    : "bg-zinc-800 hover:bg-zinc-700"
+                }`}
+              >
+                標準
+              </button>
+
+              <button
+                onClick={() => setExportQuality("high")}
+                className={`p-2 rounded text-xs font-bold ${
+                  exportQuality === "high"
+                    ? "bg-pink-500 text-white"
+                    : "bg-zinc-800 hover:bg-zinc-700"
+                }`}
+              >
+                高画質
+              </button>
+            </div>
+
+            <button
+              onClick={handlePrepareExport}
+              className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold p-2 rounded mt-3"
+            >
+              書き出し準備
+            </button>
+
+            <p className="text-xs text-zinc-400 mt-2">
+              状態：{exportStatus}
+            </p>
+
+            <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
+              ※現在は書き出し準備モードです。MP4保存は次の段階で
+              Remotion または Canvas録画方式を接続します。
+            </p>
+          </div>
+
+          <div className="pt-1 pb-3 border-b border-zinc-700">
+            <p className="text-sm mb-2 text-pink-300 font-bold">
+              演出プリセット
+            </p>
+
+            <div className="grid grid-cols-2 gap-2">
+              {presetList.map((preset) => (
+                <button
+                  key={preset}
+                  onClick={() => applyPreset(preset)}
+                  className={`p-2 rounded text-xs font-bold ${
+                    activePreset === preset
+                      ? "bg-pink-500 text-white shadow-[0_0_12px_#ec4899]"
+                      : "bg-zinc-800 hover:bg-zinc-700"
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-1 pb-3 border-b border-zinc-700">
+            <p className="text-sm mb-2 text-cyan-300">画像切替方式</p>
+
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                onClick={() => {
+                  setSwitchMode("equal");
+                  wasAboveThresholdRef.current = false;
+                  setActivePreset(null);
+                }}
+                className={`p-2 rounded text-sm font-bold ${
+                  switchMode === "equal"
+                    ? "bg-pink-600"
+                    : "bg-zinc-800 hover:bg-zinc-700"
+                }`}
+              >
+                均等切替
+              </button>
+
+              <button
+                onClick={() => {
+                  setSwitchMode("peak");
+                  wasAboveThresholdRef.current = false;
+                  setActivePreset(null);
+                }}
+                className={`p-2 rounded text-sm font-bold ${
+                  switchMode === "peak"
+                    ? "bg-cyan-600 text-black"
+                    : "bg-zinc-800 hover:bg-zinc-700"
+                }`}
+              >
+                音量ピーク＋補助
+              </button>
+
+              <button
+                onClick={() => {
+                  setSwitchMode("kick");
+                  wasAboveThresholdRef.current = false;
+                  lastLowEnergyRef.current = 0;
+                  setActivePreset(null);
+                }}
+                className={`p-2 rounded text-sm font-bold ${
+                  switchMode === "kick"
+                    ? "bg-yellow-400 text-black"
+                    : "bg-zinc-800 hover:bg-zinc-700"
+                }`}
+              >
+                低音キック＋補助
+              </button>
+            </div>
+          </div>
+
+          {switchMode === "equal" ? (
+            <div className="pt-2 border-b border-zinc-700 pb-4">
+              <p className="text-sm mb-2 text-cyan-300">
+                画像切替秒数
+              </p>
+
+              <input
+                type="range"
+                min="500"
+                max="10000"
+                step="100"
+                value={imageDuration}
+                onChange={(e) => {
+                  setImageDuration(Number(e.target.value));
+                  setActivePreset(null);
+                }}
+                className="w-full"
+              />
+
+              <p className="text-xs text-zinc-400 mt-1">
+                {(imageDuration / 1000).toFixed(1)} 秒
+              </p>
+
+              <button
+                onClick={handleAutoDuration}
+                className="w-full bg-pink-600 hover:bg-pink-500 p-2 rounded mt-3 font-bold"
+              >
+                曲尺に合わせる
+              </button>
+            </div>
+          ) : (
+            <div className="pt-2 border-b border-zinc-700 pb-4 space-y-3">
+              {switchMode === "peak" && (
+                <div>
+                  <p className="text-sm mb-2 text-cyan-300">
+                    ピーク感度
+                  </p>
+
+                  <input
+                    type="range"
+                    min="5"
+                    max="35"
+                    step="1"
+                    value={peakSensitivity}
+                    onChange={(e) => {
+                      setPeakSensitivity(Number(e.target.value));
+                      setActivePreset(null);
+                    }}
+                    className="w-full"
+                  />
+
+                  <p className="text-xs text-zinc-400 mt-1">
+                    {peakSensitivity}%
+                  </p>
+                </div>
+              )}
+
+              {switchMode === "kick" && (
+                <div>
+                  <p className="text-sm mb-2 text-yellow-300">
+                    低音キック感度
+                  </p>
+
+                  <input
+                    type="range"
+                    min="2"
+                    max="20"
+                    step="1"
+                    value={kickSensitivity}
+                    onChange={(e) => {
+                      setKickSensitivity(Number(e.target.value));
+                      setActivePreset(null);
+                    }}
+                    className="w-full"
+                  />
+
+                  <p className="text-xs text-zinc-400 mt-1">
+                    {kickSensitivity}%
+                  </p>
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm mb-2 text-cyan-300">
+                  最短切替間隔
+                </p>
+
+                <input
+                  type="range"
+                  min="200"
+                  max="3000"
+                  step="100"
+                  value={minSwitchInterval}
+                  onChange={(e) => {
+                    setMinSwitchInterval(Number(e.target.value));
+                    setActivePreset(null);
+                  }}
+                  className="w-full"
+                />
+
+                <p className="text-xs text-zinc-400 mt-1">
+                  {(minSwitchInterval / 1000).toFixed(1)} 秒
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm mb-2 text-yellow-300">
+                  理想切替間隔
+                </p>
+
+                <input
+                  type="range"
+                  min="400"
+                  max="4000"
+                  step="100"
+                  value={idealSwitchInterval}
+                  onChange={(e) => {
+                    setIdealSwitchInterval(Number(e.target.value));
+                    setActivePreset(null);
+                  }}
+                  className="w-full"
+                />
+
+                <p className="text-xs text-zinc-400 mt-1">
+                  {(idealSwitchInterval / 1000).toFixed(1)} 秒
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm mb-2 text-pink-300">
+                  補助切替間隔
+                </p>
+
+                <input
+                  type="range"
+                  min="400"
+                  max="5000"
+                  step="100"
+                  value={fallbackSwitchInterval}
+                  onChange={(e) => {
+                    setFallbackSwitchInterval(Number(e.target.value));
+                    setActivePreset(null);
+                  }}
+                  className="w-full"
+                />
+
+                <p className="text-xs text-zinc-400 mt-1">
+                  {(fallbackSwitchInterval / 1000).toFixed(1)} 秒
+                </p>
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={() => {
+              setShowBubble(true);
+              setActivePreset(null);
+            }}
+            className={`w-full p-2 rounded ${
+              showBubble
+                ? "bg-pink-600 hover:bg-pink-500"
+                : "bg-zinc-800 hover:bg-zinc-700"
+            }`}
+          >
+            吹き出し {showBubble ? "ON" : "追加"}
+          </button>
+
+          <input
+            value={bubbleText}
+            onChange={(e) => {
+              setBubbleText(e.target.value);
+              setActivePreset(null);
+            }}
+            className="w-full bg-black border border-zinc-600 p-2 rounded text-white"
+          />
+
+          <button
+            onClick={() => {
+              setAutoBubble(!autoBubble);
+              setActivePreset(null);
+            }}
+            className={`w-full p-2 rounded ${
+              autoBubble
+                ? "bg-pink-600 hover:bg-pink-500"
+                : "bg-zinc-800 hover:bg-zinc-700"
+            }`}
+          >
+            セリフ全自動 {autoBubble ? "ON" : "OFF"}
+          </button>
+
+          <div className="pt-3 pb-3 border-b border-zinc-700">
+            <p className="text-sm mb-2 text-pink-300 font-bold">
+              文字生成モード
+            </p>
+
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                onClick={() => {
+                  setTextMode("fixed");
+                  setActivePreset(null);
+                }}
+                className={`p-2 rounded text-sm ${
+                  textMode === "fixed"
+                    ? "bg-white text-black font-bold"
+                    : "bg-zinc-800 hover:bg-zinc-700"
+                }`}
+              >
+                固定
+              </button>
+
+              <button
+                onClick={() => {
+                  setTextMode("random");
+                  setActivePreset(null);
+                }}
+                className={`p-2 rounded text-sm ${
+                  textMode === "random"
+                    ? "bg-cyan-500 text-black font-bold"
+                    : "bg-zinc-800 hover:bg-zinc-700"
+                }`}
+              >
+                ランダム
+              </button>
+
+              <button
+                onClick={() => {
+                  setTextMode("smart");
+                  setActivePreset(null);
+                }}
+                className={`p-2 rounded text-sm ${
+                  textMode === "smart"
+                    ? "bg-pink-600 font-bold"
+                    : "bg-zinc-800 hover:bg-zinc-700"
+                }`}
+              >
+                スマート
+              </button>
+            </div>
+
+            <p className="text-xs text-zinc-400 mt-2">
+              現在：{textMode} / 状態：{audioMoodRef.current}
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              setShowBubble(true);
+              setBubbleText(randomItem(bubbleTexts));
+              setBubblePosition(randomItem(positions));
+              setActivePreset(null);
+            }}
+            className="w-full bg-zinc-800 hover:bg-zinc-700 p-2 rounded"
+          >
+            セリフだけランダム
+          </button>
+
+          <button
+            onClick={() => {
+              setShowSfx(!showSfx);
+              setActivePreset(null);
+            }}
+            className={`w-full p-2 rounded ${
+              showSfx
+                ? "bg-pink-600 hover:bg-pink-500"
+                : "bg-zinc-800 hover:bg-zinc-700"
+            }`}
+          >
+            擬音 {showSfx ? "ON" : "OFF"}
+          </button>
+
+          <input
+            value={sfxText}
+            onChange={(e) => {
+              setSfxText(e.target.value);
+              setActivePreset(null);
+            }}
+            className="w-full bg-black border border-zinc-600 p-2 rounded text-white"
+          />
+
+          <button
+            onClick={() => {
+              setAutoSfx(!autoSfx);
+              setActivePreset(null);
+            }}
+            className={`w-full p-2 rounded ${
+              autoSfx
+                ? "bg-pink-600 hover:bg-pink-500"
+                : "bg-zinc-800 hover:bg-zinc-700"
+            }`}
+          >
+            擬音全自動 {autoSfx ? "ON" : "OFF"}
+          </button>
+
+          <button
+            onClick={() => {
+              setShowSfx(true);
+              setSfxText(randomItem(sfxTexts));
+              setSfxPosition(randomItem(positions));
+              setActivePreset(null);
+            }}
+            className="w-full bg-zinc-800 hover:bg-zinc-700 p-2 rounded"
+          >
+            擬音だけランダム
+          </button>
+
+          <button
+            onClick={() => {
+              setShowGlitch(!showGlitch);
+              setActivePreset(null);
+            }}
+            className={`w-full p-2 rounded ${
+              showGlitch
+                ? "bg-pink-600 hover:bg-pink-500"
+                : "bg-zinc-800 hover:bg-zinc-700"
+            }`}
+          >
+            グリッチ {showGlitch ? "ON" : "OFF"}
+          </button>
+
+          <button
+            onClick={() => {
+              setShowEqualizer(!showEqualizer);
+              setActivePreset(null);
+            }}
+            className={`w-full p-2 rounded ${
+              showEqualizer
+                ? "bg-cyan-600 hover:bg-cyan-500 text-black"
+                : "bg-zinc-800 hover:bg-zinc-700"
+            }`}
+          >
+            イコライザー {showEqualizer ? "ON" : "OFF"}
+          </button>
+
+          <button
+            onClick={() => {
+              setShowFlash(!showFlash);
+              setActivePreset(null);
+            }}
+            className={`w-full p-2 rounded ${
+              showFlash
+                ? "bg-yellow-400 text-black font-bold"
+                : "bg-zinc-800 hover:bg-zinc-700"
+            }`}
+          >
+            カメラフラッシュ {showFlash ? "ON" : "OFF"}
+          </button>
+
+          <button
+            onClick={() => {
+              setShowPanels(!showPanels);
+              setActivePreset(null);
+            }}
+            className={`w-full p-2 rounded ${
+              showPanels
+                ? "bg-white text-black font-bold"
+                : "bg-zinc-800 hover:bg-zinc-700"
+            }`}
+          >
+            漫画コマ割り {showPanels ? "ON" : "OFF"}
+          </button>
+
+          <div className="pt-3 pb-3 border-b border-zinc-700">
+            <p className="text-sm mb-2 text-cyan-300">
+              コマ割り方式
+            </p>
+
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                onClick={() => {
+                  setPanelMode("fixed");
+                  setPanelPattern("classic");
+                  setActivePreset(null);
+                }}
+                className={`p-2 rounded text-sm ${
+                  panelMode === "fixed"
+                    ? "bg-white text-black font-bold"
+                    : "bg-zinc-800 hover:bg-zinc-700"
+                }`}
+              >
+                固定
+              </button>
+
+              <button
+                onClick={() => {
+                  setPanelMode("random");
+                  setActivePreset(null);
+                }}
+                className={`p-2 rounded text-sm ${
+                  panelMode === "random"
+                    ? "bg-cyan-500 text-black font-bold"
+                    : "bg-zinc-800 hover:bg-zinc-700"
+                }`}
+              >
+                画像切替ごとにランダム
+              </button>
+
+              <button
+                onClick={() => {
+                  setPanelMode("chorus");
+                  setActivePreset(null);
+                }}
+                className={`p-2 rounded text-sm ${
+                  panelMode === "chorus"
+                    ? "bg-pink-600 font-bold"
+                    : "bg-zinc-800 hover:bg-zinc-700"
+                }`}
+              >
+                サビだけランダム
+              </button>
+            </div>
+
+            <p className="text-xs text-zinc-400 mt-2">
+              現在：{panelPattern}
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-zinc-700">
+            <p className="text-sm mb-2 text-pink-300">
+              サビ暴走モード
+            </p>
+
+            <div
+              className={`w-full p-2 rounded text-center font-bold mb-3 ${
+                chorusBoost
+                  ? "bg-pink-600"
+                  : "bg-zinc-800 text-zinc-400"
+              }`}
+            >
+              {chorusBoost ? "暴走中" : "待機中"}
+            </div>
+
+            <p className="text-xs text-zinc-400 mb-1">
+              暴走感度：{chorusSensitivity}%
+            </p>
+
+            <input
+              type="range"
+              min="10"
+              max="45"
+              step="1"
+              value={chorusSensitivity}
+              onChange={(e) => {
+                setChorusSensitivity(Number(e.target.value));
+                setActivePreset(null);
+              }}
+              className="w-full"
+            />
+          </div>
+
+          <div className="pt-4 border-t border-zinc-700">
+            <p className="text-sm mb-2 text-cyan-300">
+              現在画像のモーション
+            </p>
+
+            <select
+              value={selectedMotion}
+              onChange={(e) => {
+                setSelectedMotion(e.target.value as MotionType);
+                setActivePreset(null);
+              }}
+              className="w-full bg-black border border-zinc-600 p-2 rounded text-white"
+            >
+              <option value="zoomIn">ズームイン</option>
+              <option value="zoomOut">ズームアウト</option>
+              <option value="panLeft">左パン</option>
+              <option value="panRight">右パン</option>
+              <option value="shake">シェイク</option>
+              <option value="comic">漫画揺れ</option>
+            </select>
+
+            <button
+              onClick={applyMotionToCurrent}
+              className="w-full bg-pink-600 hover:bg-pink-500 p-2 rounded mt-3"
+            >
+              この画像に適用
+            </button>
+
+            <button
+              onClick={applyRandomMotions}
+              className={`w-full p-2 rounded mt-3 ${
+                randomMotionApplied
+                  ? "bg-cyan-500 text-black font-bold"
+                  : "bg-zinc-800 hover:bg-zinc-700"
+              }`}
+            >
+              全画像ランダム {randomMotionApplied ? "適用中" : "未適用"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}

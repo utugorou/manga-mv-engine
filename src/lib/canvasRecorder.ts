@@ -280,7 +280,10 @@ export const drawSfxText = (
     ctx.restore();
   };
   if (options.sfxItems && options.sfxItems.length > 0) {
-    options.sfxItems.slice(0, 4).forEach((item) => drawOne(item.text, (item.position === "top" ? "topLeft" : item.position === "right" ? "bottomRight" : item.position === "left" ? "bottomLeft" : item.position === "bottom" ? "bottomRight" : item.position === "random" ? "center" : item.position) as CanvasOverlayPosition, item.scale, item.rotation));
+    const normalizedItems = options.sfxItems.slice(0, 4);
+    const unifiedText = normalizedItems[0]?.text ?? text;
+    const unifiedScale = normalizedItems[0]?.scale ?? scale;
+    normalizedItems.forEach((item) => drawOne(unifiedText, (item.position === "top" ? "topLeft" : item.position === "right" ? "bottomRight" : item.position === "left" ? "bottomLeft" : item.position === "bottom" ? "bottomRight" : item.position === "random" ? "center" : item.position) as CanvasOverlayPosition, unifiedScale, item.rotation));
   } else {
     drawOne(text, position, scale, -4.5);
   }

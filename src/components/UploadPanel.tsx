@@ -3,7 +3,11 @@ import type { AspectRatio, AudioMood, MotionType, PresetName } from "../types/mv
 type UploadPanelProps = {
   handleImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleAudioUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  handleVideoUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   audioName: string;
+  videoName: string;
+  videoFitMode: "cover" | "contain";
+  setVideoFitMode: (mode: "cover" | "contain") => void;
   aspectRatio: AspectRatio;
   formatTime: (time: number) => string;
   audioDuration: number;
@@ -18,7 +22,7 @@ type UploadPanelProps = {
   onSelectImage: (image: string, index: number) => void;
 };
 
-export default function UploadPanel({ handleImageUpload, handleAudioUpload, audioName, aspectRatio, formatTime, audioDuration, currentTime, images, currentImageIndex, isPlaying, chorusBoost, activePreset, audioMood, imageMotions, onSelectImage }: UploadPanelProps) {
+export default function UploadPanel({ handleImageUpload, handleAudioUpload, handleVideoUpload, audioName, videoName, videoFitMode, setVideoFitMode, aspectRatio, formatTime, audioDuration, currentTime, images, currentImageIndex, isPlaying, chorusBoost, activePreset, audioMood, imageMotions, onSelectImage }: UploadPanelProps) {
   const getMotionLabel = (motion?: MotionType) => {
     const labels: Record<MotionType, string> = { zoomIn: "ズームイン", zoomOut: "ズームアウト", panLeft: "左パン", panRight: "右パン", shake: "シェイク", comic: "漫画揺れ", panUp: "上パン", panDown: "下パン", diagonalPan: "斜めパン", slowZoomIn: "ゆっくりズームイン", breathZoom: "呼吸ズーム", impactZoom: "インパクトズーム", glitchJump: "グリッチジャンプ", grooveBounce: "グルーヴバウンス", sideGroove: "横ノリ", handheld: "手持ちカメラ風" };
     return motion ? labels[motion] : "ズームイン";
@@ -28,16 +32,25 @@ export default function UploadPanel({ handleImageUpload, handleAudioUpload, audi
     <div className="h-full rounded-2xl border border-fuchsia-500/30 bg-zinc-950/90 p-4 overflow-y-auto space-y-4">
       <h2 className="text-lg font-black text-fuchsia-300">素材マネージャー</h2>
       <label className="block"><p className="mb-1 text-xs text-cyan-300">STEP 1 音楽をアップロード</p><div className="w-full cursor-pointer rounded-xl border border-cyan-400/70 bg-cyan-500/15 p-2 text-center text-sm font-bold text-cyan-100 hover:bg-cyan-500/30">音楽アップロード</div><input type="file" accept="audio/*" className="hidden" onChange={handleAudioUpload} /></label>
-      <label className="block"><p className="mb-1 text-xs text-fuchsia-300">STEP 2 画像をアップロード</p><div className="w-full cursor-pointer rounded-xl border border-fuchsia-400/70 bg-fuchsia-500/15 p-2 text-center text-sm font-bold text-fuchsia-100 hover:bg-fuchsia-500/30">画像アップロード</div><input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} /></label>
+      <label className="block"><p className="mb-1 text-xs text-green-300">STEP 2 動画をアップロード (MP4 / WebM)</p><div className="w-full cursor-pointer rounded-xl border border-green-400/70 bg-green-500/15 p-2 text-center text-sm font-bold text-green-100 hover:bg-green-500/30">動画アップロード</div><input type="file" accept="video/mp4,video/webm" className="hidden" onChange={handleVideoUpload} /></label>
+      <label className="block"><p className="mb-1 text-xs text-fuchsia-300">STEP 3 画像をアップロード</p><div className="w-full cursor-pointer rounded-xl border border-fuchsia-400/70 bg-fuchsia-500/15 p-2 text-center text-sm font-bold text-fuchsia-100 hover:bg-fuchsia-500/30">画像アップロード</div><input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} /></label>
 
       <div className="rounded-xl border border-zinc-700 bg-zinc-900/80 p-3 text-xs space-y-1">
         <div className="text-cyan-200 break-all">🎧 {audioName || "未選択"}</div>
+        <div className="text-green-200 break-all">🎬 {videoName || "未選択"}</div>
         <div className="text-zinc-300">尺：{formatTime(currentTime)} / {formatTime(audioDuration)}</div>
         <div className="text-zinc-400">画角：{aspectRatio} / 画像 {images.length}枚</div>
         <div className={isPlaying ? "text-fuchsia-300" : "text-zinc-500"}>再生：{isPlaying ? "ON" : "OFF"}</div>
         <div className={chorusBoost ? "text-pink-300" : "text-zinc-500"}>サビ暴走：{chorusBoost ? "ON" : "OFF"}</div>
         <div className="text-cyan-300">プリセット：{activePreset ?? "手動設定"}</div>
         <div className="text-fuchsia-300">文字状態：{audioMood}</div>
+      </div>
+      <div className="rounded-xl border border-zinc-700 bg-zinc-900/80 p-3 text-xs space-y-2">
+        <p className="text-zinc-300 font-bold">動画の表示モード</p>
+        <div className="grid grid-cols-2 gap-2">
+          <button onClick={() => setVideoFitMode("cover")} className={`rounded-lg px-2 py-1 ${videoFitMode === "cover" ? "bg-green-500/30 text-green-100 border border-green-300/70" : "bg-zinc-800 text-zinc-300 border border-zinc-600"}`}>cover</button>
+          <button onClick={() => setVideoFitMode("contain")} className={`rounded-lg px-2 py-1 ${videoFitMode === "contain" ? "bg-green-500/30 text-green-100 border border-green-300/70" : "bg-zinc-800 text-zinc-300 border border-zinc-600"}`}>contain</button>
+        </div>
       </div>
 
       <p className="text-xs font-bold text-zinc-300">画像サムネイル</p>

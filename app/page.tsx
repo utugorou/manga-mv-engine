@@ -1251,7 +1251,7 @@ export default function Home() {
             setAutoBubble={setAutoBubble}
             textMode={textMode}
             setTextMode={setTextMode}
-            audioMoodRef={audioMoodRef}
+            audioMood={audioMoodRef.current}
             showSfx={showSfx}
             setShowSfx={setShowSfx}
             sfxText={sfxText}

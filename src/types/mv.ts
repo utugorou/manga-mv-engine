@@ -1,4 +1,5 @@
 export type MotionType = "zoomIn" | "zoomOut" | "panLeft" | "panRight" | "shake" | "comic";
+export type MotionGroup = "all" | "calm" | "battle" | "simpleZoom";
 export type PositionType = "topLeft" | "topRight" | "bottomLeft" | "bottomRight" | "center";
 export type SwitchMode = "equal" | "peak" | "kick";
 export type PanelPattern = "classic" | "vertical" | "horizontal" | "diagonal" | "action";

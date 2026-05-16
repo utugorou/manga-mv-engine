@@ -26,45 +26,6 @@ const loadImage = async (imageUrl: string): Promise<HTMLImageElement> => {
   return image;
 };
 
-export const drawImageToCanvas = async (
-  ctx: CanvasRenderingContext2D,
-  imageUrl: string,
-  width: number,
-  height: number
-): Promise<void> => {
-  const image = await loadImage(imageUrl);
-
-  const scale = Math.max(width / image.width, height / image.height);
-  const drawWidth = image.width * scale;
-  const drawHeight = image.height * scale;
-  const x = (width - drawWidth) / 2;
-  const y = (height - drawHeight) / 2;
-
-  ctx.drawImage(image, x, y, drawWidth, drawHeight);
-};
-
-export const drawTextOverlay = (
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  width: number,
-  height: number
-): void => {
-  if (!text) return;
-
-  const fontSize = Math.max(28, Math.round(width * 0.045));
-  ctx.font = `900 ${fontSize}px sans-serif`;
-  ctx.textBaseline = "bottom";
-  ctx.lineWidth = Math.max(4, Math.round(fontSize * 0.12));
-  ctx.strokeStyle = "rgba(0, 0, 0, 0.95)";
-  ctx.fillStyle = "#ffffff";
-
-  const x = Math.round(width * 0.06);
-  const y = Math.round(height * 0.9);
-
-  ctx.strokeText(text, x, y);
-  ctx.fillText(text, x, y);
-};
-
 export type CanvasOverlayPosition =
   | "topLeft"
   | "topRight"
@@ -111,19 +72,43 @@ export const drawCoverImage = (ctx: CanvasRenderingContext2D, image: HTMLImageEl
   ctx.drawImage(image, x, y, drawWidth, drawHeight);
 };
 
+export const drawImageToCanvas = async (
+  ctx: CanvasRenderingContext2D,
+  imageUrl: string,
+  width: number,
+  height: number
+): Promise<void> => {
+  const image = await loadImage(imageUrl);
+  drawCoverImage(ctx, image, width, height);
+};
+
 export const drawSpeechBubble = (ctx: CanvasRenderingContext2D, text: string, position: CanvasOverlayPosition, canvasWidth: number, canvasHeight: number): void => {
   if (!text) return;
   const p = getAnchor(position, canvasWidth, canvasHeight);
-  const fontSize = Math.max(20, Math.round(Math.min(canvasWidth, canvasHeight) * 0.045));
+  const fontSize = Math.max(20, Math.round(Math.min(canvasWidth, canvasHeight) * 0.05));
   ctx.font = `800 ${fontSize}px sans-serif`;
-  const w = Math.min(canvasWidth * 0.45, ctx.measureText(text).width + fontSize * 1.8);
-  const h = fontSize * 2.2;
+  const w = Math.min(canvasWidth * 0.56, ctx.measureText(text).width + fontSize * 1.7);
+  const h = fontSize * 2.15;
   const x = Math.max(24, Math.min(canvasWidth - w - 24, p.x - w / 2));
   const y = Math.max(24, Math.min(canvasHeight - h - 24, p.y - h / 2));
+
   ctx.fillStyle = "#ffffff";
   ctx.strokeStyle = "#000000";
-  ctx.lineWidth = Math.max(3, Math.round(fontSize * 0.12));
-  ctx.beginPath(); ctx.roundRect(x, y, w, h, h / 2); ctx.fill(); ctx.stroke();
+  ctx.lineWidth = Math.max(3, Math.round(fontSize * 0.1));
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, h / 2);
+  ctx.fill();
+  ctx.stroke();
+
+  const tailSize = Math.max(12, fontSize * 0.33);
+  ctx.beginPath();
+  ctx.moveTo(x + w * 0.75, y + h);
+  ctx.lineTo(x + w * 0.75 + tailSize, y + h + tailSize);
+  ctx.lineTo(x + w * 0.6, y + h - 1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
   ctx.fillStyle = "#000000";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
@@ -134,41 +119,51 @@ export const drawSpeechBubble = (ctx: CanvasRenderingContext2D, text: string, po
 export const drawSfxText = (ctx: CanvasRenderingContext2D, text: string, position: CanvasOverlayPosition, canvasWidth: number, canvasHeight: number): void => {
   if (!text) return;
   const p = getAnchor(position, canvasWidth, canvasHeight);
-  const fontSize = Math.max(36, Math.round(Math.min(canvasWidth, canvasHeight) * 0.11));
-  ctx.font = `900 ${fontSize}px sans-serif`;
+  const fontSize = Math.max(42, Math.round(Math.min(canvasWidth, canvasHeight) * 0.13));
+  ctx.font = `900 italic ${fontSize}px sans-serif`;
   ctx.textAlign = position.includes("Right") ? "right" : position === "center" ? "center" : "left";
   ctx.textBaseline = "middle";
-  ctx.lineWidth = Math.max(5, Math.round(fontSize * 0.1));
-  ctx.strokeStyle = "rgba(0,0,0,0.92)";
+  ctx.lineWidth = Math.max(5, Math.round(fontSize * 0.11));
+  ctx.strokeStyle = "rgba(0,0,0,0.95)";
   ctx.fillStyle = "#ffffff";
-  ctx.strokeText(text, p.x, p.y);
-  ctx.fillText(text, p.x, p.y);
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  ctx.rotate(-0.08);
+  ctx.strokeText(text, 0, 0);
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
   ctx.textAlign = "start";
 };
 
 export const drawGlitchLines = (ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, frame: number): void => {
-  for (let i = 0; i < 4; i++) {
-    const y = (frame * 7 + i * canvasHeight * 0.23) % canvasHeight;
-    ctx.fillStyle = i % 2 ? "rgba(255,255,255,0.18)" : "rgba(34,211,238,0.14)";
-    ctx.fillRect(0, y, canvasWidth, 2 + (i % 3));
+  for (let i = 0; i < 6; i++) {
+    const y = (frame * (6 + i) + i * canvasHeight * 0.18) % canvasHeight;
+    const h = 1 + (i % 3);
+    const xOffset = ((frame * (i + 3)) % 24) - 12;
+    ctx.fillStyle = i % 2 ? "rgba(255,255,255,0.2)" : "rgba(34,211,238,0.16)";
+    ctx.fillRect(xOffset, y, canvasWidth - xOffset, h);
   }
 };
 
 export const drawEqualizerBars = (ctx: CanvasRenderingContext2D, eqBars: number[], canvasWidth: number, canvasHeight: number): void => {
-  const barWidth = Math.max(6, canvasWidth * 0.012);
-  const gap = barWidth * 0.45;
-  const baseX = canvasWidth - (barWidth + gap) * eqBars.length - canvasWidth * 0.04;
-  const baseY = canvasHeight - canvasHeight * 0.05;
-  eqBars.forEach((bar, idx) => {
-    const h = Math.max(12, (bar / 100) * canvasHeight * 0.22);
-    ctx.fillStyle = "rgba(34,211,238,0.9)";
+  const barCount = Math.max(8, eqBars.length);
+  const barWidth = Math.max(5, canvasWidth * 0.008);
+  const gap = Math.max(3, barWidth * 0.5);
+  const fullWidth = barCount * barWidth + (barCount - 1) * gap;
+  const baseX = canvasWidth * 0.5 - fullWidth / 2;
+  const baseY = canvasHeight - canvasHeight * 0.055;
+
+  for (let idx = 0; idx < barCount; idx++) {
+    const bar = eqBars[idx % eqBars.length] ?? 15;
+    const h = Math.max(10, (bar / 100) * canvasHeight * 0.26);
+    ctx.fillStyle = idx % 2 === 0 ? "rgba(255,255,255,0.8)" : "rgba(34,211,238,0.9)";
     ctx.fillRect(baseX + idx * (barWidth + gap), baseY - h, barWidth, h);
-  });
+  }
 };
 
 export const drawComicPanels = (ctx: CanvasRenderingContext2D, panelPattern: CanvasOverlayDrawOptions["panelPattern"], canvasWidth: number, canvasHeight: number): void => {
-  ctx.strokeStyle = "rgba(0,0,0,0.75)";
-  ctx.lineWidth = Math.max(5, Math.round(Math.min(canvasWidth, canvasHeight) * 0.014));
+  ctx.strokeStyle = "rgba(0,0,0,0.8)";
+  ctx.lineWidth = Math.max(4, Math.round(Math.min(canvasWidth, canvasHeight) * 0.012));
   ctx.strokeRect(0, 0, canvasWidth, canvasHeight);
   ctx.beginPath();
   if (panelPattern === "vertical") {
@@ -193,7 +188,7 @@ export const drawComicPanels = (ctx: CanvasRenderingContext2D, panelPattern: Can
 
 export const drawFlash = (ctx: CanvasRenderingContext2D, canvasWidth: number, canvasHeight: number, active: boolean): void => {
   if (!active) return;
-  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.fillStyle = "rgba(255,255,255,0.34)";
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 };
 
@@ -259,17 +254,17 @@ export const stopCanvasRecording = async (
 
   return new Promise<Blob>((resolve, reject) => {
     mediaRecorder.ondataavailable = (event: BlobEvent) => {
-      if (event.data && event.data.size > 0) {
+      if (event.data.size > 0) {
         chunks.push(event.data);
       }
     };
 
     mediaRecorder.onerror = () => {
-      reject(new Error("録画の停止に失敗しました"));
+      reject(new Error("録画に失敗しました"));
     };
 
     mediaRecorder.onstop = () => {
-      resolve(new Blob(chunks, { type: mediaRecorder.mimeType || "video/webm" }));
+      resolve(new Blob(chunks, { type: "video/webm" }));
     };
 
     mediaRecorder.stop();

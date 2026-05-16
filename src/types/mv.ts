@@ -12,6 +12,8 @@ export type ExportMode = "preview" | "canvas" | "remotion";
 export type ExportStatus = "idle" | "ready" | "recording" | "finished" | "error";
 export type ExportAudioStatus = "with-audio" | "video-only" | "unknown";
 export type RecordingMode = "manual" | "synced";
+export type BackgroundMode = "none" | "video" | "image";
+export type AudioSourceMode = "bgm" | "video" | "silent";
 export type PresetName = "ROCK" | "POP" | "FUNK" | "JAZZ" | "DANCE" | "DISCO" | "Synth Vocal" | "BALLADE" | "漫画BATTLE" | "SIMPLE";
 
 export type TimelineMarker = { index: number; percent: number };

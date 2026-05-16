@@ -35,6 +35,8 @@ import type {
   AudioMood,
   ExportMode,
   ExportAudioStatus,
+  BackgroundMode,
+  AudioSourceMode,
   ExportQuality,
   RecordingMode,
   ExportStatus,
@@ -101,6 +103,8 @@ export default function Home() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoName, setVideoName] = useState("");
   const [videoFitMode, setVideoFitMode] = useState<"cover" | "contain">("cover");
+  const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>("none");
+  const [audioSourceMode, setAudioSourceMode] = useState<AudioSourceMode>("bgm");
   const [audioName, setAudioName] = useState("");
   const [audioDuration, setAudioDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -167,6 +171,21 @@ export default function Home() {
     useState<MotionType>("zoomIn");
 
   const [activePreset, setActivePreset] = useState<PresetName | null>(null);
+
+
+  const getActiveMediaElement = () => {
+    if (audioSourceMode === "video" && backgroundMode === "video") return videoRef.current;
+    if (audioSourceMode === "bgm") return audioRef.current;
+    if (backgroundMode === "video") return videoRef.current;
+    return audioRef.current;
+  };
+
+  const getRecordingAudioElement = () => {
+    if (audioSourceMode === "silent") return null;
+    if (audioSourceMode === "video" && backgroundMode === "video") return videoRef.current;
+    if (audioSourceMode === "bgm") return audioRef.current;
+    return null;
+  };
 
   useEffect(() => {
     latestSelectedImageRef.current = selectedImage;
@@ -458,7 +477,7 @@ export default function Home() {
   };
 
   const setupAudioAnalysis = async () => {
-    const mediaElement = videoRef.current ?? audioRef.current;
+    const mediaElement = getActiveMediaElement();
     if (!mediaElement) return;
 
     const AudioContextClass =
@@ -495,7 +514,7 @@ export default function Home() {
   };
 
   const startAnalysisLoop = () => {
-    const mediaElement = videoRef.current ?? audioRef.current;
+    const mediaElement = getActiveMediaElement();
     if (!analyserRef.current || !mediaElement) return;
 
     stopAnalysisLoop();
@@ -775,7 +794,7 @@ export default function Home() {
     wasAboveThresholdRef.current = false;
     lastLowEnergyRef.current = 0;
 
-    if (videoRef.current && videoUrl) {
+    if (backgroundMode === "video" && videoRef.current && videoUrl) {
       try {
         if (audioRef.current) {
           audioRef.current.pause();
@@ -889,7 +908,8 @@ export default function Home() {
   };
 
   const handlePrepareExport = () => {
-    if ((!audioUrl && !videoUrl) || images.length === 0) {
+    const hasPlayableSource = backgroundMode === "video" ? Boolean(videoUrl || audioUrl) : Boolean(audioUrl);
+    if (!hasPlayableSource || images.length === 0) {
       setExportStatus("error");
       setExportMessage("画像と音楽をアップロードしてください");
       return;
@@ -911,7 +931,7 @@ export default function Home() {
       return { imageUrl: latestSelectedImageRef.current, imageIndex: latestCurrentImageIndexRef.current };
     }
 
-    const mediaCurrentTimeMs = videoRef.current
+    const mediaCurrentTimeMs = backgroundMode === "video" && videoRef.current
       ? videoRef.current.currentTime * 1000
       : audioRef.current
       ? audioRef.current.currentTime * 1000
@@ -959,11 +979,7 @@ export default function Home() {
         throw new Error("Canvas context の作成に失敗しました");
       }
 
-      const { recorder, hasAudio } = startCanvasRecording(
-        canvas,
-        30,
-        videoRef.current ?? audioRef.current
-      );
+      const { recorder, hasAudio } = startCanvasRecording(canvas, 30, getRecordingAudioElement(), audioSourceMode !== "silent");
       mediaRecorderRef.current = recorder;
       recorder.start();
       recordingStartedAtRef.current = performance.now();
@@ -989,10 +1005,10 @@ export default function Home() {
         recordingElapsedMsRef.current = performance.now() - startedAt;
         const activeState = getRecordingActiveImage(recordingElapsedMsRef.current);
         const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";
-        if (videoRef.current) {
+        if (backgroundMode === "video" && videoRef.current) {
           drawCoverImage(ctx, videoRef.current, resolution.width, resolution.height);
         }
-        if (activeState.imageUrl && !videoRef.current) {
+        if (activeState.imageUrl && backgroundMode !== "video") {
           try {
             await drawImageToCanvas(ctx, activeState.imageUrl, resolution.width, resolution.height, {
               motionType: activeMotion,
@@ -1082,7 +1098,9 @@ export default function Home() {
   };
 
   const handleStartSyncedRecording = async () => {
-    if (images.length === 0 || isRecording || (!audioRef.current && !videoRef.current) || (!audioUrl && !videoUrl)) return;
+    const hasMediaElement = backgroundMode === "video" ? Boolean(videoRef.current || audioRef.current) : Boolean(audioRef.current);
+    const hasSource = backgroundMode === "video" ? Boolean(videoUrl || audioUrl) : Boolean(audioUrl);
+    if (images.length === 0 || isRecording || !hasMediaElement || !hasSource) return;
 
     if (recordedVideoUrl) {
       URL.revokeObjectURL(recordedVideoUrl);
@@ -1110,7 +1128,7 @@ export default function Home() {
         throw new Error("Canvas context の作成に失敗しました");
       }
 
-      const { recorder, hasAudio } = startCanvasRecording(canvas, 30, videoRef.current ?? audioRef.current);
+      const { recorder, hasAudio } = startCanvasRecording(canvas, 30, getRecordingAudioElement(), audioSourceMode !== "silent");
       mediaRecorderRef.current = recorder;
       recorder.start();
       recordingStartedAtRef.current = performance.now();
@@ -1129,10 +1147,10 @@ export default function Home() {
         recordingElapsedMsRef.current = performance.now() - startedAt;
         const activeState = getRecordingActiveImage(recordingElapsedMsRef.current);
         const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";
-        if (videoRef.current) {
+        if (backgroundMode === "video" && videoRef.current) {
           drawCoverImage(ctx, videoRef.current, resolution.width, resolution.height);
         }
-        if (activeState.imageUrl && !videoRef.current) {
+        if (activeState.imageUrl && backgroundMode !== "video") {
           try {
             await drawImageToCanvas(ctx, activeState.imageUrl, resolution.width, resolution.height, {
               motionType: activeMotion,
@@ -1173,10 +1191,10 @@ export default function Home() {
         void handleStopRecording();
       };
       recordingEndedHandlerRef.current = stopOnEnded;
-      if (videoRef.current) {
+      if (backgroundMode === "video" && videoRef.current) {
         videoRef.current.addEventListener("ended", stopOnEnded, { once: true });
       } else {
-        audioRef.current.addEventListener("ended", stopOnEnded, { once: true });
+        audioRef.current?.addEventListener("ended", stopOnEnded, { once: true });
       }
       if (audioDuration > 0) {
         recordingStopTimeoutRef.current = window.setTimeout(() => {
@@ -1184,10 +1202,10 @@ export default function Home() {
         }, audioDuration * 1000) as unknown as number;
       }
 
-      if (videoRef.current) {
+      if (backgroundMode === "video" && videoRef.current) {
         await videoRef.current.play();
       } else {
-        await audioRef.current.play();
+        await audioRef.current?.play();
       }
       setIsPlaying(true);
 
@@ -1501,6 +1519,10 @@ export default function Home() {
           activePreset={activePreset}
           audioMood={audioMood}
           imageMotions={imageMotions}
+          backgroundMode={backgroundMode}
+          setBackgroundMode={setBackgroundMode}
+          audioSourceMode={audioSourceMode}
+          setAudioSourceMode={setAudioSourceMode}
           onSelectImage={(image, index) => {
             setSelectedImage(image);
             setCurrentImageIndex(index);
@@ -1513,9 +1535,11 @@ export default function Home() {
               chorusBoost={chorusBoost}
               showGlitch={showGlitch}
               selectedImage={selectedImage}
-              videoUrl={videoUrl}
+              backgroundMode={backgroundMode}
+              videoUrl={backgroundMode === "video" ? videoUrl : null}
               videoFitMode={videoFitMode}
               videoRef={videoRef}
+              videoMuted={audioSourceMode !== "video"}
               isPlaying={isPlaying}
               isRecording={isRecording}
               getMotionStyle={getMotionStyle}
@@ -1544,7 +1568,7 @@ export default function Home() {
               onReset={handleReset}
             />
             <Timeline
-              audioUrl={audioUrl || videoUrl}
+              audioUrl={backgroundMode === "video" ? (audioUrl || videoUrl) : audioUrl}
               currentTime={currentTime}
               audioDuration={audioDuration}
               onSeek={handleSeek}
@@ -1593,7 +1617,7 @@ export default function Home() {
                 handleStartSyncedRecording={handleStartSyncedRecording}
                 handleStopRecording={handleStopRecording}
                 isRecording={isRecording}
-                hasAudioSource={Boolean(audioUrl || videoUrl)}
+                hasAudioSource={audioSourceMode === "silent" ? false : audioSourceMode === "video" ? Boolean(videoUrl && backgroundMode === "video") : Boolean(audioUrl)}
                 recordingMode={recordingMode}
                 recordedVideoUrl={recordedVideoUrl}
                 exportAudioStatus={exportAudioStatus}
@@ -1676,7 +1700,7 @@ export default function Home() {
             ref={audioRef}
             src={audioUrl}
             className="hidden"
-            muted={Boolean(videoUrl)}
+            muted={audioSourceMode !== "bgm"}
             onLoadedMetadata={(e) =>
               setAudioDuration(e.currentTarget.duration)
             }

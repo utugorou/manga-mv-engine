@@ -27,6 +27,7 @@ type EffectOverlaysProps = {
   showSfx: boolean;
   sfxPosition: PositionType;
   sfxText: string;
+  sfxScale: number;
   getPositionClass: (position: PositionType) => string;
   showBubble: boolean;
   bubblePosition: PositionType;
@@ -47,6 +48,7 @@ export default function EffectOverlays({
   showSfx,
   sfxPosition,
   sfxText,
+  sfxScale,
   getPositionClass,
   showBubble,
   bubblePosition,
@@ -56,6 +58,10 @@ export default function EffectOverlays({
   const playOrNone = (animation: string): CSSProperties => ({
     animation: isPlaying ? animation : "none",
   });
+  const minSide = selectedImage ? 405 : 360;
+  const baseSize = chorusBoost ? 64 : 48;
+  const maxFontSize = minSide * 0.4;
+  const computedFontSize = Math.min(baseSize * sfxScale, maxFontSize);
 
   return (
     <>
@@ -154,10 +160,14 @@ export default function EffectOverlays({
 
       {showSfx && (
         <div
-          className={`absolute ${getPositionClass(sfxPosition)} ${
-            chorusBoost ? "text-7xl" : "text-5xl"
-          } font-black text-white drop-shadow-[0_0_10px_#ec4899]`}
-          style={playOrNone("sfxShake 0.45s ease-in-out infinite")}
+          className={`absolute ${getPositionClass(sfxPosition)} font-black text-white drop-shadow-[0_0_10px_#ec4899] text-center`}
+          style={{
+            ...playOrNone("sfxShake 0.45s ease-in-out infinite"),
+            fontSize: `${computedFontSize}px`,
+            maxWidth: "82%",
+            lineHeight: 1.05,
+            transformOrigin: sfxPosition === "center" ? "center center" : "50% 50%",
+          }}
         >
           {sfxText}
         </div>

@@ -19,6 +19,7 @@ type PreviewStageProps = {
   showSfx: boolean;
   sfxPosition: PositionType;
   sfxText: string;
+  sfxScale: number;
   getPositionClass: (position: PositionType) => string;
   showBubble: boolean;
   bubblePosition: PositionType;

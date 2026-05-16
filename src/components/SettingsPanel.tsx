@@ -46,6 +46,9 @@ type SettingsPanelProps = {
   setSfxText: (value: string) => void;
   autoSfx: boolean;
   setAutoSfx: (value: boolean) => void;
+  randomSfxScaleEnabled: boolean;
+  setRandomSfxScaleEnabled: (value: boolean) => void;
+  randomizeSfxScale: () => void;
   setBubblePosition: (position: PositionType) => void;
   setSfxPosition: (position: PositionType) => void;
   bubbleTexts: string[];
@@ -108,6 +111,9 @@ export default function SettingsPanel({
   setSfxText,
   autoSfx,
   setAutoSfx,
+  randomSfxScaleEnabled,
+  setRandomSfxScaleEnabled,
+  randomizeSfxScale,
   setBubblePosition,
   setSfxPosition,
   bubbleTexts,
@@ -469,11 +475,26 @@ export default function SettingsPanel({
           setShowSfx(true);
           setSfxText(randomItem(sfxTexts));
           setSfxPosition(randomItem(positions));
+          randomizeSfxScale();
           setActivePreset(null);
         }}
         className="w-full bg-zinc-800 hover:bg-zinc-700 p-2 rounded"
       >
         擬音だけランダム
+      </button>
+
+      <button
+        onClick={() => {
+          setRandomSfxScaleEnabled(!randomSfxScaleEnabled);
+          setActivePreset(null);
+        }}
+        className={`w-full p-2 rounded ${
+          randomSfxScaleEnabled
+            ? "bg-yellow-400 text-black font-bold"
+            : "bg-zinc-800 hover:bg-zinc-700"
+        }`}
+      >
+        擬音巨大化 {randomSfxScaleEnabled ? "ON" : "OFF"}
       </button>
 
       <button

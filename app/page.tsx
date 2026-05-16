@@ -69,6 +69,7 @@ export default function Home() {
   const latestEqBarsRef = useRef<number[]>(Array(12).fill(20));
   const latestShowPanelsRef = useRef(true);
   const latestPanelPatternRef = useRef<PanelPattern>("classic");
+  const latestSfxScaleRef = useRef(1);
   const latestFlashActiveRef = useRef(false);
   const latestChorusBoostRef = useRef(false);
   const latestCurrentImageIndexRef = useRef(0);
@@ -119,6 +120,8 @@ export default function Home() {
   const [sfxPosition, setSfxPosition] =
     useState<PositionType>("bottomLeft");
   const [autoSfx, setAutoSfx] = useState(false);
+  const [randomSfxScaleEnabled, setRandomSfxScaleEnabled] = useState(true);
+  const [sfxScale, setSfxScale] = useState(1);
 
   const [textMode, setTextMode] = useState<TextMode>("random");
 
@@ -175,6 +178,7 @@ export default function Home() {
   useEffect(() => { latestEqBarsRef.current = eqBars; }, [eqBars]);
   useEffect(() => { latestShowPanelsRef.current = showPanels; }, [showPanels]);
   useEffect(() => { latestPanelPatternRef.current = panelPattern; }, [panelPattern]);
+  useEffect(() => { latestSfxScaleRef.current = sfxScale; }, [sfxScale]);
   useEffect(() => { latestFlashActiveRef.current = flashActive; }, [flashActive]);
   useEffect(() => { latestChorusBoostRef.current = chorusBoost; }, [chorusBoost]);
   useEffect(() => { latestCurrentImageIndexRef.current = currentImageIndex; }, [currentImageIndex]);
@@ -182,7 +186,6 @@ export default function Home() {
   useEffect(() => { latestSwitchModeRef.current = switchMode; }, [switchMode]);
   useEffect(() => { latestImageDurationRef.current = imageDuration; }, [imageDuration]);
   useEffect(() => { latestImageMotionsRef.current = imageMotions; }, [imageMotions]);
-
   const motionList: MotionType[] = [
     "zoomIn",
     "zoomOut",
@@ -228,11 +231,28 @@ export default function Home() {
     "bottomRight",
     "center",
   ];
+  const sfxScaleOptions = [1, 2, 3, 4, 5, 7] as const;
 
   const aspectList: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5"];
 
   const randomItem = <T,>(list: T[]): T => {
     return list[Math.floor(Math.random() * list.length)];
+  };
+
+  const randomizeSfxScale = () => {
+    if (!randomSfxScaleEnabled) {
+      setSfxScale(1);
+      return;
+    }
+
+    setSfxScale(randomItem([...sfxScaleOptions]));
+  };
+
+  const handleRandomSfxScaleEnabled = (value: boolean) => {
+    setRandomSfxScaleEnabled(value);
+    if (!value) {
+      setSfxScale(1);
+    }
   };
 
   const formatTime = (time: number) => {
@@ -393,6 +413,7 @@ export default function Home() {
         setShowSfx(true);
         setSfxText(pickSfxText());
         setSfxPosition(randomItem(positions));
+        randomizeSfxScale();
       }
 
       return nextIndex;
@@ -871,7 +892,10 @@ export default function Home() {
           drawEqualizerBars(ctx, latestEqBarsRef.current, resolution.width, resolution.height);
         }
         if (latestShowSfxRef.current) {
-          drawSfxText(ctx, latestSfxTextRef.current, latestSfxPositionRef.current, resolution.width, resolution.height);
+          drawSfxText(ctx, latestSfxTextRef.current, latestSfxPositionRef.current, resolution.width, resolution.height, {
+            sfxScale: latestSfxScaleRef.current,
+            chorusBoost: latestChorusBoostRef.current,
+          });
         }
         if (latestShowBubbleRef.current) {
           drawSpeechBubble(ctx, latestBubbleTextRef.current, latestBubblePositionRef.current, resolution.width, resolution.height);
@@ -1001,7 +1025,10 @@ export default function Home() {
           drawEqualizerBars(ctx, latestEqBarsRef.current, resolution.width, resolution.height);
         }
         if (latestShowSfxRef.current) {
-          drawSfxText(ctx, latestSfxTextRef.current, latestSfxPositionRef.current, resolution.width, resolution.height);
+          drawSfxText(ctx, latestSfxTextRef.current, latestSfxPositionRef.current, resolution.width, resolution.height, {
+            sfxScale: latestSfxScaleRef.current,
+            chorusBoost: latestChorusBoostRef.current,
+          });
         }
         if (latestShowBubbleRef.current) {
           drawSpeechBubble(ctx, latestBubbleTextRef.current, latestBubblePositionRef.current, resolution.width, resolution.height);
@@ -1345,6 +1372,7 @@ export default function Home() {
               showSfx={showSfx}
               sfxPosition={sfxPosition}
               sfxText={sfxText}
+              sfxScale={sfxScale}
               getPositionClass={getPositionClass}
               showBubble={showBubble}
               bubblePosition={bubblePosition}
@@ -1451,6 +1479,9 @@ export default function Home() {
                 setSfxText={setSfxText}
                 autoSfx={autoSfx}
                 setAutoSfx={setAutoSfx}
+                randomSfxScaleEnabled={randomSfxScaleEnabled}
+                setRandomSfxScaleEnabled={handleRandomSfxScaleEnabled}
+                randomizeSfxScale={randomizeSfxScale}
                 setBubblePosition={setBubblePosition}
                 setSfxPosition={setSfxPosition}
                 bubbleTexts={bubbleTexts}

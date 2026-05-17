@@ -4,6 +4,7 @@ type UploadPanelProps = {
   handleImageUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleAudioUpload: (event: React.ChangeEvent<HTMLInputElement>) => void;
   audioName: string;
+  audioUploadError: string;
   aspectRatio: AspectRatio;
   formatTime: (time: number) => string;
   audioDuration: number;
@@ -53,7 +54,7 @@ function FileUploadButton(props: FileUploadButtonProps) {
 }
 
 export default function UploadPanel(props: UploadPanelProps) {
-  const { handleImageUpload, handleAudioUpload, audioName, aspectRatio, formatTime, audioDuration, currentTime, images, currentImageIndex, isPlaying, chorusBoost, activePreset, audioMood, imageMotions, onSelectImage } = props;
+  const { handleImageUpload, handleAudioUpload, audioName, audioUploadError, aspectRatio, formatTime, audioDuration, currentTime, images, currentImageIndex, isPlaying, chorusBoost, activePreset, audioMood, imageMotions, onSelectImage } = props;
   const audioInputId = "bgm-upload-input";
   const imageInputId = "image-upload-input";
   const getMotionLabel = (motion?: MotionType) => {
@@ -63,8 +64,9 @@ export default function UploadPanel(props: UploadPanelProps) {
 
   return (<div className="relative z-20 h-full rounded-2xl border border-fuchsia-500/30 bg-zinc-950/90 p-4 overflow-y-auto space-y-4">
     <h2 className="text-lg font-black text-fuchsia-300">1. 素材</h2>
-    <FileUploadButton label="BGMアップロード" buttonText="音楽アップロード" inputId={audioInputId} accept="audio/*" onChange={handleAudioUpload} tone="cyan" />
+    <FileUploadButton label="BGMアップロード" buttonText="音楽アップロード" inputId={audioInputId} accept="audio/*,.mp3,.wav,.m4a,.aac,.ogg,.webm" onChange={handleAudioUpload} tone="cyan" />
     <FileUploadButton label="背景画像アップロード" buttonText="画像アップロード" inputId={imageInputId} accept="image/*" multiple onChange={handleImageUpload} tone="fuchsia" />
+    {audioUploadError ? <p className="rounded-xl border border-red-300/40 bg-red-500/15 p-2 text-xs font-bold text-red-200">{audioUploadError}</p> : null}
 
     <div className="rounded-xl border border-zinc-700 bg-zinc-900/80 p-3 text-xs space-y-1">
       <div className="text-cyan-200 break-all">🎧 {audioName || "BGMをアップロードしてください"}</div>

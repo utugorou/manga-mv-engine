@@ -1609,27 +1609,6 @@ export default function Home() {
     }
   };
 
-  const renderAspectRatioSelector = (compact = false) => (
-    <div className={`rounded-xl border border-zinc-700 bg-zinc-900/70 ${compact ? "p-2" : "p-3"}`}>
-      <p className="mb-2 text-sm font-bold text-pink-300">画角</p>
-      <div className="grid grid-cols-2 gap-2">
-        {aspectList.map((ratio) => (
-          <button
-            key={ratio}
-            onClick={() => setAspectRatio(ratio)}
-            className={`rounded p-2 text-xs font-bold ${
-              aspectRatio === ratio
-                ? "bg-yellow-400 text-black shadow-[0_0_10px_#facc15]"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            {aspectLabels[ratio]}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
     <main className="min-h-screen bg-black text-white">
       <style>{`
@@ -1868,10 +1847,12 @@ export default function Home() {
         <div className="max-h-[calc(100vh-140px)] overflow-y-auto rounded-2xl border border-cyan-500/30 bg-zinc-950/90 p-4">
           <h2 className="text-xl font-bold mb-4 text-cyan-300">演出設定と書き出し</h2>
           <div className="space-y-4">
-            {renderAspectRatioSelector()}
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
               <ExportPanel
                 aspectRatio={aspectRatio}
+                aspectList={aspectList}
+                aspectLabels={aspectLabels}
+                setAspectRatio={setAspectRatio}
                 audioDuration={audioDuration}
                 imageCount={images.length}
                 exportMode={exportMode}
@@ -2023,7 +2004,6 @@ export default function Home() {
           ))}
         </div>
         <div className="mt-1 min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded-xl border border-zinc-700 bg-zinc-950/90 p-2 pb-4 shadow-inner shadow-cyan-950/40 [&_button]:min-h-10 [&_button]:text-sm [&_input]:min-h-10 [&_input]:text-base [&_select]:min-h-10 [&_select]:text-base [&_textarea]:min-h-10 [&_textarea]:text-base [&_input[type='range']]:min-h-7">
-          {(mobileTab === "assets" || mobileTab === "export") ? <div className="mb-3">{renderAspectRatioSelector(true)}</div> : null}
           {mobileTab === "assets" ? (
             <UploadPanel
               handleImageUpload={handleImageUpload}
@@ -2182,7 +2162,7 @@ export default function Home() {
           ) : null}
           {mobileTab === "export" ? (
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
-              <ExportPanel aspectRatio={aspectRatio} audioDuration={audioDuration} imageCount={images.length} exportMode={exportMode} exportQuality={exportQuality} setExportQuality={setExportQuality} exportStatus={exportStatus} exportMessage={exportMessage} handlePrepareExport={handlePrepareExport} handleStartRecording={handleStartRecording} handleStopRecording={handleStopRecording} isRecording={isRecording} recordingMode={recordingMode} recordedVideoUrl={recordedVideoUrl} exportAudioStatus={exportAudioStatus} formatTime={formatTime} autoRecordEnabled={autoRecordEnabled} setAutoRecordEnabled={setAutoRecordEnabled} audioDurationState={audioDurationState} hasAudio={Boolean(audioUrl)} exportFormatPreference={exportFormatPreference} setExportFormatPreference={setExportFormatPreference} supportsMp4Recording={formatPreview.supportsMp4} actualRecordingFormat={formatPreview.actualFormat} selectedMimeType={formatPreview.selectedMimeType ?? null} mp4FallbackMessage={mp4FallbackMessage} recordedFileExtension={recordedFileExtension} recordingStreamDiagnostics={recordingStreamDiagnostics} />
+              <ExportPanel aspectRatio={aspectRatio} aspectList={aspectList} aspectLabels={aspectLabels} setAspectRatio={setAspectRatio} audioDuration={audioDuration} imageCount={images.length} exportMode={exportMode} exportQuality={exportQuality} setExportQuality={setExportQuality} exportStatus={exportStatus} exportMessage={exportMessage} handlePrepareExport={handlePrepareExport} handleStartRecording={handleStartRecording} handleStopRecording={handleStopRecording} isRecording={isRecording} recordingMode={recordingMode} recordedVideoUrl={recordedVideoUrl} exportAudioStatus={exportAudioStatus} formatTime={formatTime} autoRecordEnabled={autoRecordEnabled} setAutoRecordEnabled={setAutoRecordEnabled} audioDurationState={audioDurationState} hasAudio={Boolean(audioUrl)} exportFormatPreference={exportFormatPreference} setExportFormatPreference={setExportFormatPreference} supportsMp4Recording={formatPreview.supportsMp4} actualRecordingFormat={formatPreview.actualFormat} selectedMimeType={formatPreview.selectedMimeType ?? null} mp4FallbackMessage={mp4FallbackMessage} recordedFileExtension={recordedFileExtension} recordingStreamDiagnostics={recordingStreamDiagnostics} />
             </div>
           ) : null}
         </div>

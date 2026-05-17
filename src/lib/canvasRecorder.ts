@@ -471,7 +471,9 @@ export const combineCanvasAndAudioStreams = (
 };
 
 const MP4_MIME_CANDIDATES = [
+  "video/mp4;codecs=\"avc1.42E01E,mp4a.40.2\"",
   "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+  "video/mp4;codecs=\"h264,aac\"",
   "video/mp4;codecs=h264,aac",
   "video/mp4",
 ] as const;

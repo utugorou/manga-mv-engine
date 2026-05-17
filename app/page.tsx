@@ -160,6 +160,12 @@ export default function Home() {
   const [exportFormatPreference, setExportFormatPreference] = useState<ExportFormatPreference>("auto");
   const [recordedFileExtension, setRecordedFileExtension] = useState<RecordingContainer | null>(null);
   const [mp4FallbackMessage, setMp4FallbackMessage] = useState<string | null>(null);
+  const [recordingStreamDiagnostics, setRecordingStreamDiagnostics] = useState<{
+    videoTrackCount: number;
+    audioTrackCount: number;
+    mimeType: string | null;
+    format: RecordingContainer;
+  } | null>(null);
   const autoStopTriggeredRef = useRef(false);
 
   const [showBubble, setShowBubble] = useState(false);
@@ -1312,7 +1318,37 @@ export default function Home() {
         } else { throw error; }
       }
 
-      const { recorder, hasAudio } = recordingStartResult;
+      let { recorder, hasAudio } = recordingStartResult;
+      const videoTrackCount = recorder.stream.getVideoTracks().length;
+      const audioTrackCount = recorder.stream.getAudioTracks().length;
+      const recorderMimeType = recorder.mimeType || (recordingInfo.selectedMimeType ?? null);
+      setRecordingStreamDiagnostics({
+        videoTrackCount,
+        audioTrackCount,
+        mimeType: recorderMimeType,
+        format: recordingInfo.actualFormat,
+      });
+      if (recordingInfo.actualFormat === "mp4" && audioTrackCount === 0) {
+        const fallbackSelection = selectRecordingFormat("webm");
+        if (fallbackSelection.selectedMimeType) {
+          recorder.stream.getTracks().forEach((track) => track.stop());
+          const webmStartResult = startCanvasRecording(canvas, 30, getRecordingAudioElement(), true, fallbackSelection.selectedMimeType);
+          recordingInfo = { ...fallbackSelection, fallbackMessage: "MP4では音声を取得できないため、音声ありWebMで録画します" };
+          setMp4FallbackMessage(recordingInfo.fallbackMessage);
+          const webmVideoTrackCount = webmStartResult.recorder.stream.getVideoTracks().length;
+          const webmAudioTrackCount = webmStartResult.recorder.stream.getAudioTracks().length;
+          setRecordingStreamDiagnostics({
+            videoTrackCount: webmVideoTrackCount,
+            audioTrackCount: webmAudioTrackCount,
+            mimeType: webmStartResult.recorder.mimeType || (fallbackSelection.selectedMimeType ?? null),
+            format: recordingInfo.actualFormat,
+          });
+          recordingStartResult = webmStartResult;
+          ({ recorder, hasAudio } = recordingStartResult);
+        } else {
+          setMp4FallbackMessage("MP4の音声取得に失敗しました。この端末ではMP4音声が入らない場合があります");
+        }
+      }
       mediaRecorderRef.current = recorder;
       recorder.start();
       recordingStartedAtRef.current = null;
@@ -1457,6 +1493,7 @@ export default function Home() {
       setIsRecording(false);
       setRecordingMode(null);
       setIsPlaying(false);
+      setRecordingStreamDiagnostics(null);
     }
   };
 
@@ -1851,6 +1888,7 @@ export default function Home() {
                 selectedMimeType={formatPreview.selectedMimeType ?? null}
                 mp4FallbackMessage={mp4FallbackMessage}
                 recordedFileExtension={recordedFileExtension}
+                recordingStreamDiagnostics={recordingStreamDiagnostics}
               />
             </div>
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
@@ -2137,7 +2175,7 @@ export default function Home() {
           ) : null}
           {mobileTab === "export" ? (
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
-              <ExportPanel aspectRatio={aspectRatio} audioDuration={audioDuration} imageCount={images.length} exportMode={exportMode} exportQuality={exportQuality} setExportQuality={setExportQuality} exportStatus={exportStatus} exportMessage={exportMessage} handlePrepareExport={handlePrepareExport} handleStartRecording={handleStartRecording} handleStopRecording={handleStopRecording} isRecording={isRecording} recordingMode={recordingMode} recordedVideoUrl={recordedVideoUrl} exportAudioStatus={exportAudioStatus} formatTime={formatTime} autoRecordEnabled={autoRecordEnabled} setAutoRecordEnabled={setAutoRecordEnabled} audioDurationState={audioDurationState} hasAudio={Boolean(audioUrl)} exportFormatPreference={exportFormatPreference} setExportFormatPreference={setExportFormatPreference} supportsMp4Recording={formatPreview.supportsMp4} actualRecordingFormat={formatPreview.actualFormat} selectedMimeType={formatPreview.selectedMimeType ?? null} mp4FallbackMessage={mp4FallbackMessage} recordedFileExtension={recordedFileExtension} />
+              <ExportPanel aspectRatio={aspectRatio} audioDuration={audioDuration} imageCount={images.length} exportMode={exportMode} exportQuality={exportQuality} setExportQuality={setExportQuality} exportStatus={exportStatus} exportMessage={exportMessage} handlePrepareExport={handlePrepareExport} handleStartRecording={handleStartRecording} handleStopRecording={handleStopRecording} isRecording={isRecording} recordingMode={recordingMode} recordedVideoUrl={recordedVideoUrl} exportAudioStatus={exportAudioStatus} formatTime={formatTime} autoRecordEnabled={autoRecordEnabled} setAutoRecordEnabled={setAutoRecordEnabled} audioDurationState={audioDurationState} hasAudio={Boolean(audioUrl)} exportFormatPreference={exportFormatPreference} setExportFormatPreference={setExportFormatPreference} supportsMp4Recording={formatPreview.supportsMp4} actualRecordingFormat={formatPreview.actualFormat} selectedMimeType={formatPreview.selectedMimeType ?? null} mp4FallbackMessage={mp4FallbackMessage} recordedFileExtension={recordedFileExtension} recordingStreamDiagnostics={recordingStreamDiagnostics} />
             </div>
           ) : null}
         </div>

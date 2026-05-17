@@ -181,6 +181,40 @@ export default function Home() {
     useState<MotionType>("zoomIn");
 
   const [activePreset, setActivePreset] = useState<EffectPresetName>("標準");
+  const [customControls, setCustomControls] = useState({
+    sfxAmount: 65,
+    sfxSize: 24,
+    focusLine: 33,
+    glitch: 23,
+    shake: 33,
+    textFrequency: 55,
+    chorusMultiplier: 1.3,
+  });
+  const [isCustomAdjusted, setIsCustomAdjusted] = useState(false);
+
+  const mapPresetToControls = (config: (typeof effectPresetConfigs)[EffectPresetName]) => ({
+    sfxAmount: Math.round(config.sfxFrequency * 100),
+    sfxSize: Math.round(Math.min(100, Math.max(0, (config.sfxScale - 1) * 30))),
+    focusLine: Math.round(Math.min(100, config.focusLineIntensity * 33)),
+    glitch: Math.round(Math.min(100, config.glitchIntensity * 50)),
+    shake: Math.round(Math.min(100, config.screenShakeIntensity * 33)),
+    textFrequency: Math.round(config.textFrequency * 100),
+    chorusMultiplier: Math.min(3, Math.max(1, config.chorusEffectMultiplier)),
+  });
+
+  const applyCustomControls = (controls: typeof customControls) => {
+    const sfxAmountNormalized = controls.sfxAmount / 100;
+    setSfxFrequency(sfxAmountNormalized);
+    setSfxMaxCount(Math.min(4, Math.round(sfxAmountNormalized * 4)));
+    setSfxScale(1 + controls.sfxSize / 30);
+    setFocusLineIntensity(Math.max(0, controls.focusLine / 33));
+    const glitchValue = Math.max(0, controls.glitch / 50);
+    setGlitchIntensity(glitchValue);
+    setShowGlitch(glitchValue > 0);
+    setScreenShakeIntensity(Math.max(0, controls.shake / 33));
+    setTextFrequency(controls.textFrequency / 100);
+    setChorusEffectMultiplier(controls.chorusMultiplier);
+  };
 
 
   const getActiveMediaElement = () => {
@@ -279,7 +313,8 @@ export default function Home() {
   const sfxPositions = ["topLeft", "top", "topRight", "left", "center", "right", "bottomLeft", "bottom", "bottomRight", "random"] as const;
   const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
   const generateSfxItems = (): SfxItem[] => {
-    const count = randomSfxCountEnabled ? randomInt(0, sfxMaxCount) : Math.min(1, sfxMaxCount);
+    const maxCount = Math.min(4, Math.max(0, sfxMaxCount));
+    const count = sfxFrequency <= 0 ? 0 : (randomSfxCountEnabled ? randomInt(0, maxCount) : Math.min(1, maxCount));
     const unifiedText = pickSfxText();
     const unifiedScale = randomSfxScaleEnabled ? randomItem([...sfxScaleOptions]) * sfxFrequency : sfxScale;
     return Array.from({ length: count }, (_, i) => ({
@@ -382,8 +417,11 @@ export default function Home() {
     setAudioMood("quiet");
 
     const config = effectPresetConfigs[preset];
+    const controls = mapPresetToControls(config);
+    setCustomControls(controls);
+    setIsCustomAdjusted(false);
 
-    setShowGlitch(config.glitchIntensity > 0.25);
+    setShowGlitch(config.glitchIntensity > 0);
     setShowEqualizer(true);
     setShowFlash(true);
     setShowPanels(true);
@@ -394,14 +432,7 @@ export default function Home() {
     setShowSfx(true);
     setTextMode("smart");
     setChorusSensitivity(config.chorusThreshold);
-    setSfxFrequency(config.sfxFrequency);
-    setSfxScale(config.sfxScale);
-    setSfxMaxCount(config.sfxMaxCount);
-    setFocusLineIntensity(config.focusLineIntensity);
-    setGlitchIntensity(config.glitchIntensity);
-    setScreenShakeIntensity(config.screenShakeIntensity);
-    setTextFrequency(config.textFrequency);
-    setChorusEffectMultiplier(config.chorusEffectMultiplier);
+    applyCustomControls(controls);
     setFadeFlickerBlurIntensity(config.fadeFlickerBlurIntensity);
     setBaseContrast(config.baseContrast);
 
@@ -426,6 +457,16 @@ export default function Home() {
       return;
     }
     randomizeMotionsFromList(battleMotionList);
+  };
+
+  const handleCustomControlChange = (
+    key: keyof typeof customControls,
+    value: number,
+  ) => {
+    const next = { ...customControls, [key]: value };
+    setCustomControls(next);
+    setIsCustomAdjusted(true);
+    applyCustomControls(next);
   };
 
 
@@ -1596,7 +1637,7 @@ export default function Home() {
               switchMode={switchMode}
               formatTime={formatTime}
             />
-            <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3"><PresetPanel presetList={effectPresetList} activePreset={activePreset} applyPreset={applyPreset} /></div>
+            <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3"><PresetPanel presetList={effectPresetList} activePreset={activePreset} isCustomAdjusted={isCustomAdjusted} applyPreset={applyPreset} customControls={customControls} onCustomControlChange={handleCustomControlChange} /></div>
           </div>
         </div>
         <div className="max-h-[calc(100vh-140px)] overflow-y-auto rounded-2xl border border-cyan-500/30 bg-zinc-950/90 p-4">

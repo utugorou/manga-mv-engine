@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { SfxItem } from "../types/mv";
 import type { EqualizerType } from "../types/mv";
+import type { EqualizerColorTheme } from "../types/mv";
 import type { BubbleVariant } from "../types/mv";
 
 type PositionType =
@@ -17,6 +18,7 @@ type EffectOverlaysProps = {
   showEqualizer: boolean;
   eqBars: number[];
   equalizerType: EqualizerType;
+  equalizerColorTheme: EqualizerColorTheme;
   showSfx: boolean;
   sfxItems: SfxItem[];
   getPositionClass: (position: PositionType) => string;
@@ -35,6 +37,7 @@ export default function EffectOverlays({
   showEqualizer,
   eqBars,
   equalizerType,
+  equalizerColorTheme,
   showSfx,
   sfxItems,
   getPositionClass,
@@ -45,6 +48,16 @@ export default function EffectOverlays({
   bubbleScale,
   flashActive,
 }: EffectOverlaysProps) {
+  const themeColors: Record<EqualizerColorTheme, string[]> = {
+    neon: ["#22d3ee", "#f472b6", "#c084fc"],
+    redBlue: ["#ef4444", "#3b82f6"],
+    yellowBlack: ["#facc15", "#171717"],
+    green: ["#84cc16", "#22c55e"],
+    pink: ["#ec4899", "#f472b6"],
+    mono: ["#ffffff", "#a1a1aa"],
+    rainbow: ["#ef4444", "#f59e0b", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#a855f7"],
+  };
+  const getColor = (index: number) => themeColors[equalizerColorTheme][index % themeColors[equalizerColorTheme].length];
   const playOrNone = (animation: string): CSSProperties => ({
     animation: isPlaying ? animation : "none",
   });
@@ -78,23 +91,26 @@ export default function EffectOverlays({
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {equalizerType === "wave" ? (
             <svg className="absolute bottom-0 left-0 h-[22%] w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-              <polyline fill="none" stroke="rgba(34,211,238,0.88)" strokeWidth="4" points={eqBars.map((v, i) => `${(i / Math.max(1, eqBars.length - 1)) * 100},${50 - (v / 100) * 38}`).join(" ")} />
+              <polyline fill="none" stroke={getColor(0)} strokeWidth="4" points={eqBars.map((v, i) => `${(i / Math.max(1, eqBars.length - 1)) * 100},${50 - (v / 100) * 38}`).join(" ")} />
             </svg>
           ) : null}
           <div className={`absolute inset-x-0 bottom-0 ${equalizerType === "mirror" ? "h-[24%] items-center" : "h-[20%] items-end"} flex gap-[0.35vw] px-[1.2%] transition-all duration-150 bg-gradient-to-t from-black/35 via-black/15 to-transparent`}>
-          {eqBars.map((height, index) => (
-            <div
+          {eqBars.map((height, index) => {
+            const normalizedHeight = (height / 100) * (equalizerType === "laser" ? 95 : 82);
+            const blockHeight = Math.round(normalizedHeight / 10) * 10;
+            return <div
               key={index}
-              className={`origin-bottom rounded-t ${equalizerType === "glitchEq" && index % 3 === 0 ? "bg-pink-400" : "bg-cyan-300"} shadow-[0_0_12px_#22d3ee]`}
+              className={`origin-bottom ${equalizerType === "dot" ? "rounded-full" : "rounded-t"} ${equalizerType === "laser" ? "opacity-85" : ""}`}
               style={{
-                width: `${equalizerType === "wideBars" ? 100 / Math.max(1, eqBars.length * 0.95) : 100 / Math.max(1, eqBars.length * 1.6)}%`,
-                height: `${Math.max(8, (height / 100) * (equalizerType === "pulse" ? 95 : 82))}%`,
+                backgroundColor: getColor(index),
+                width: `${equalizerType === "wideBars" ? 100 / Math.max(1, eqBars.length * 1.05) : equalizerType === "laser" ? 100 / Math.max(1, eqBars.length * 2.5) : 100 / Math.max(1, eqBars.length * 1.6)}%`,
+                height: `${Math.max(equalizerType === "dot" ? 6 : 8, equalizerType === "block" ? blockHeight : normalizedHeight)}%`,
                 animation: isPlaying ? `eqMove ${0.3 + index * 0.05}s infinite` : "none",
                 transform: equalizerType === "mirror" ? "translateY(0)" : undefined,
-                borderRadius: equalizerType === "circle" ? "999px" : undefined,
+                boxShadow: equalizerType === "laser" ? `0 0 6px ${getColor(index)}` : undefined,
               }}
-            />
-          ))}
+            />;
+          })}
           </div>
         </div>
       )}

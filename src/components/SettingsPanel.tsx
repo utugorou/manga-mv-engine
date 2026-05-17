@@ -12,6 +12,7 @@ import {
   TextMode,
   MotionAmplitude,
   EqualizerType,
+  EqualizerColorTheme,
 } from "../types/mv";
 
 type SettingsPanelProps = {
@@ -63,6 +64,8 @@ type SettingsPanelProps = {
   setShowEqualizer: (value: boolean) => void;
   equalizerType: EqualizerType;
   setEqualizerType: (value: EqualizerType) => void;
+  equalizerColorTheme: EqualizerColorTheme;
+  setEqualizerColorTheme: (value: EqualizerColorTheme) => void;
   showFlash: boolean;
   setShowFlash: (value: boolean) => void;
   showPanels: boolean;
@@ -132,6 +135,8 @@ export default function SettingsPanel({
   setShowEqualizer,
   equalizerType,
   setEqualizerType,
+  equalizerColorTheme,
+  setEqualizerColorTheme,
   showFlash,
   setShowFlash,
   showPanels,
@@ -368,7 +373,13 @@ export default function SettingsPanel({
         <p className="text-sm mb-1 text-cyan-300">エコライザータイプ</p>
         <p className="text-xs text-zinc-400 mb-2">音への反応をどの形で見せるかを選びます。</p>
         <select value={equalizerType} onChange={(e) => { setEqualizerType(e.target.value as EqualizerType); setActivePreset(null); }} className="w-full bg-black border border-zinc-600 p-2 rounded text-white">
-          <option value="bars">バー</option><option value="wideBars">ワイドバー</option><option value="mirror">ミラー</option><option value="wave">波形</option><option value="glitchEq">グリッチEQ</option><option value="pulse">パルス</option><option value="circle">円形</option>
+          <option value="bars">バー</option><option value="wideBars">ワイドバー</option><option value="mirror">ミラー</option><option value="wave">波形</option><option value="block">ブロック</option><option value="dot">ドット</option><option value="laser">レーザー</option>
+        </select>
+      </div>
+      <div className="pt-3">
+        <p className="text-sm mb-1 text-cyan-300">エコライザー色</p>
+        <select value={equalizerColorTheme} onChange={(e) => { setEqualizerColorTheme(e.target.value as EqualizerColorTheme); setActivePreset(null); }} className="w-full bg-black border border-zinc-600 p-2 rounded text-white">
+          <option value="neon">ネオン</option><option value="redBlue">赤青</option><option value="yellowBlack">黄黒</option><option value="green">緑</option><option value="pink">ピンク</option><option value="mono">白黒</option><option value="rainbow">レインボー</option>
         </select>
       </div>
 

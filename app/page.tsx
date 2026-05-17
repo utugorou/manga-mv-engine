@@ -42,6 +42,7 @@ import type {
   PositionType,
   EffectPresetName,
   EqualizerType,
+  EqualizerColorTheme,
   MotionAmplitude,
   SfxItem,
   SwitchMode,
@@ -189,6 +190,7 @@ export default function Home() {
   const [showGlitch, setShowGlitch] = useState(false);
   const [showEqualizer, setShowEqualizer] = useState(false);
   const [equalizerType, setEqualizerType] = useState<EqualizerType>("bars");
+  const [equalizerColorTheme, setEqualizerColorTheme] = useState<EqualizerColorTheme>("neon");
   const [eqBars, setEqBars] = useState<number[]>(Array(16).fill(20));
 
   const [showFlash, setShowFlash] = useState(true);
@@ -327,7 +329,8 @@ export default function Home() {
 
   const motionAmplitudeValue = motionAmplitude === "x2" ? 2 : motionAmplitude === "x3" ? 3 : 1;
   const presetMotionMultiplier: Record<EffectPresetName, number> = { "標準": 1, "エモ": 0.9, "バトル": 1.35, "ライブ": 1.5, "グリッチ": 1.2, "サビ爆発": 1.8 };
-  const eqPresetType: Record<EffectPresetName, EqualizerType> = { "標準": "bars", "エモ": "wave", "バトル": "mirror", "ライブ": "wideBars", "グリッチ": "glitchEq", "サビ爆発": "pulse" };
+  const eqPresetType: Record<EffectPresetName, EqualizerType> = { "標準": "bars", "エモ": "wave", "バトル": "mirror", "ライブ": "wideBars", "グリッチ": "dot", "サビ爆発": "laser" };
+  const eqPresetColor: Record<EffectPresetName, EqualizerColorTheme> = { "標準": "neon", "エモ": "pink", "バトル": "redBlue", "ライブ": "rainbow", "グリッチ": "green", "サビ爆発": "yellowBlack" };
   const getActiveMediaElement = () => audioRef.current;
 
   const getRecordingAudioElement = () => audioRef.current;
@@ -534,6 +537,7 @@ export default function Home() {
     setShowGlitch(config.glitchIntensity > 0);
     setShowEqualizer(true);
     setEqualizerType(eqPresetType[preset]);
+    setEqualizerColorTheme(eqPresetColor[preset]);
     setShowFlash(true);
     setShowPanels(true);
     setPanelMode("random");
@@ -1420,7 +1424,7 @@ export default function Home() {
         }
 
         if (latestShowEqualizerRef.current) {
-          drawEqualizerBars(ctx, latestEqBarsRef.current, resolution.width, resolution.height, equalizerType);
+          drawEqualizerBars(ctx, latestEqBarsRef.current, resolution.width, resolution.height, equalizerType, equalizerColorTheme);
         }
         if (latestShowSfxRef.current) {
           drawSfxText(ctx, latestSfxTextRef.current, latestSfxPositionRef.current, resolution.width, resolution.height, {
@@ -1793,6 +1797,7 @@ export default function Home() {
               showEqualizer={showEqualizer}
               eqBars={eqBars}
               equalizerType={equalizerType}
+              equalizerColorTheme={equalizerColorTheme}
               showSfx={showSfx}
               sfxItems={sfxItems}
               sfxPosition={sfxPosition}
@@ -1920,6 +1925,8 @@ export default function Home() {
                 setShowEqualizer={setShowEqualizer}
                 equalizerType={equalizerType}
                 setEqualizerType={setEqualizerType}
+                equalizerColorTheme={equalizerColorTheme}
+                setEqualizerColorTheme={setEqualizerColorTheme}
                 motionAmplitude={motionAmplitude}
                 setMotionAmplitude={setMotionAmplitude}
                 showFlash={showFlash}
@@ -1956,6 +1963,7 @@ export default function Home() {
             showEqualizer={showEqualizer}
             eqBars={eqBars}
             equalizerType={equalizerType}
+            equalizerColorTheme={equalizerColorTheme}
             showSfx={showSfx}
             sfxItems={sfxItems}
             sfxPosition={sfxPosition}
@@ -2067,6 +2075,24 @@ export default function Home() {
                 <button onClick={() => setShowEqualizer(!showEqualizer)} className={`w-full rounded p-2 ${showEqualizer ? "bg-cyan-600 text-black" : "bg-zinc-800"}`}>イコライザー {showEqualizer ? "ON" : "OFF"}</button>
                 <button onClick={() => setShowFlash(!showFlash)} className={`w-full rounded p-2 ${showFlash ? "bg-yellow-400 text-black" : "bg-zinc-800"}`}>テキスト演出フラッシュ {showFlash ? "ON" : "OFF"}</button>
               </div>
+              <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3 space-y-3">
+                <p className="text-sm font-bold text-cyan-300">エコライザータイプ</p>
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  {[
+                    ["bars", "バー"], ["wideBars", "ワイド"], ["mirror", "ミラー"], ["wave", "波形"], ["block", "ブロック"], ["dot", "ドット"], ["laser", "レーザー"],
+                  ].map(([value, label]) => (
+                    <button key={value} onClick={() => setEqualizerType(value as EqualizerType)} className={`rounded p-2 font-bold ${equalizerType === value ? "bg-cyan-500 text-black" : "bg-zinc-800"}`}>{label}</button>
+                  ))}
+                </div>
+                <p className="text-sm font-bold text-cyan-300">エコライザー色</p>
+                <div className="grid grid-cols-4 gap-2 text-xs">
+                  {[
+                    ["neon", "ネオン"], ["redBlue", "赤青"], ["yellowBlack", "黄黒"], ["green", "緑"], ["pink", "ピンク"], ["mono", "白黒"], ["rainbow", "虹"],
+                  ].map(([value, label]) => (
+                    <button key={value} onClick={() => setEqualizerColorTheme(value as EqualizerColorTheme)} className={`rounded p-2 font-bold ${equalizerColorTheme === value ? "bg-fuchsia-500 text-white" : "bg-zinc-800"}`}>{label}</button>
+                  ))}
+                </div>
+              </div>
               <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
                 <details open>
                   <summary className="cursor-pointer text-sm font-bold text-cyan-300">カスタム調整 / 詳細</summary>
@@ -2120,6 +2146,8 @@ export default function Home() {
                       setShowEqualizer={setShowEqualizer}
                       equalizerType={equalizerType}
                       setEqualizerType={setEqualizerType}
+                      equalizerColorTheme={equalizerColorTheme}
+                      setEqualizerColorTheme={setEqualizerColorTheme}
                       motionAmplitude={motionAmplitude}
                       setMotionAmplitude={setMotionAmplitude}
                       showFlash={showFlash}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 
 import {
   getExportModeLabel,
@@ -84,11 +84,17 @@ export default function ExportPanel({
   recordedFileExtension,
   recordingStreamDiagnostics,
 }: ExportPanelProps) {
-  const mounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const timerId = window.setTimeout(() => {
+      setMounted(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, []);
 
   const resolution = getExportResolution(aspectRatio, exportQuality);
   const isRecordingNow = isRecording || exportStatus === "recording";

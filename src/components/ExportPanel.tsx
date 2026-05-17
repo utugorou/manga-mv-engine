@@ -215,8 +215,10 @@ export default function ExportPanel({
             <p className="text-[11px] text-cyan-200">
               録画ストリーム：{recordingStreamDiagnostics.videoTrackCount > 0 ? "映像あり" : "映像なし"} / {recordingStreamDiagnostics.audioTrackCount > 0 ? "音声あり" : "音声なし"}
             </p>
-            <p className="text-[11px] text-cyan-200">音声トラック：{recordingStreamDiagnostics.audioTrackCount}</p>
-            <p className="text-[11px] text-cyan-200">録画MIME：{recordingStreamDiagnostics.mimeType ?? "ブラウザ既定"}</p>
+            <p className="text-[11px] text-cyan-200">録画音声トラック：{recordingStreamDiagnostics.audioTrackCount}</p>
+            <p className="text-[11px] text-cyan-200">録画音声：{recordingStreamDiagnostics.audioTrackCount > 0 ? "あり" : "なし"}</p>
+            <p className="text-[11px] text-cyan-200">録画形式：{recordingStreamDiagnostics.format.toUpperCase()}</p>
+            <p className="text-[11px] text-cyan-200">使用MIME：{recordingStreamDiagnostics.mimeType ?? "ブラウザ既定"}</p>
             {recordingStreamDiagnostics.format === "mp4" && (
               <p className="text-[11px] text-amber-300">注意：この端末ではMP4音声が入らない場合があります</p>
             )}
@@ -269,6 +271,7 @@ export default function ExportPanel({
             <video
               src={recordedVideoUrl}
               controls
+              playsInline
               className="w-full rounded border border-zinc-700 bg-black"
             />
           </div>

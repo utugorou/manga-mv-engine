@@ -431,6 +431,39 @@ export const drawFlash = (ctx: CanvasRenderingContext2D, canvasWidth: number, ca
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 };
 
+type MediaElementAudioBridge = {
+  sourceNode: MediaElementAudioSourceNode;
+  destinationNode: MediaStreamAudioDestinationNode;
+  stream: MediaStream;
+};
+
+const mediaElementAudioBridgeMap = new WeakMap<HTMLMediaElement, MediaElementAudioBridge>();
+
+const getAudioStreamFromAudioContext = (mediaElement: HTMLMediaElement): MediaStream | null => {
+  const AudioContextClass = window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextClass) {
+    return null;
+  }
+
+  try {
+    const existingBridge = mediaElementAudioBridgeMap.get(mediaElement);
+    if (existingBridge) {
+      return existingBridge.stream;
+    }
+
+    const context = new AudioContextClass();
+    const sourceNode = context.createMediaElementSource(mediaElement);
+    const destinationNode = context.createMediaStreamDestination();
+    sourceNode.connect(destinationNode);
+    sourceNode.connect(context.destination);
+    const stream = destinationNode.stream;
+    mediaElementAudioBridgeMap.set(mediaElement, { sourceNode, destinationNode, stream });
+    return stream;
+  } catch {
+    return null;
+  }
+};
+
 export const getAudioStreamFromElement = (
   mediaElement?: HTMLMediaElement | null
 ): MediaStream | null => {
@@ -445,13 +478,18 @@ export const getAudioStreamFromElement = (
       captureStream?: () => MediaStream;
     }).mozCaptureStream;
 
-  if (!capture) return null;
-
-  try {
-    return capture.call(mediaElement);
-  } catch {
-    return null;
+  if (capture) {
+    try {
+      const stream = capture.call(mediaElement);
+      if (stream.getAudioTracks().length > 0) {
+        return stream;
+      }
+    } catch {
+      // ignore and fallback
+    }
   }
+
+  return getAudioStreamFromAudioContext(mediaElement);
 };
 
 export const combineCanvasAndAudioStreams = (

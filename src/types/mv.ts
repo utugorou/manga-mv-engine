@@ -14,7 +14,7 @@ export type ExportAudioStatus = "with-audio" | "video-only" | "unknown";
 export type RecordingMode = "manual" | "synced";
 export type BackgroundMode = "none" | "video" | "image";
 export type AudioSourceMode = "bgm" | "video" | "silent";
-export type PresetName = "ROCK" | "POP" | "FUNK" | "JAZZ" | "DANCE" | "DISCO" | "Synth Vocal" | "BALLADE" | "漫画BATTLE" | "SIMPLE";
+export type EffectPresetName = "標準" | "バトル" | "エモ" | "ライブ" | "グリッチ" | "サビ爆発";
 
 export type TimelineMarker = { index: number; percent: number };
 
@@ -25,3 +25,5 @@ export type SfxItem = {
   scale: number;
   rotation: number;
 };
+
+export type PresetName = EffectPresetName;

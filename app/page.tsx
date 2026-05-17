@@ -120,6 +120,7 @@ export default function Home() {
   const latestImageMotionsRef = useRef<MotionType[]>([]);
   const recordingStartedAtRef = useRef<number | null>(null);
   const recordingElapsedMsRef = useRef(0);
+  const equalModeFallbackStartedAtRef = useRef<number | null>(null);
 
   const lastSwitchTimeRef = useRef(0);
   const wasAboveThresholdRef = useRef(false);
@@ -256,6 +257,35 @@ export default function Home() {
   const [selectedSettingsId, setSelectedSettingsId] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<"assets" | "text" | "effects" | "export">("assets");
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+
+  const getEqualModeElapsedSeconds = (
+    fallbackStartedAtRef: React.MutableRefObject<number | null>
+  ): number => {
+    const audioCurrentTime = audioRef.current?.currentTime;
+    if (
+      typeof audioCurrentTime === "number" &&
+      Number.isFinite(audioCurrentTime) &&
+      audioCurrentTime >= 0
+    ) {
+      return audioCurrentTime;
+    }
+    const startedAt = fallbackStartedAtRef.current ?? performance.now();
+    if (fallbackStartedAtRef.current === null) fallbackStartedAtRef.current = startedAt;
+    return Math.max(0, (performance.now() - startedAt) / 1000);
+  };
+
+  const getEqualModeSceneIndex = (
+    elapsedSeconds: number,
+    intervalSeconds: number,
+    sceneCountRaw: number
+  ): number => {
+    const safeSceneCount = Math.max(1, sceneCountRaw);
+    const safeIntervalSeconds = Math.max(0.001, intervalSeconds);
+    return (
+      Math.floor(Math.max(0, elapsedSeconds) / safeIntervalSeconds) %
+      safeSceneCount
+    );
+  };
 
 
   const mapPresetToControls = (config: (typeof effectPresetConfigs)[EffectPresetName]) => ({
@@ -871,13 +901,20 @@ export default function Home() {
       }
 
       if (switchMode === "equal" && images.length > 0) {
-        const durationMs = Math.max(1, imageDuration);
-        const nextIndex =
-          Math.floor((audio.currentTime * 1000) / durationMs) % images.length;
-
-        if (nextIndex !== latestCurrentImageIndexRef.current) {
+        const elapsedSeconds = getEqualModeElapsedSeconds(equalModeFallbackStartedAtRef);
+        const intervalSeconds = Math.max(0.001, imageDuration / 1000);
+        const nextIndex = getEqualModeSceneIndex(
+          elapsedSeconds,
+          intervalSeconds,
+          images.length
+        );
+        const nextImage = images[nextIndex] ?? null;
+        if (
+          nextIndex !== latestCurrentImageIndexRef.current ||
+          nextImage !== latestSelectedImageRef.current
+        ) {
           setCurrentImageIndex(nextIndex);
-          setSelectedImage(images[nextIndex] ?? null);
+          setSelectedImage(nextImage);
         }
       }
 
@@ -1055,6 +1092,7 @@ export default function Home() {
     lastLowEnergyRef.current = 0;
 
     if (audioRef.current && audioUrl) {
+      equalModeFallbackStartedAtRef.current = performance.now();
       try {
         await audioRef.current.play();
         setIsPlaying(true);
@@ -1077,6 +1115,7 @@ export default function Home() {
       return;
     }
 
+    equalModeFallbackStartedAtRef.current = performance.now();
     setIsPlaying(true);
   };
 
@@ -1099,6 +1138,7 @@ export default function Home() {
     wasAboveThresholdRef.current = false;
     lastLowEnergyRef.current = 0;
     audioMoodRef.current = "quiet";
+    equalModeFallbackStartedAtRef.current = null;
 
     if (images.length > 0) {
       setSelectedImage(images[0]);
@@ -1121,7 +1161,8 @@ export default function Home() {
       let nextIndex = 0;
 
       if (switchMode === "equal") {
-        nextIndex = Math.floor((value * 1000) / imageDuration) % images.length;
+        const intervalSeconds = Math.max(0.001, imageDuration / 1000);
+        nextIndex = getEqualModeSceneIndex(value, intervalSeconds, images.length);
       } else {
         nextIndex = Math.floor((value / audioDuration) * images.length);
         nextIndex = Math.min(nextIndex, images.length - 1);
@@ -1154,18 +1195,20 @@ export default function Home() {
     );
   };
 
-  const getRecordingActiveImage = (elapsedMs: number): { imageUrl: string | null; imageIndex: number } => {
+  const getRecordingActiveImage = (): { imageUrl: string | null; imageIndex: number } => {
     const recordingImages = latestImagesRef.current;
     if (recordingImages.length === 0) {
-      return { imageUrl: latestSelectedImageRef.current, imageIndex: latestCurrentImageIndexRef.current };
+      return { imageUrl: latestSelectedImageRef.current, imageIndex: 0 };
     }
 
-    const mediaCurrentTimeMs = audioRef.current ? audioRef.current.currentTime * 1000 : 0;
-    const playbackMs = mediaCurrentTimeMs > 0 ? mediaCurrentTimeMs : elapsedMs;
-
     if (latestSwitchModeRef.current === "equal") {
-      const duration = Math.max(1, latestImageDurationRef.current);
-      const imageIndex = Math.floor(playbackMs / duration) % recordingImages.length;
+      const elapsedSeconds = getEqualModeElapsedSeconds(recordingStartedAtRef);
+      const intervalSeconds = Math.max(0.001, latestImageDurationRef.current / 1000);
+      const imageIndex = getEqualModeSceneIndex(
+        elapsedSeconds,
+        intervalSeconds,
+        recordingImages.length
+      );
       return {
         imageUrl: recordingImages[imageIndex] ?? latestSelectedImageRef.current,
         imageIndex,
@@ -1270,7 +1313,7 @@ export default function Home() {
           recordingStartedAtRef.current = startedAt;
         }
         recordingElapsedMsRef.current = performance.now() - startedAt;
-        const activeState = getRecordingActiveImage(recordingElapsedMsRef.current);
+        const activeState = getRecordingActiveImage();
         const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";
         if (activeState.imageUrl) {
           try {

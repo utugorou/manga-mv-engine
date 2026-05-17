@@ -1,6 +1,7 @@
 import EffectOverlays from "./EffectOverlays";
 import type { SfxItem } from "../types/mv";
 import type { EqualizerType } from "../types/mv";
+import type { EqualizerColorTheme } from "../types/mv";
 import type { BubbleVariant } from "../types/mv";
 import type { CSSProperties } from "react";
 
@@ -16,6 +17,7 @@ type PreviewStageProps = {
   showEqualizer: boolean;
   eqBars: number[];
   equalizerType: EqualizerType;
+  equalizerColorTheme: EqualizerColorTheme;
   showSfx: boolean;
   sfxItems: SfxItem[];
   sfxPosition: PositionType;

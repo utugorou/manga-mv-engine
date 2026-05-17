@@ -14,7 +14,8 @@ export type ExportAudioStatus = "with-audio" | "video-only" | "unknown";
 export type RecordingMode = "manual" | "synced";
 export type EffectPresetName = "標準" | "バトル" | "エモ" | "ライブ" | "グリッチ" | "サビ爆発";
 export type MotionAmplitude = "normal" | "x2" | "x3";
-export type EqualizerType = "bars" | "wideBars" | "mirror" | "wave" | "glitchEq" | "pulse" | "circle";
+export type EqualizerType = "bars" | "wideBars" | "mirror" | "wave" | "block" | "dot" | "laser";
+export type EqualizerColorTheme = "neon" | "redBlue" | "yellowBlack" | "green" | "pink" | "mono" | "rainbow";
 export type BubbleVariant = "normal" | "spiky" | "thought";
 
 export type TimelineMarker = { index: number; percent: number };

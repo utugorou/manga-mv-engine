@@ -346,13 +346,23 @@ export const drawGlitchLines = (ctx: CanvasRenderingContext2D, canvasWidth: numb
   }
 };
 
-export const drawEqualizerBars = (ctx: CanvasRenderingContext2D, eqBars: number[], canvasWidth: number, canvasHeight: number, eqType: "bars" | "wideBars" | "mirror" | "wave" | "glitchEq" | "pulse" | "circle" = "bars"): void => {
+export const drawEqualizerBars = (ctx: CanvasRenderingContext2D, eqBars: number[], canvasWidth: number, canvasHeight: number, eqType: "bars" | "wideBars" | "mirror" | "wave" | "block" | "dot" | "laser" = "bars", colorTheme: "neon" | "redBlue" | "yellowBlack" | "green" | "pink" | "mono" | "rainbow" = "neon"): void => {
+  const paletteMap = {
+    neon: ["rgba(34,211,238,0.95)", "rgba(244,114,182,0.95)", "rgba(192,132,252,0.95)"],
+    redBlue: ["rgba(239,68,68,0.95)", "rgba(59,130,246,0.95)"],
+    yellowBlack: ["rgba(250,204,21,0.95)", "rgba(23,23,23,0.95)"],
+    green: ["rgba(132,204,22,0.95)", "rgba(34,197,94,0.95)"],
+    pink: ["rgba(236,72,153,0.95)", "rgba(244,114,182,0.95)"],
+    mono: ["rgba(255,255,255,0.95)", "rgba(161,161,170,0.95)"],
+    rainbow: ["rgba(239,68,68,0.95)", "rgba(245,158,11,0.95)", "rgba(234,179,8,0.95)", "rgba(34,197,94,0.95)", "rgba(6,182,212,0.95)", "rgba(59,130,246,0.95)", "rgba(168,85,247,0.95)"],
+  } as const;
+  const palette = paletteMap[colorTheme];
   const barCount = Math.max(12, eqBars.length);
   const eqAreaHeight = canvasHeight * 0.2;
   const eqAreaTop = canvasHeight - eqAreaHeight;
   const eqAreaMid = eqAreaTop + eqAreaHeight / 2;
   if (eqType === "wave") {
-    ctx.strokeStyle = "rgba(34,211,238,0.95)";
+    ctx.strokeStyle = palette[0];
     ctx.lineWidth = Math.max(2, canvasHeight * 0.006);
     ctx.beginPath();
     for (let i = 0; i < canvasWidth; i++) {
@@ -372,21 +382,24 @@ export const drawEqualizerBars = (ctx: CanvasRenderingContext2D, eqBars: number[
 
   for (let idx = 0; idx < barCount; idx++) {
     const bar = eqBars[idx % eqBars.length] ?? 15;
-    const h = Math.max(8, (bar / 100) * eqAreaHeight * (eqType === "pulse" ? 0.95 : 0.8));
+    const rawH = Math.max(8, (bar / 100) * eqAreaHeight * (eqType === "laser" ? 0.95 : 0.8));
+    const h = eqType === "block" ? Math.round(rawH / 10) * 10 : rawH;
     const x = baseX + idx * (barWidth + gap);
+    ctx.fillStyle = palette[idx % palette.length];
     if (eqType === "mirror") {
-      ctx.fillStyle = idx % 2 === 0 ? "rgba(255,255,255,0.85)" : "rgba(34,211,238,0.95)";
       ctx.fillRect(x, eqAreaMid - h, barWidth, h);
       ctx.fillRect(x, eqAreaMid, barWidth, h);
-    } else if (eqType === "circle") {
-      ctx.fillStyle = idx % 2 === 0 ? "rgba(255,255,255,0.78)" : "rgba(34,211,238,0.9)";
+    } else if (eqType === "dot") {
       const radius = Math.max(2, h * 0.16);
       ctx.beginPath();
       ctx.arc(x + barWidth / 2, baseY - h, radius, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      ctx.fillStyle = eqType === "glitchEq" && idx % 3 === 0 ? "rgba(244,114,182,0.95)" : idx % 2 === 0 ? "rgba(255,255,255,0.8)" : "rgba(34,211,238,0.9)";
-      ctx.fillRect(x, baseY - h, barWidth, h);
+      if (eqType === "laser") {
+        ctx.fillRect(x + barWidth * 0.35, baseY - h, Math.max(1, barWidth * 0.3), h);
+      } else {
+        ctx.fillRect(x, baseY - h, barWidth, h);
+      }
     }
   }
 };

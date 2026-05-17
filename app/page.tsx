@@ -103,6 +103,7 @@ export default function Home() {
 
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [audioName, setAudioName] = useState("");
+  const [audioUploadError, setAudioUploadError] = useState("");
   const [audioDuration, setAudioDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 
@@ -911,7 +912,20 @@ export default function Home() {
     const file = event.target.files?.[0];
 
     if (!file) return;
+    const allowedExtensions = [".mp3", ".wav", ".m4a", ".aac", ".ogg", ".webm"];
+    const lowerName = file.name.toLowerCase();
+    const hasAllowedExtension = allowedExtensions.some((extension) =>
+      lowerName.endsWith(extension)
+    );
+    const isAudioFile = file.type.startsWith("audio/");
 
+    if (!isAudioFile && !hasAllowedExtension) {
+      setAudioUploadError("音声ファイルを選択してください");
+      event.target.value = "";
+      return;
+    }
+
+    setAudioUploadError("");
     setAudioUrl(URL.createObjectURL(file));
     setAudioName(file.name);
     setAudioDuration(0);
@@ -1470,6 +1484,7 @@ export default function Home() {
           handleImageUpload={handleImageUpload}
           handleAudioUpload={handleAudioUpload}
           audioName={audioName}
+          audioUploadError={audioUploadError}
           aspectRatio={aspectRatio}
           formatTime={formatTime}
           audioDuration={audioDuration}
@@ -1690,6 +1705,7 @@ export default function Home() {
               handleImageUpload={handleImageUpload}
               handleAudioUpload={handleAudioUpload}
               audioName={audioName}
+              audioUploadError={audioUploadError}
               aspectRatio={aspectRatio}
               formatTime={formatTime}
               audioDuration={audioDuration}

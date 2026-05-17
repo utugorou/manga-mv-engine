@@ -31,6 +31,10 @@ type ExportPanelProps = {
   recordedVideoUrl: string | null;
   exportAudioStatus: ExportAudioStatus;
   formatTime: (time: number) => string;
+  autoRecordEnabled: boolean;
+  setAutoRecordEnabled: (enabled: boolean) => void;
+  audioDurationState: "idle" | "loading" | "ready" | "error";
+  hasAudio: boolean;
 };
 
 export default function ExportPanel({
@@ -50,6 +54,10 @@ export default function ExportPanel({
   recordedVideoUrl,
   exportAudioStatus,
   formatTime,
+  autoRecordEnabled,
+  setAutoRecordEnabled,
+  audioDurationState,
+  hasAudio,
 }: ExportPanelProps) {
   const resolution = getExportResolution(aspectRatio, exportQuality);
   const isRecordingNow = isRecording || exportStatus === "recording";
@@ -62,6 +70,7 @@ export default function ExportPanel({
     : exportStatus === "finished"
       ? "録画完了"
       : "録画準備中";
+  const canUseAutoRecord = hasAudio && audioDurationState === "ready" && audioDuration > 0;
 
   return (
     <div className="pt-1">
@@ -144,6 +153,21 @@ export default function ExportPanel({
           <li>録画停止</li>
           <li>WebMをダウンロード</li>
         </ol>
+      </div>
+      <div className="mt-3 rounded border border-emerald-800/80 bg-emerald-950/30 p-3 space-y-2">
+        <p className="text-xs text-emerald-200 font-bold">曲尺自動録画</p>
+        <p className="text-xs text-zinc-200">
+          曲の長さ：
+          {audioDurationState === "loading" ? "曲の長さを取得中" : audioDurationState === "error" ? "曲の長さを取得できません" : formatTime(audioDuration)}
+        </p>
+        <p className="text-xs text-zinc-200">録画予定：{canUseAutoRecord ? formatTime(audioDuration) : "--:--"}</p>
+        <label className="flex items-center gap-2 text-xs">
+          <input type="checkbox" checked={autoRecordEnabled} onChange={(e) => setAutoRecordEnabled(e.target.checked)} disabled={!canUseAutoRecord || isRecordingNow} />
+          曲尺自動録画：{autoRecordEnabled && canUseAutoRecord ? "ON" : "OFF"}
+        </label>
+        {!hasAudio && (
+          <p className="text-xs text-amber-300">BGMをアップロードすると曲尺自動録画が使えます</p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-2 mt-3">

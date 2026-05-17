@@ -106,6 +106,7 @@ export default function Home() {
   const [audioName, setAudioName] = useState("");
   const [audioUploadError, setAudioUploadError] = useState("");
   const [audioDuration, setAudioDuration] = useState(0);
+  const [audioDurationState, setAudioDurationState] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [currentTime, setCurrentTime] = useState(0);
 
   const [aspectRatio, setAspectRatio] = useState<AspectRatio>("16:9");
@@ -119,6 +120,8 @@ export default function Home() {
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
   const [exportAudioStatus, setExportAudioStatus] = useState<ExportAudioStatus>("unknown");
   const [recordingMode, setRecordingMode] = useState<RecordingMode | null>(null);
+  const [autoRecordEnabled, setAutoRecordEnabled] = useState(true);
+  const autoStopTriggeredRef = useRef(false);
 
   const [showBubble, setShowBubble] = useState(false);
   const [bubbleText, setBubbleText] = useState("ここにセリフ");
@@ -931,6 +934,7 @@ export default function Home() {
     setAudioUrl(URL.createObjectURL(file));
     setAudioName(file.name);
     setAudioDuration(0);
+    setAudioDurationState("loading");
     setCurrentTime(0);
     setIsPlaying(false);
     setChorusBoost(false);
@@ -1095,6 +1099,14 @@ export default function Home() {
 
     if (isRecording) return;
 
+    const audio = audioRef.current;
+    const canUseAutoRecord =
+      autoRecordEnabled &&
+      Boolean(audioUrl) &&
+      audioDurationState === "ready" &&
+      audioDuration > 0 &&
+      Number.isFinite(audioDuration);
+
     if (recordedVideoUrl) {
       URL.revokeObjectURL(recordedVideoUrl);
       setRecordedVideoUrl(null);
@@ -1114,18 +1126,39 @@ export default function Home() {
       const { recorder, hasAudio } = startCanvasRecording(canvas, 30, getRecordingAudioElement(), true);
       mediaRecorderRef.current = recorder;
       recorder.start();
-      recordingStartedAtRef.current = performance.now();
+      recordingStartedAtRef.current = null;
       recordingElapsedMsRef.current = 0;
 
       setIsRecording(true);
-      setRecordingMode("manual");
+      setRecordingMode(canUseAutoRecord ? "synced" : "manual");
       setExportAudioStatus(hasAudio ? "with-audio" : "video-only");
       setExportStatus("recording");
       setExportMessage(
-        hasAudio
-          ? "録画中です（WebM・音声付き）"
-          : "録画中です（WebM・映像のみ）"
+        canUseAutoRecord
+          ? hasAudio
+            ? "曲尺自動録画中です（WebM・音声付き）"
+            : "曲尺自動録画中です（WebM・映像のみ）"
+          : hasAudio
+            ? "録画中です（WebM・音声付き）"
+            : "録画中です（WebM・映像のみ）"
       );
+
+      if (canUseAutoRecord && audio) {
+        autoStopTriggeredRef.current = false;
+        audio.currentTime = 0;
+        await audio.play();
+        const stopFromAuto = () => {
+          if (autoStopTriggeredRef.current) return;
+          autoStopTriggeredRef.current = true;
+          void handleStopRecording();
+        };
+        recordingEndedHandlerRef.current = stopFromAuto;
+        audio.addEventListener("ended", stopFromAuto, { once: true });
+        recordingStopTimeoutRef.current = window.setTimeout(
+          stopFromAuto,
+          Math.ceil(audioDuration * 1000) + 500
+        );
+      }
 
       const drawFrame = async () => {
         if (!recordingCanvasRef.current || !ctx) return;
@@ -1196,6 +1229,8 @@ export default function Home() {
         audioRef.current.removeEventListener("ended", recordingEndedHandlerRef.current);
         recordingEndedHandlerRef.current = null;
       }
+      autoStopTriggeredRef.current = false;
+      audioRef.current?.pause();
 
       if (recordingFrameRef.current !== null) {
         clearTimeout(recordingFrameRef.current);
@@ -1225,6 +1260,17 @@ export default function Home() {
       setIsPlaying(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (recordingStopTimeoutRef.current !== null) {
+        clearTimeout(recordingStopTimeoutRef.current);
+      }
+      if (recordingEndedHandlerRef.current && audioRef.current) {
+        audioRef.current.removeEventListener("ended", recordingEndedHandlerRef.current);
+      }
+    };
+  }, []);
 
   const getTimelineMarkers = () => {
     if (audioDuration <= 0 || images.length === 0) return [];
@@ -1592,6 +1638,10 @@ export default function Home() {
                 recordedVideoUrl={recordedVideoUrl}
                 exportAudioStatus={exportAudioStatus}
                 formatTime={formatTime}
+                autoRecordEnabled={autoRecordEnabled}
+                setAutoRecordEnabled={setAutoRecordEnabled}
+                audioDurationState={audioDurationState}
+                hasAudio={Boolean(audioUrl)}
               />
             </div>
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
@@ -1860,7 +1910,7 @@ export default function Home() {
           ) : null}
           {mobileTab === "export" ? (
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
-              <ExportPanel aspectRatio={aspectRatio} audioDuration={audioDuration} imageCount={images.length} exportMode={exportMode} exportQuality={exportQuality} setExportQuality={setExportQuality} exportStatus={exportStatus} exportMessage={exportMessage} handlePrepareExport={handlePrepareExport} handleStartRecording={handleStartRecording} handleStopRecording={handleStopRecording} isRecording={isRecording} recordingMode={recordingMode} recordedVideoUrl={recordedVideoUrl} exportAudioStatus={exportAudioStatus} formatTime={formatTime} />
+              <ExportPanel aspectRatio={aspectRatio} audioDuration={audioDuration} imageCount={images.length} exportMode={exportMode} exportQuality={exportQuality} setExportQuality={setExportQuality} exportStatus={exportStatus} exportMessage={exportMessage} handlePrepareExport={handlePrepareExport} handleStartRecording={handleStartRecording} handleStopRecording={handleStopRecording} isRecording={isRecording} recordingMode={recordingMode} recordedVideoUrl={recordedVideoUrl} exportAudioStatus={exportAudioStatus} formatTime={formatTime} autoRecordEnabled={autoRecordEnabled} setAutoRecordEnabled={setAutoRecordEnabled} audioDurationState={audioDurationState} hasAudio={Boolean(audioUrl)} />
             </div>
           ) : null}
         </div>
@@ -1870,9 +1920,22 @@ export default function Home() {
           ref={audioRef}
           src={audioUrl}
           className="hidden"
-          onLoadedMetadata={(e) =>
-            setAudioDuration(e.currentTarget.duration)
-          }
+          onLoadedMetadata={(e) => {
+            const duration = e.currentTarget.duration;
+            if (!Number.isFinite(duration) || duration <= 0) {
+              setAudioDuration(0);
+              setAudioDurationState("error");
+              return;
+            }
+            setAudioDuration(duration);
+            setAudioDurationState("ready");
+          }}
+          onDurationChange={(e) => {
+            const duration = e.currentTarget.duration;
+            if (!Number.isFinite(duration) || duration <= 0) return;
+            setAudioDuration(duration);
+            setAudioDurationState("ready");
+          }}
           onTimeUpdate={(e) =>
             setCurrentTime(e.currentTarget.currentTime)
           }

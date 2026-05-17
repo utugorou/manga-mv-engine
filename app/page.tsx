@@ -1876,7 +1876,7 @@ export default function Home() {
         </div>
       </div>
       <div className="md:hidden flex h-[calc(100vh-72px)] h-[calc(100dvh-72px)] min-h-0 flex-col overflow-hidden px-3 pb-3">
-        <div className="shrink-0 rounded-2xl border border-cyan-500/30 bg-zinc-950/95 p-3">
+        <div className="shrink-0">
           <PreviewStage
             previewSizeClass="w-full max-w-none aspect-video"
             chorusBoost={chorusBoost}
@@ -1904,13 +1904,14 @@ export default function Home() {
             bubbleVariant={bubbleVariant}
             bubbleScale={bubbleScale}
             flashActive={flashActive}
+            showStatusOverlay={false}
           />
-          <div className="mt-3 flex min-h-6 flex-wrap items-center gap-1.5">
+          <div className="mt-2 flex min-h-6 flex-wrap items-center justify-center gap-1.5">
             {isPlaying ? <span className="rounded-full border border-emerald-300/70 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-emerald-100">再生中</span> : null}
             {isRecording ? <span className="rounded-full border border-rose-300/80 bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-rose-100">録画中</span> : null}
             {chorusBoost ? <span className="rounded-full border border-fuchsia-300/70 bg-amber-300/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-fuchsia-100">サビ暴走中</span> : null}
           </div>
-          <div className="mt-3"><ControlButtons isPlaying={isPlaying} isRecording={isRecording} chorusBoost={chorusBoost} isMobile onPlay={handlePlay} onPause={handlePause} onReset={handleReset} /></div>
+          <div className="mt-2"><ControlButtons isPlaying={isPlaying} isRecording={isRecording} chorusBoost={chorusBoost} isMobile onPlay={handlePlay} onPause={handlePause} onReset={handleReset} /></div>
         </div>
         <div className="mt-3 grid shrink-0 grid-cols-4 gap-2">
           {[

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   getExportModeLabel,
@@ -16,6 +16,7 @@ import type {
   RecordingMode,
   ExportFormatPreference,
   RecordingContainer,
+  RecordingStreamDiagnostics,
 } from "../types/mv";
 
 type ExportPanelProps = {
@@ -49,12 +50,7 @@ type ExportPanelProps = {
   selectedMimeType: string | null;
   mp4FallbackMessage: string | null;
   recordedFileExtension: RecordingContainer | null;
-  recordingStreamDiagnostics: {
-    videoTrackCount: number;
-    audioTrackCount: number;
-    mimeType: string | null;
-    format: RecordingContainer;
-  } | null;
+  recordingStreamDiagnostics: RecordingStreamDiagnostics | null;
 };
 
 export default function ExportPanel({
@@ -91,6 +87,7 @@ export default function ExportPanel({
   recordingStreamDiagnostics,
 }: ExportPanelProps) {
   const [mounted, setMounted] = useState(false);
+  const previewVideoRef = useRef<HTMLVideoElement | null>(null);
 
   useEffect(() => {
     const timerId = window.setTimeout(() => {
@@ -101,6 +98,14 @@ export default function ExportPanel({
       window.clearTimeout(timerId);
     };
   }, []);
+
+  useEffect(() => {
+    if (!previewVideoRef.current) return;
+    previewVideoRef.current.muted = false;
+    previewVideoRef.current.volume = 1;
+    previewVideoRef.current.controls = true;
+    previewVideoRef.current.playsInline = true;
+  }, [recordedVideoUrl]);
 
   const resolution = getExportResolution(aspectRatio, exportQuality);
   const isRecordingNow = isRecording || exportStatus === "recording";
@@ -239,6 +244,9 @@ export default function ExportPanel({
               ? "この端末はMP4書き出しに対応しています"
               : "この端末はMP4録画に非対応のためWebMで保存します"}
         </p>
+        <p className="text-[11px] text-zinc-400">
+          MP4β：この端末が対応している場合のみMP4で保存できます。非対応時はWebMに戻します。
+        </p>
         {mounted && mp4FallbackMessage && <p className="text-xs text-amber-300">{mp4FallbackMessage}</p>}
         <p className="text-xs text-cyan-300">
           実際の録画形式：{mounted ? actualRecordingFormat.toUpperCase() : "確認中"}
@@ -253,8 +261,14 @@ export default function ExportPanel({
             </p>
             <p className="text-[11px] text-cyan-200">録画音声トラック：{recordingStreamDiagnostics.audioTrackCount}</p>
             <p className="text-[11px] text-cyan-200">録画音声：{recordingStreamDiagnostics.audioTrackCount > 0 ? "あり" : "なし"}</p>
+            <p className="text-[11px] text-cyan-200">audio.enabled：{recordingStreamDiagnostics.audioEnabled ? "true" : "false"}</p>
+            <p className="text-[11px] text-cyan-200">audio.readyState：{recordingStreamDiagnostics.audioReadyState}</p>
             <p className="text-[11px] text-cyan-200">録画形式：{recordingStreamDiagnostics.format.toUpperCase()}</p>
             <p className="text-[11px] text-cyan-200">使用MIME：{recordingStreamDiagnostics.mimeType ?? "ブラウザ既定"}</p>
+            <p className="text-[11px] text-cyan-200">Canvas：{recordingStreamDiagnostics.canvasWidth} x {recordingStreamDiagnostics.canvasHeight}</p>
+            <p className="text-[11px] text-cyan-200">BGM設定：{recordingStreamDiagnostics.hasBgm ? "あり" : "なし"}</p>
+            <p className="text-[11px] text-cyan-200">audio.paused：{recordingStreamDiagnostics.audioPaused ? "true" : "false"} / muted：{recordingStreamDiagnostics.audioMuted ? "true" : "false"} / volume：{recordingStreamDiagnostics.audioVolume.toFixed(2)}</p>
+            {recordingStreamDiagnostics.fallbackReason && <p className="text-[11px] text-amber-300">フォールバック理由：{recordingStreamDiagnostics.fallbackReason}</p>}
             {recordingStreamDiagnostics.format === "mp4" && (
               <p className="text-[11px] text-amber-300">注意：この端末ではMP4音声が入らない場合があります</p>
             )}
@@ -305,9 +319,12 @@ export default function ExportPanel({
           <div className="space-y-2">
             <p className="text-zinc-300">動画プレビュー</p>
             <video
+              ref={previewVideoRef}
               src={recordedVideoUrl}
               controls
               playsInline
+              muted={false}
+              autoPlay={false}
               className="w-full rounded border border-zinc-700 bg-black"
             />
           </div>

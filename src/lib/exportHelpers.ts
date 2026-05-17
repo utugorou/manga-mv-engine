@@ -26,9 +26,12 @@ const resolutionMap: Record<AspectRatio, Record<ExportQuality, ExportResolution>
 
 export const getExportResolution = (
   aspectRatio: AspectRatio,
-  exportQuality: ExportQuality
+  exportQuality: ExportQuality,
+  isMobileViewport = false
 ): ExportResolution => {
-  return resolutionMap[aspectRatio][exportQuality];
+  const base = resolutionMap[aspectRatio][exportQuality];
+  if (!isMobileViewport) return base;
+  return resolutionMap[aspectRatio].standard;
 };
 
 export const getExportModeLabel = (exportMode: ExportMode): string => {

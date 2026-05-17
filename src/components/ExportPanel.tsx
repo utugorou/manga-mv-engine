@@ -133,6 +133,18 @@ export default function ExportPanel({
             ? "未対応のため映像のみ"
             : "未判定"}
       </p>
+      <p className="text-[11px] text-zinc-400 mt-2 leading-relaxed">
+        書き出し形式はWebMです。MP4が必要な場合は、書き出したWebMを外部ツールでMP4に変換してください。
+      </p>
+
+      <div className="mt-3 rounded border border-cyan-800/80 bg-cyan-950/30 p-2">
+        <p className="text-xs text-cyan-200 font-bold">WebM書き出しの流れ</p>
+        <ol className="mt-1 list-decimal list-inside text-xs text-cyan-100 space-y-1">
+          <li>録画開始</li>
+          <li>録画停止</li>
+          <li>WebMをダウンロード</li>
+        </ol>
+      </div>
 
       <div className="grid grid-cols-1 gap-2 mt-3">
         <button
@@ -140,7 +152,7 @@ export default function ExportPanel({
           disabled={isRecordingNow}
           className="p-2 rounded text-xs font-bold bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-700 disabled:text-zinc-400 text-black"
         >
-          {exportStatus === "finished" ? "もう一度録画する" : "録画開始"}
+          1. {exportStatus === "finished" ? "もう一度録画する" : "録画開始"}
         </button>
       </div>
 
@@ -150,7 +162,7 @@ export default function ExportPanel({
           disabled={!isRecording}
           className="p-2 rounded text-xs font-bold bg-rose-500 hover:bg-rose-400 disabled:bg-zinc-700 disabled:text-zinc-400 text-white"
         >
-          録画停止
+          2. 録画停止
         </button>
       </div>
 
@@ -173,7 +185,7 @@ export default function ExportPanel({
             download="manga-mv-export.webm"
             className="inline-block text-lime-300 underline"
           >
-            WebMをダウンロード
+            3. WebMをダウンロード
           </a>
           <p className="text-zinc-400">ファイル名：manga-mv-export.webm</p>
         </div>

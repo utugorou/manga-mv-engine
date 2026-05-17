@@ -577,6 +577,28 @@ export default function Home() {
     }, 260 / Math.max(0.6, focusLineIntensity));
   };
 
+
+  const generateSfxItems = () => {
+    const maxCount = Math.min(4, Math.max(0, sfxMaxCount));
+    const count = sfxFrequency <= 0
+      ? 0
+      : (randomSfxCountEnabled
+        ? Math.floor(Math.random() * (maxCount + 1))
+        : Math.min(1, maxCount));
+    const unifiedText = pickSfxText();
+    const unifiedScale = randomSfxScaleEnabled
+      ? [...sfxScaleOptions][Math.floor(Math.random() * sfxScaleOptions.length)] * sfxFrequency
+      : sfxScale;
+
+    return Array.from({ length: count }, (_, i) => ({
+      id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+      text: unifiedText,
+      position: [...sfxPositions][Math.floor(Math.random() * sfxPositions.length)],
+      scale: unifiedScale,
+      rotation: Math.floor(Math.random() * 37) - 18,
+    }));
+  };
+
   const stepToNextImage = useCallback(() => {
     if (images.length === 0) return;
 
@@ -596,23 +618,7 @@ export default function Home() {
 
       if (autoSfx && Math.random() <= sfxFrequency) {
         setShowSfx(true);
-        const maxCount = Math.min(4, Math.max(0, sfxMaxCount));
-        const count = sfxFrequency <= 0
-          ? 0
-          : (randomSfxCountEnabled
-            ? Math.floor(Math.random() * (maxCount + 1))
-            : Math.min(1, maxCount));
-        const unifiedText = pickSfxText();
-        const unifiedScale = randomSfxScaleEnabled
-          ? [...sfxScaleOptions][Math.floor(Math.random() * sfxScaleOptions.length)] * sfxFrequency
-          : sfxScale;
-        const items = Array.from({ length: count }, (_, i) => ({
-          id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`,
-          text: unifiedText,
-          position: [...sfxPositions][Math.floor(Math.random() * sfxPositions.length)],
-          scale: unifiedScale,
-          rotation: Math.floor(Math.random() * 37) - 18,
-        }));
+        const items = generateSfxItems();
         setSfxItems(items);
         setSfxText(items[0]?.text ?? pickSfxText());
         setSfxPosition((items[0]?.position === "random" ? "center" : (items[0]?.position ?? "bottomLeft")) as PositionType);
@@ -1577,7 +1583,7 @@ export default function Home() {
                 setSwitchMode={setSwitchMode}
                 wasAboveThresholdRef={wasAboveThresholdRef}
                 lastLowEnergyRef={lastLowEnergyRef}
-                setActivePreset={setActivePreset}
+                setActivePreset={(preset) => setActivePreset(preset ?? DEFAULT_PRESET)}
                 imageDuration={imageDuration}
                 setImageDuration={setImageDuration}
                 handleAutoDuration={handleAutoDuration}

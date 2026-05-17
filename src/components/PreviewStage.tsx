@@ -51,7 +51,7 @@ export default function PreviewStage(props: PreviewStageProps) {
         </div>
       ) : null}
 
-      <div className={`${previewSizeClass} mt-10 bg-zinc-900 border-2 border-cyan-300/80 rounded-2xl relative overflow-hidden flex items-center justify-center transition-all duration-150 shadow-[0_0_40px_rgba(34,211,238,0.2)] ${chorusBoost ? "shadow-[0_0_70px_#ec4899] scale-[1.02]" : showGlitch ? "shadow-[0_0_40px_#ec4899]" : ""}`}>
+      <div className={`${previewSizeClass} mt-2 md:mt-10 bg-zinc-900 border-2 border-cyan-300/80 rounded-xl md:rounded-2xl relative overflow-hidden flex items-center justify-center transition-all duration-150 shadow-[0_0_30px_rgba(34,211,238,0.18)] md:shadow-[0_0_40px_rgba(34,211,238,0.2)] ${chorusBoost ? "shadow-[0_0_55px_#ec4899] scale-[1.015] md:shadow-[0_0_70px_#ec4899] md:scale-[1.02]" : showGlitch ? "shadow-[0_0_36px_#ec4899] md:shadow-[0_0_40px_#ec4899]" : ""}`}>
         {selectedImage ? (
           <img src={selectedImage} alt="" className={`w-full h-full object-cover ${showGlitch || chorusBoost ? "contrast-125 saturate-150" : ""}`} style={imageStyle} />
         ) : (

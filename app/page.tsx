@@ -1662,7 +1662,7 @@ export default function Home() {
         }
       `}</style>
 
-      <header className="sticky top-0 z-30 border-b border-fuchsia-500/30 bg-black/90 px-3 py-2 md:px-6 md:py-4 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-fuchsia-500/30 bg-black/90 px-2 py-1.5 md:px-6 md:py-4 backdrop-blur">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-fuchsia-300">
@@ -1670,9 +1670,10 @@ export default function Home() {
                 src={logoSrc}
                 isError={isLogoLoadError}
                 onError={handleLogoLoadError}
+                className="h-7 sm:h-9 md:h-10 lg:h-11 w-auto max-w-[68vw] md:max-w-[min(70vw,20rem)] object-contain opacity-95 drop-shadow-[0_0_12px_rgba(217,70,239,0.4)]"
               />
             </h1>
-            <p className="text-xs text-zinc-400">Project: <span className="text-cyan-300">Untitled MV</span></p>
+            <p className="text-[10px] leading-tight text-zinc-400 md:text-xs">Project: <span className="text-cyan-300">Untitled MV</span></p>
             {isLogoLoadError && logoErrorSrc ? (
               <p className="mt-1 text-[10px] text-amber-300 break-all">Logo fallback active: {logoErrorSrc}</p>
             ) : null}
@@ -1875,10 +1876,10 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <div className="md:hidden flex h-[calc(100vh-72px)] h-[calc(100dvh-72px)] min-h-0 flex-col overflow-hidden px-3 pb-3">
+      <div className="md:hidden flex h-[calc(100vh-56px)] h-[calc(100dvh-56px)] min-h-0 flex-col overflow-hidden px-2 pb-2">
         <div className="shrink-0">
           <PreviewStage
-            previewSizeClass="w-full max-w-none aspect-video"
+            previewSizeClass="w-full max-w-none aspect-video max-h-[30dvh]"
             chorusBoost={chorusBoost}
             showGlitch={showGlitch}
             selectedImage={selectedImage}
@@ -1906,24 +1907,24 @@ export default function Home() {
             flashActive={flashActive}
             showStatusOverlay={false}
           />
-          <div className="mt-1 flex min-h-6 flex-wrap items-center justify-center gap-1">
-            {isPlaying ? <span className="rounded-full border border-emerald-300/70 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-emerald-100">再生中</span> : null}
-            {isRecording ? <span className="rounded-full border border-rose-300/80 bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-rose-100">録画中</span> : null}
-            {chorusBoost ? <span className="rounded-full border border-fuchsia-300/70 bg-amber-300/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-fuchsia-100">サビ暴走中</span> : null}
+          <div className="mt-0.5 flex min-h-0 flex-wrap items-center justify-center gap-1 empty:hidden">
+            {isPlaying ? <span className="rounded-full border border-emerald-300/70 bg-emerald-500/15 px-1.5 py-px text-[9px] font-bold tracking-wide text-emerald-100">再生中</span> : null}
+            {isRecording ? <span className="rounded-full border border-rose-300/80 bg-rose-500/20 px-1.5 py-px text-[9px] font-bold tracking-wide text-rose-100">録画中</span> : null}
+            {chorusBoost ? <span className="rounded-full border border-fuchsia-300/70 bg-amber-300/15 px-1.5 py-px text-[9px] font-bold tracking-wide text-fuchsia-100">サビ暴走中</span> : null}
           </div>
-          <div className="mt-1"><ControlButtons isPlaying={isPlaying} isRecording={isRecording} chorusBoost={chorusBoost} isMobile onPlay={handlePlay} onPause={handlePause} onReset={handleReset} /></div>
+          <div className="mt-0.5"><ControlButtons isPlaying={isPlaying} isRecording={isRecording} chorusBoost={chorusBoost} isMobile onPlay={handlePlay} onPause={handlePause} onReset={handleReset} /></div>
         </div>
-        <div className="mt-2 grid shrink-0 grid-cols-4 gap-2">
+        <div className="mt-1 grid shrink-0 grid-cols-4 gap-1.5">
           {[
             { id: "assets", label: "素材" },
             { id: "text", label: "テキスト" },
             { id: "effects", label: "演出" },
             { id: "export", label: "書き出し" },
           ].map((tab) => (
-            <button key={tab.id} onClick={() => setMobileTab(tab.id as "assets" | "text" | "effects" | "export")} className={`min-h-11 rounded-xl border text-sm font-bold ${mobileTab === tab.id ? "border-cyan-300 bg-cyan-500/25 text-cyan-100" : "border-zinc-700 bg-zinc-900/90 text-zinc-200"}`}>{tab.label}</button>
+            <button key={tab.id} onClick={() => setMobileTab(tab.id as "assets" | "text" | "effects" | "export")} className={`min-h-9 rounded-lg border px-1 py-1.5 text-[13px] font-bold leading-none ${mobileTab === tab.id ? "border-cyan-300 bg-cyan-500/25 text-cyan-100" : "border-zinc-700 bg-zinc-900/90 text-zinc-200"}`}>{tab.label}</button>
           ))}
         </div>
-        <div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-950/90 p-3 pb-5 shadow-inner shadow-cyan-950/40 [&_button]:min-h-11 [&_button]:text-sm [&_input]:min-h-11 [&_input]:text-base [&_select]:min-h-11 [&_select]:text-base [&_textarea]:min-h-11 [&_textarea]:text-base [&_input[type='range']]:min-h-8">
+        <div className="mt-1 min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded-xl border border-zinc-700 bg-zinc-950/90 p-2 pb-4 shadow-inner shadow-cyan-950/40 [&_button]:min-h-10 [&_button]:text-sm [&_input]:min-h-10 [&_input]:text-base [&_select]:min-h-10 [&_select]:text-base [&_textarea]:min-h-10 [&_textarea]:text-base [&_input[type='range']]:min-h-7">
           {mobileTab === "assets" ? (
             <UploadPanel
               handleImageUpload={handleImageUpload}

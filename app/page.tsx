@@ -20,10 +20,8 @@ import { withBasePath } from "../src/lib/assetPath";
 import {
   createExportCanvas,
   drawImageToCanvas,
-  drawComicPanels,
   drawEqualizerBars,
   drawFlash,
-  drawGlitchLines,
   drawSfxText,
   drawSpeechBubble,
   startCanvasRecording,
@@ -1421,9 +1419,6 @@ export default function Home() {
           }
         }
 
-        if (latestShowPanelsRef.current) {
-          drawComicPanels(ctx, latestPanelPatternRef.current, resolution.width, resolution.height);
-        }
         if (latestShowEqualizerRef.current) {
           drawEqualizerBars(ctx, latestEqBarsRef.current, resolution.width, resolution.height, equalizerType);
         }
@@ -1437,9 +1432,6 @@ export default function Home() {
         }
         if (latestShowBubbleRef.current) {
           drawSpeechBubble(ctx, latestBubbleTextRef.current, latestBubblePositionRef.current, resolution.width, resolution.height, { variant: latestBubbleVariantRef.current, scale: latestBubbleScaleRef.current });
-        }
-        if (latestShowGlitchRef.current) {
-          drawGlitchLines(ctx, resolution.width, resolution.height, Math.floor(performance.now() / 16));
         }
         drawFlash(ctx, resolution.width, resolution.height, latestFlashActiveRef.current || latestChorusBoostRef.current);
 

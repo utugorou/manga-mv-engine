@@ -76,14 +76,6 @@ export default function ControlButtons({ isPlaying, isRecording, chorusBoost, is
       >
         最初から
       </button>
-      <div className="ml-auto flex items-center gap-1.5 text-[10px] sm:text-xs">
-        <span className={`rounded-full border px-2 py-1 ${isPlaying ? "border-fuchsia-300 bg-fuchsia-500/20 text-fuchsia-100" : "border-zinc-700 bg-zinc-900 text-zinc-400"}`}>
-          {isPlaying ? "再生中" : "停止中"}
-        </span>
-        <span className={`rounded-full border px-2 py-1 ${isRecording ? "border-rose-300 bg-rose-500/20 text-rose-100" : "border-zinc-700 bg-zinc-900 text-zinc-500"}`}>
-          {isRecording ? "録画中" : "録画待機"}
-        </span>
-      </div>
     </div>
   );
 }

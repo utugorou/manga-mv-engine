@@ -205,6 +205,7 @@ export default function Home() {
   };
   const [savedSettingsList, setSavedSettingsList] = useState<SavedSettingsSlot[]>([]);
   const [selectedSettingsId, setSelectedSettingsId] = useState<string | null>(null);
+  const [mobileTab, setMobileTab] = useState<"assets" | "text" | "effects" | "export">("assets");
 
 
   const mapPresetToControls = (config: (typeof effectPresetConfigs)[EffectPresetName]) => ({
@@ -1458,7 +1459,7 @@ export default function Home() {
           </div>
         </div>
       </header>
-      <div className="grid grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)_360px] gap-4 p-4">
+      <div className="hidden md:grid md:grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)_360px] gap-4 p-4">
         <UploadPanel
           handleImageUpload={handleImageUpload}
           handleAudioUpload={handleAudioUpload}
@@ -1679,21 +1680,103 @@ export default function Home() {
             </div>
           </div>
         </div>
-        {audioUrl && (
-          <audio
-            ref={audioRef}
-            src={audioUrl}
-            className="hidden"
-            onLoadedMetadata={(e) =>
-              setAudioDuration(e.currentTarget.duration)
-            }
-            onTimeUpdate={(e) =>
-              setCurrentTime(e.currentTarget.currentTime)
-            }
-            onEnded={handleReset}
-          />
-        )}
       </div>
+      <div className="md:hidden px-3 pb-4 overflow-x-hidden">
+        <div className="sticky top-[108px] z-20 rounded-2xl border border-cyan-500/30 bg-zinc-950/95 p-3 backdrop-blur">
+          <PreviewStage
+            previewSizeClass="w-full max-w-none aspect-video"
+            chorusBoost={chorusBoost}
+            showGlitch={showGlitch}
+            selectedImage={selectedImage}
+            isPlaying={isPlaying}
+            isRecording={isRecording}
+            getMotionStyle={getMotionStyle}
+            showPanels={showPanels}
+            panelBurst={panelBurst}
+            panelPattern={panelPattern}
+            showEqualizer={showEqualizer}
+            eqBars={eqBars}
+            showSfx={showSfx}
+            sfxItems={sfxItems}
+            sfxPosition={sfxPosition}
+            sfxText={sfxText}
+            sfxScale={sfxScale}
+            getPositionClass={getPositionClass}
+            showBubble={showBubble}
+            bubblePosition={bubblePosition}
+            bubbleText={bubbleText}
+            flashActive={flashActive}
+          />
+          <div className="mt-3"><ControlButtons isPlaying={isPlaying} onPlay={handlePlay} onPause={handlePause} onReset={handleReset} /></div>
+        </div>
+        <div className="mt-3 grid grid-cols-4 gap-2">
+          {[
+            { id: "assets", label: "素材" },
+            { id: "text", label: "テキスト" },
+            { id: "effects", label: "演出" },
+            { id: "export", label: "書き出し" },
+          ].map((tab) => (
+            <button key={tab.id} onClick={() => setMobileTab(tab.id as "assets" | "text" | "effects" | "export")} className={`min-h-11 rounded-xl border text-sm font-bold ${mobileTab === tab.id ? "border-cyan-300 bg-cyan-500/25 text-cyan-100" : "border-zinc-700 bg-zinc-900/90 text-zinc-200"}`}>{tab.label}</button>
+          ))}
+        </div>
+        <div className="mt-3 rounded-2xl border border-zinc-700 bg-zinc-950/90 p-3 [&_button]:min-h-11 [&_button]:text-sm [&_input]:min-h-11 [&_input]:text-base [&_select]:min-h-11 [&_select]:text-base [&_textarea]:min-h-11 [&_textarea]:text-base [&_input[type='range']]:min-h-8">
+          {mobileTab === "assets" ? (
+            <UploadPanel
+              handleImageUpload={handleImageUpload}
+              handleAudioUpload={handleAudioUpload}
+              audioName={audioName}
+              aspectRatio={aspectRatio}
+              formatTime={formatTime}
+              audioDuration={audioDuration}
+              currentTime={currentTime}
+              images={images}
+              currentImageIndex={currentImageIndex}
+              isPlaying={isPlaying}
+              chorusBoost={chorusBoost}
+              activePreset={activePreset}
+              audioMood={audioMood}
+              imageMotions={imageMotions}
+              onSelectImage={(image, index) => {
+                setSelectedImage(image);
+                setCurrentImageIndex(index);
+              }}
+            />
+          ) : null}
+          {mobileTab === "text" ? (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3"><SettingsPanel {...{switchMode,setSwitchMode,wasAboveThresholdRef,lastLowEnergyRef,setActivePreset,imageDuration,setImageDuration,handleAutoDuration,peakSensitivity,setPeakSensitivity,kickSensitivity,setKickSensitivity,minSwitchInterval,setMinSwitchInterval,idealSwitchInterval,setIdealSwitchInterval,fallbackSwitchInterval,setFallbackSwitchInterval,showBubble,setShowBubble,bubbleText,setBubbleText,autoBubble,setAutoBubble,textMode,setTextMode,audioMood,showSfx,setShowSfx,sfxText,setSfxText,autoSfx,setAutoSfx,randomSfxScaleEnabled,randomSfxCountEnabled,setRandomSfxScaleEnabled:handleRandomSfxScaleEnabled,setRandomSfxCountEnabled,regenerateSfxItems:() => { const items = generateSfxItems(); setSfxItems(items); setSfxText(items[0]?.text ?? sfxText); setSfxScale(items[0]?.scale ?? 1); },setBubblePosition,bubbleTexts,positions,randomItem,showGlitch,setShowGlitch,showEqualizer,setShowEqualizer,showFlash,setShowFlash,showPanels,setShowPanels,panelMode,setPanelMode,panelPattern,setPanelPattern,chorusBoost,chorusSensitivity,setChorusSensitivity,selectedMotion,setSelectedMotion,applyMotionToCurrent,applyRandomMotions,randomMotionApplied}} /></div>
+            </div>
+          ) : null}
+          {mobileTab === "effects" ? (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3"><PresetPanel presetList={effectPresetList} activePreset={activePreset} isCustomAdjusted={isCustomAdjusted} applyPreset={applyPreset} customControls={customControls} onCustomControlChange={handleCustomControlChange} /></div>
+              <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
+                <p className="mb-2 text-sm font-bold text-pink-300">画角</p>
+                <div className="grid grid-cols-2 gap-2">{aspectList.map((ratio) => (<button key={ratio} onClick={() => setAspectRatio(ratio)} className={`rounded p-2 font-bold ${aspectRatio === ratio ? "bg-yellow-400 text-black shadow-[0_0_10px_#facc15]" : "bg-zinc-800"}`}>{ratio}</button>))}</div>
+              </div>
+            </div>
+          ) : null}
+          {mobileTab === "export" ? (
+            <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
+              <ExportPanel aspectRatio={aspectRatio} audioDuration={audioDuration} imageCount={images.length} exportMode={exportMode} exportQuality={exportQuality} setExportQuality={setExportQuality} exportStatus={exportStatus} exportMessage={exportMessage} handlePrepareExport={handlePrepareExport} handleStartRecording={handleStartRecording} handleStopRecording={handleStopRecording} isRecording={isRecording} recordingMode={recordingMode} recordedVideoUrl={recordedVideoUrl} exportAudioStatus={exportAudioStatus} formatTime={formatTime} />
+            </div>
+          ) : null}
+        </div>
+      </div>
+      {audioUrl && (
+        <audio
+          ref={audioRef}
+          src={audioUrl}
+          className="hidden"
+          onLoadedMetadata={(e) =>
+            setAudioDuration(e.currentTarget.duration)
+          }
+          onTimeUpdate={(e) =>
+            setCurrentTime(e.currentTarget.currentTime)
+          }
+          onEnded={handleReset}
+        />
+      )}
     </main>
   );
 }

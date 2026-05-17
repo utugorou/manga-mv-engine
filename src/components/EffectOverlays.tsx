@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { SfxItem } from "../types/mv";
+import type { EqualizerType } from "../types/mv";
 
 type PositionType =
   | "topLeft"
@@ -25,6 +26,7 @@ type EffectOverlaysProps = {
   showGlitch: boolean;
   showEqualizer: boolean;
   eqBars: number[];
+  equalizerType: EqualizerType;
   showSfx: boolean;
   sfxItems: SfxItem[];
   getPositionClass: (position: PositionType) => string;
@@ -44,6 +46,7 @@ export default function EffectOverlays({
   showGlitch,
   showEqualizer,
   eqBars,
+  equalizerType,
   showSfx,
   sfxItems,
   getPositionClass,
@@ -154,21 +157,26 @@ export default function EffectOverlays({
       )}
 
       {showEqualizer && (
-        <div
-          className={`absolute bottom-4 right-4 flex items-end gap-1 ${
-            chorusBoost ? "h-32 scale-125" : "h-24"
-          } transition-all duration-150`}
-        >
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {equalizerType === "wave" ? (
+            <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
+              <polyline fill="none" stroke="rgba(34,211,238,0.92)" strokeWidth="3" points={eqBars.map((v, i) => `${(i / Math.max(1, eqBars.length - 1)) * 100},${50 - (v / 100) * 35}`).join(" ")} />
+            </svg>
+          ) : null}
+          <div className={`absolute inset-x-0 ${equalizerType === "mirror" ? "top-0 bottom-0 items-center" : "bottom-0 h-[45%] items-end"} flex gap-[0.4vw] px-[1.5%] transition-all duration-150`}>
           {eqBars.map((height, index) => (
             <div
               key={index}
-              className="w-3 origin-bottom rounded-t bg-cyan-300 shadow-[0_0_12px_#22d3ee]"
+              className={`origin-bottom rounded-t ${equalizerType === "glitchEq" && index % 3 === 0 ? "bg-pink-400" : "bg-cyan-300"} shadow-[0_0_12px_#22d3ee]`}
               style={{
-                height: `${height}px`,
+                width: `${equalizerType === "wideBars" ? 100 / Math.max(1, eqBars.length * 0.95) : 100 / Math.max(1, eqBars.length * 1.6)}%`,
+                height: `${Math.max(6, (height / 100) * 100)}%`,
                 animation: isPlaying ? `eqMove ${0.3 + index * 0.05}s infinite` : "none",
+                transform: equalizerType === "mirror" ? "translateY(0)" : undefined,
               }}
             />
           ))}
+          </div>
         </div>
       )}
 

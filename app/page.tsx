@@ -43,6 +43,8 @@ import type {
   PanelPattern,
   PositionType,
   EffectPresetName,
+  EqualizerType,
+  MotionAmplitude,
   SfxItem,
   SwitchMode,
   TextMode,
@@ -143,7 +145,8 @@ export default function Home() {
 
   const [showGlitch, setShowGlitch] = useState(false);
   const [showEqualizer, setShowEqualizer] = useState(false);
-  const [eqBars, setEqBars] = useState<number[]>(Array(12).fill(20));
+  const [equalizerType, setEqualizerType] = useState<EqualizerType>("bars");
+  const [eqBars, setEqBars] = useState<number[]>(Array(16).fill(20));
 
   const [showFlash, setShowFlash] = useState(true);
   const [flashActive, setFlashActive] = useState(false);
@@ -181,6 +184,7 @@ export default function Home() {
 
   const [selectedMotion, setSelectedMotion] =
     useState<MotionType>("zoomIn");
+  const [motionAmplitude, setMotionAmplitude] = useState<MotionAmplitude>("normal");
 
   const [activePreset, setActivePreset] = useState<EffectPresetName>("標準");
   const [customControls, setCustomControls] = useState({
@@ -239,6 +243,10 @@ export default function Home() {
   };
 
 
+
+  const motionAmplitudeValue = motionAmplitude === "x2" ? 2 : motionAmplitude === "x3" ? 3 : 1;
+  const presetMotionMultiplier: Record<EffectPresetName, number> = { "標準": 1, "エモ": 0.9, "バトル": 1.35, "ライブ": 1.5, "グリッチ": 1.2, "サビ爆発": 1.8 };
+  const eqPresetType: Record<EffectPresetName, EqualizerType> = { "標準": "bars", "エモ": "wave", "バトル": "mirror", "ライブ": "wideBars", "グリッチ": "glitchEq", "サビ爆発": "pulse" };
   const getActiveMediaElement = () => audioRef.current;
 
   const getRecordingAudioElement = () => audioRef.current;
@@ -408,6 +416,7 @@ export default function Home() {
 
     setShowGlitch(config.glitchIntensity > 0);
     setShowEqualizer(true);
+    setEqualizerType(eqPresetType[preset]);
     setShowFlash(true);
     setShowPanels(true);
     setPanelMode("random");
@@ -706,7 +715,7 @@ export default function Home() {
       analyser.getByteFrequencyData(freqData);
       analyser.getByteTimeDomainData(timeData);
 
-      const barCount = 12;
+      const barCount = 16;
       const chunkSize = Math.floor(freqData.length / barCount);
 
       const nextBars = Array.from({ length: barCount }, (_, index) => {
@@ -721,7 +730,9 @@ export default function Home() {
 
         const avg = sum / chunkSize;
 
-        return Math.max(8, Math.round((avg / 255) * 100));
+        const overall = rms * 100;
+        const boosted = (avg / 255) * 100 + overall * 0.35;
+        return Math.max(4, Math.round(boosted));
       });
 
       setEqBars(nextBars);
@@ -1176,6 +1187,7 @@ export default function Home() {
               motionType: activeMotion,
               chorusBoost: latestChorusBoostRef.current,
               recordingElapsedMs: recordingElapsedMsRef.current,
+              motionAmplitudeMultiplier: motionAmplitudeValue * presetMotionMultiplier[activePreset],
             });
           } catch (error) {
             console.warn("画像描画に失敗しました", error);
@@ -1186,7 +1198,7 @@ export default function Home() {
           drawComicPanels(ctx, latestPanelPatternRef.current, resolution.width, resolution.height);
         }
         if (latestShowEqualizerRef.current) {
-          drawEqualizerBars(ctx, latestEqBarsRef.current, resolution.width, resolution.height);
+          drawEqualizerBars(ctx, latestEqBarsRef.current, resolution.width, resolution.height, equalizerType);
         }
         if (latestShowSfxRef.current) {
           drawSfxText(ctx, latestSfxTextRef.current, latestSfxPositionRef.current, resolution.width, resolution.height, {
@@ -1317,7 +1329,7 @@ export default function Home() {
       case "zoomOut":
         return "zoomOutAnim 8s ease-in-out infinite";
       case "panLeft":
-        return "panLeftAnim 8s ease-in-out infinite";
+        return `panLeftAnim 8s ease-in-out infinite`;
       case "panRight":
         return "panRightAnim 8s ease-in-out infinite";
       case "shake":
@@ -1348,6 +1360,7 @@ export default function Home() {
         return "zoomInAnim 8s ease-in-out infinite";
     }
   };
+  const getMotionAmplitude = () => motionAmplitudeValue * presetMotionMultiplier[activePreset];
 
   const getPositionClass = (position: PositionType) => {
     switch (position) {
@@ -1381,13 +1394,13 @@ export default function Home() {
 
         @keyframes panLeftAnim {
           0% { transform: scale(1.1) translateX(0); }
-          50% { transform: scale(1.1) translateX(-40px); }
+          50% { transform: scale(1.1) translateX(calc(-40px * var(--motion-amp, 1))); }
           100% { transform: scale(1.1) translateX(0); }
         }
 
         @keyframes panRightAnim {
           0% { transform: scale(1.1) translateX(0); }
-          50% { transform: scale(1.1) translateX(40px); }
+          50% { transform: scale(1.1) translateX(calc(40px * var(--motion-amp, 1))); }
           100% { transform: scale(1.1) translateX(0); }
         }
 
@@ -1405,16 +1418,16 @@ export default function Home() {
           75% { transform: scale(1.03) rotate(-1deg); }
         }
         @keyframes panUpAnim {
-          0%,100% { transform: scale(1.08) translateY(16px); }
-          50% { transform: scale(1.08) translateY(-22px); }
+          0%,100% { transform: scale(1.08) translateY(calc(16px * var(--motion-amp, 1))); }
+          50% { transform: scale(1.08) translateY(calc(-22px * var(--motion-amp, 1))); }
         }
         @keyframes panDownAnim {
-          0%,100% { transform: scale(1.08) translateY(-16px); }
-          50% { transform: scale(1.08) translateY(22px); }
+          0%,100% { transform: scale(1.08) translateY(calc(-16px * var(--motion-amp, 1))); }
+          50% { transform: scale(1.08) translateY(calc(22px * var(--motion-amp, 1))); }
         }
         @keyframes diagonalPanAnim {
-          0%,100% { transform: scale(1.1) translate(-20px,18px); }
-          50% { transform: scale(1.1) translate(20px,-18px); }
+          0%,100% { transform: scale(1.1) translate(calc(-20px * var(--motion-amp, 1)),calc(18px * var(--motion-amp, 1))); }
+          50% { transform: scale(1.1) translate(calc(20px * var(--motion-amp, 1)),calc(-18px * var(--motion-amp, 1))); }
         }
         @keyframes slowZoomInAnim {
           0%,100% { transform: scale(1); }
@@ -1441,8 +1454,8 @@ export default function Home() {
         }
         @keyframes sideGrooveAnim {
           0%,100% { transform: translateX(0) scale(1.04); }
-          25% { transform: translateX(-10px) scale(1.03); }
-          75% { transform: translateX(10px) scale(1.05); }
+          25% { transform: translateX(calc(-10px * var(--motion-amp, 1))) scale(1.03); }
+          75% { transform: translateX(calc(10px * var(--motion-amp, 1))) scale(1.05); }
         }
         @keyframes handheldAnim {
           0%,100% { transform: translate(0,0) rotate(0deg) scale(1.04); }
@@ -1559,11 +1572,13 @@ export default function Home() {
               isPlaying={isPlaying}
               isRecording={isRecording}
               getMotionStyle={getMotionStyle}
+              getMotionAmplitude={getMotionAmplitude}
               showPanels={showPanels}
               panelBurst={panelBurst}
               panelPattern={panelPattern}
               showEqualizer={showEqualizer}
               eqBars={eqBars}
+              equalizerType={equalizerType}
               showSfx={showSfx}
               sfxItems={sfxItems}
               sfxPosition={sfxPosition}
@@ -1692,6 +1707,10 @@ export default function Home() {
                 setShowGlitch={setShowGlitch}
                 showEqualizer={showEqualizer}
                 setShowEqualizer={setShowEqualizer}
+                equalizerType={equalizerType}
+                setEqualizerType={setEqualizerType}
+                motionAmplitude={motionAmplitude}
+                setMotionAmplitude={setMotionAmplitude}
                 showFlash={showFlash}
                 setShowFlash={setShowFlash}
                 showPanels={showPanels}
@@ -1723,11 +1742,13 @@ export default function Home() {
             isPlaying={isPlaying}
             isRecording={isRecording}
             getMotionStyle={getMotionStyle}
+            getMotionAmplitude={getMotionAmplitude}
             showPanels={showPanels}
             panelBurst={panelBurst}
             panelPattern={panelPattern}
             showEqualizer={showEqualizer}
             eqBars={eqBars}
+            equalizerType={equalizerType}
             showSfx={showSfx}
             sfxItems={sfxItems}
             sfxPosition={sfxPosition}
@@ -1886,6 +1907,10 @@ export default function Home() {
                       setShowGlitch={setShowGlitch}
                       showEqualizer={showEqualizer}
                       setShowEqualizer={setShowEqualizer}
+                      equalizerType={equalizerType}
+                      setEqualizerType={setEqualizerType}
+                      motionAmplitude={motionAmplitude}
+                      setMotionAmplitude={setMotionAmplitude}
                       showFlash={showFlash}
                       setShowFlash={setShowFlash}
                       showPanels={showPanels}

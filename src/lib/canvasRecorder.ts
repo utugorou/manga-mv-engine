@@ -55,6 +55,7 @@ export type CanvasImageMotionDrawOptions = {
   motionType?: "zoomIn" | "zoomOut" | "panLeft" | "panRight" | "shake" | "comic" | "panUp" | "panDown" | "diagonalPan" | "slowZoomIn" | "breathZoom" | "impactZoom" | "glitchJump" | "grooveBounce" | "sideGroove" | "handheld";
   chorusBoost?: boolean;
   recordingElapsedMs?: number;
+  motionAmplitudeMultiplier?: number;
 };
 
 const getAnchor = (position: CanvasOverlayPosition, width: number, height: number) => {
@@ -90,6 +91,7 @@ export const drawCoverImageWithMotion = (
   const elapsedMs = options.recordingElapsedMs ?? 0;
   const motionType = options.motionType ?? "zoomIn";
   const chorusBoost = options.chorusBoost ?? false;
+  const motionAmp = options.motionAmplitudeMultiplier ?? 1;
 
   const slowCycle = elapsedMs / 7000;
   const fastCycle = elapsedMs / 600;
@@ -119,11 +121,11 @@ export const drawCoverImageWithMotion = (
         break;
       case "panLeft":
         scale = 1.1;
-        translateX = -((slowSin + 1) / 2) * canvasWidth * 0.06;
+        translateX = -((slowSin + 1) / 2) * canvasWidth * 0.06 * motionAmp;
         break;
       case "panRight":
         scale = 1.1;
-        translateX = ((slowSin + 1) / 2) * canvasWidth * 0.06;
+        translateX = ((slowSin + 1) / 2) * canvasWidth * 0.06 * motionAmp;
         break;
       case "shake":
         translateX = fastSin * canvasWidth * 0.006;
@@ -136,16 +138,16 @@ export const drawCoverImageWithMotion = (
         break;
       case "panUp":
         scale = 1.08;
-        translateY = -((slowSin + 1) / 2) * canvasHeight * 0.05;
+        translateY = -((slowSin + 1) / 2) * canvasHeight * 0.05 * motionAmp;
         break;
       case "panDown":
         scale = 1.08;
-        translateY = ((slowSin + 1) / 2) * canvasHeight * 0.05;
+        translateY = ((slowSin + 1) / 2) * canvasHeight * 0.05 * motionAmp;
         break;
       case "diagonalPan":
         scale = 1.1;
-        translateX = slowSin * canvasWidth * 0.04;
-        translateY = -slowSin * canvasHeight * 0.035;
+        translateX = slowSin * canvasWidth * 0.04 * motionAmp;
+        translateY = -slowSin * canvasHeight * 0.035 * motionAmp;
         break;
       case "slowZoomIn":
         scale = 1 + ((Math.sin((elapsedMs / 10000) * Math.PI * 2) + 1) / 2) * 0.08;
@@ -166,7 +168,7 @@ export const drawCoverImageWithMotion = (
         break;
       case "sideGroove":
         scale = 1.04;
-        translateX = Math.sin((elapsedMs / 1000) * Math.PI * 2) * canvasWidth * 0.018;
+        translateX = Math.sin((elapsedMs / 1000) * Math.PI * 2) * canvasWidth * 0.018 * motionAmp;
         break;
       case "handheld":
         scale = 1.05;
@@ -301,19 +303,39 @@ export const drawGlitchLines = (ctx: CanvasRenderingContext2D, canvasWidth: numb
   }
 };
 
-export const drawEqualizerBars = (ctx: CanvasRenderingContext2D, eqBars: number[], canvasWidth: number, canvasHeight: number): void => {
-  const barCount = Math.max(8, eqBars.length);
+export const drawEqualizerBars = (ctx: CanvasRenderingContext2D, eqBars: number[], canvasWidth: number, canvasHeight: number, eqType: "bars" | "wideBars" | "mirror" | "wave" | "glitchEq" | "pulse" | "circle" = "bars"): void => {
+  const barCount = Math.max(12, eqBars.length);
+  if (eqType === "wave") {
+    ctx.strokeStyle = "rgba(34,211,238,0.95)";
+    ctx.lineWidth = Math.max(2, canvasHeight * 0.006);
+    ctx.beginPath();
+    for (let i = 0; i < canvasWidth; i++) {
+      const idx = Math.floor((i / canvasWidth) * eqBars.length) % eqBars.length;
+      const amp = (eqBars[idx] ?? 15) / 100;
+      const y = canvasHeight * 0.5 + Math.sin((i / canvasWidth) * Math.PI * 8) * amp * canvasHeight * 0.28;
+      if (i === 0) ctx.moveTo(i, y); else ctx.lineTo(i, y);
+    }
+    ctx.stroke();
+    return;
+  }
   const barWidth = Math.max(5, canvasWidth * 0.008);
-  const gap = Math.max(3, barWidth * 0.5);
+  const gap = eqType === "wideBars" ? Math.max(2, barWidth * 0.2) : Math.max(3, barWidth * 0.5);
   const fullWidth = barCount * barWidth + (barCount - 1) * gap;
   const baseX = canvasWidth * 0.5 - fullWidth / 2;
-  const baseY = canvasHeight - canvasHeight * 0.055;
+  const baseY = canvasHeight - canvasHeight * 0.02;
 
   for (let idx = 0; idx < barCount; idx++) {
     const bar = eqBars[idx % eqBars.length] ?? 15;
-    const h = Math.max(10, (bar / 100) * canvasHeight * 0.26);
-    ctx.fillStyle = idx % 2 === 0 ? "rgba(255,255,255,0.8)" : "rgba(34,211,238,0.9)";
-    ctx.fillRect(baseX + idx * (barWidth + gap), baseY - h, barWidth, h);
+    const h = Math.max(10, (bar / 100) * canvasHeight * (eqType === "pulse" ? 0.4 : 0.32));
+    const x = baseX + idx * (barWidth + gap);
+    if (eqType === "mirror") {
+      ctx.fillStyle = idx % 2 === 0 ? "rgba(255,255,255,0.85)" : "rgba(34,211,238,0.95)";
+      ctx.fillRect(x, canvasHeight * 0.5 - h, barWidth, h);
+      ctx.fillRect(x, canvasHeight * 0.5, barWidth, h);
+    } else {
+      ctx.fillStyle = eqType === "glitchEq" && idx % 3 === 0 ? "rgba(244,114,182,0.95)" : idx % 2 === 0 ? "rgba(255,255,255,0.8)" : "rgba(34,211,238,0.9)";
+      ctx.fillRect(x, baseY - h, barWidth, h);
+    }
   }
 };
 

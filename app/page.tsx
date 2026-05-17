@@ -52,6 +52,8 @@ import type {
 } from "../src/types/mv";
 
 export default function Home() {
+  const SETTINGS_STORAGE_KEY = "manga-mv-engine:settings:v1";
+  const DEFAULT_PRESET: EffectPresetName = "標準";
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -191,6 +193,8 @@ export default function Home() {
     chorusMultiplier: 1.3,
   });
   const [isCustomAdjusted, setIsCustomAdjusted] = useState(false);
+  const [settingsName, setSettingsName] = useState("マイ設定");
+  const [settingsStatus, setSettingsStatus] = useState("");
 
   const mapPresetToControls = (config: (typeof effectPresetConfigs)[EffectPresetName]) => ({
     sfxAmount: Math.round(config.sfxFrequency * 100),
@@ -459,6 +463,82 @@ export default function Home() {
     randomizeMotionsFromList(battleMotionList);
   };
 
+  const applySavedSettings = (saved: {
+    activePreset: EffectPresetName;
+    customControls: typeof customControls;
+    backgroundMode: BackgroundMode;
+    audioSourceMode: AudioSourceMode;
+    textMode?: TextMode;
+    bubbleText?: string;
+    sfxText?: string;
+    settingsName?: string;
+  }) => {
+    const preset = effectPresetList.includes(saved.activePreset)
+      ? saved.activePreset
+      : DEFAULT_PRESET;
+    applyPreset(preset);
+    setCustomControls(saved.customControls);
+    setIsCustomAdjusted(true);
+    applyCustomControls(saved.customControls);
+    setBackgroundMode(saved.backgroundMode);
+    setAudioSourceMode(saved.audioSourceMode);
+    if (saved.textMode) setTextMode(saved.textMode);
+    if (typeof saved.bubbleText === "string") setBubbleText(saved.bubbleText);
+    if (typeof saved.sfxText === "string") setSfxText(saved.sfxText);
+    if (saved.settingsName) setSettingsName(saved.settingsName);
+  };
+
+  const saveCurrentSettings = () => {
+    const settingsPayload = {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      settingsName,
+      activePreset,
+      customControls,
+      backgroundMode,
+      audioSourceMode,
+      textMode,
+      bubbleText,
+      sfxText,
+    };
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsPayload));
+    setSettingsStatus(`「${settingsName || "マイ設定"}」を保存しました`);
+  };
+
+  const loadSavedSettings = () => {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!raw) {
+      setSettingsStatus("保存済み設定がありません");
+      return;
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      applySavedSettings({
+        activePreset: parsed.activePreset,
+        customControls: parsed.customControls,
+        backgroundMode: parsed.backgroundMode,
+        audioSourceMode: parsed.audioSourceMode,
+        textMode: parsed.textMode,
+        bubbleText: parsed.bubbleText,
+        sfxText: parsed.sfxText,
+        settingsName: parsed.settingsName,
+      });
+      setSettingsStatus(`「${parsed.settingsName || "マイ設定"}」を読み込みました`);
+    } catch {
+      setSettingsStatus("保存設定の読み込みに失敗しました");
+    }
+  };
+
+  const resetToDefaultSettings = () => {
+    applyPreset(DEFAULT_PRESET);
+    setBackgroundMode("none");
+    setAudioSourceMode("bgm");
+    setTextMode("random");
+    setBubbleText("ここにセリフ");
+    setSfxText("ドン!!");
+    setSettingsStatus("初期設定に戻しました");
+  };
+
   const handleCustomControlChange = (
     key: keyof typeof customControls,
     value: number,
@@ -721,6 +801,14 @@ export default function Home() {
     panelMode,
     textMode,
   ]);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      loadSavedSettings();
+    }, 0);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!isPlaying) {
@@ -1638,6 +1726,22 @@ export default function Home() {
               formatTime={formatTime}
             />
             <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3"><PresetPanel presetList={effectPresetList} activePreset={activePreset} isCustomAdjusted={isCustomAdjusted} applyPreset={applyPreset} customControls={customControls} onCustomControlChange={handleCustomControlChange} /></div>
+            <div className="rounded-xl border border-cyan-500/30 bg-zinc-900/60 p-3 space-y-2">
+              <p className="text-xs font-bold text-cyan-200">設定保存</p>
+              <input
+                type="text"
+                value={settingsName}
+                onChange={(e) => setSettingsName(e.target.value)}
+                placeholder="保存名を入力"
+                className="w-full rounded-lg border border-zinc-600 bg-zinc-950 px-2 py-1 text-xs text-zinc-100"
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button onClick={saveCurrentSettings} className="rounded-lg border border-cyan-300/70 bg-cyan-500/20 px-2 py-1 text-xs font-bold text-cyan-100">設定を保存</button>
+                <button onClick={loadSavedSettings} className="rounded-lg border border-fuchsia-300/70 bg-fuchsia-500/20 px-2 py-1 text-xs font-bold text-fuchsia-100">保存設定を読み込み</button>
+                <button onClick={resetToDefaultSettings} className="rounded-lg border border-zinc-400/70 bg-zinc-700/30 px-2 py-1 text-xs font-bold text-zinc-100">初期設定に戻す</button>
+              </div>
+              {settingsStatus ? <p className="text-[11px] text-zinc-300">{settingsStatus}</p> : null}
+            </div>
           </div>
         </div>
         <div className="max-h-[calc(100vh-140px)] overflow-y-auto rounded-2xl border border-cyan-500/30 bg-zinc-950/90 p-4">

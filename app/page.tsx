@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import ControlButtons from "../src/components/ControlButtons";
 import Timeline from "../src/components/Timeline";
@@ -52,6 +51,32 @@ import type {
 
 const randomItem = <T,>(list: T[]): T => {
   return list[Math.floor(Math.random() * list.length)];
+};
+
+type AppLogoProps = {
+  src: string;
+  onError: () => void;
+  isError: boolean;
+  className?: string;
+};
+
+const AppLogo = ({ src, onError, isError, className }: AppLogoProps) => {
+  if (isError) {
+    return (
+      <span className="text-lg sm:text-xl md:text-2xl font-black tracking-[0.12em] md:tracking-[0.16em] leading-none">MANGA MV ENGINE</span>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt="manga-mv-engine"
+      loading="eager"
+      fetchPriority="high"
+      onError={onError}
+      className={className ?? "h-8 sm:h-9 md:h-10 lg:h-11 w-auto max-w-[70vw] md:max-w-[min(70vw,20rem)] object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"}
+    />
+  );
 };
 
 export default function Home() {
@@ -1522,19 +1547,11 @@ export default function Home() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-fuchsia-300">
-              {!isLogoLoadError ? (
-                <Image
-                  src={logoSrc}
-                  alt="manga-mv-engine"
-                  width={560}
-                  height={72}
-                  priority
-                  onError={() => setIsLogoLoadError(true)}
-                  className="h-8 sm:h-9 md:h-10 lg:h-11 w-auto max-w-[min(70vw,20rem)] object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
-                />
-              ) : (
-                <span className="text-lg sm:text-xl md:text-2xl font-black tracking-[0.12em] md:tracking-[0.16em] leading-none">MANGA MV ENGINE</span>
-              )}
+              <AppLogo
+                src={logoSrc}
+                isError={isLogoLoadError}
+                onError={() => setIsLogoLoadError(true)}
+              />
             </h1>
             <p className="text-xs text-zinc-400">Project: <span className="text-cyan-300">Untitled MV</span></p>
           </div>

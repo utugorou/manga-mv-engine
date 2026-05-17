@@ -328,9 +328,9 @@ export default function Home() {
 
 
   const motionAmplitudeValue = motionAmplitude === "x2" ? 2 : motionAmplitude === "x3" ? 3 : 1;
-  const presetMotionMultiplier: Record<EffectPresetName, number> = { "標準": 1, "エモ": 0.9, "バトル": 1.35, "ライブ": 1.5, "グリッチ": 1.2, "サビ爆発": 1.8 };
-  const eqPresetType: Record<EffectPresetName, EqualizerType> = { "標準": "bars", "エモ": "wave", "バトル": "mirror", "ライブ": "wideBars", "グリッチ": "dot", "サビ爆発": "laser" };
-  const eqPresetColor: Record<EffectPresetName, EqualizerColorTheme> = { "標準": "neon", "エモ": "pink", "バトル": "redBlue", "ライブ": "rainbow", "グリッチ": "green", "サビ爆発": "yellowBlack" };
+  const presetMotionMultiplier: Record<EffectPresetName, number> = { "標準": 1, "エモ": 0.9, "バトル": 1.35, "ライブ": 1.5, "サビ爆発": 1.8 };
+  const eqPresetType: Record<EffectPresetName, EqualizerType> = { "標準": "bars", "エモ": "wave", "バトル": "mirror", "ライブ": "wideBars", "サビ爆発": "laser" };
+  const eqPresetColor: Record<EffectPresetName, EqualizerColorTheme> = { "標準": "neon", "エモ": "pink", "バトル": "redBlue", "ライブ": "rainbow", "サビ爆発": "yellowBlack" };
   const getActiveMediaElement = () => audioRef.current;
 
   const getRecordingAudioElement = () => audioRef.current;
@@ -411,7 +411,6 @@ export default function Home() {
     バトル: ["diagonal", "big-plus-small", "battle-break", "center-focus"],
     エモ: ["full", "split-horizontal", "center-focus"],
     ライブ: ["triple-vertical", "triple-horizontal", "split-vertical", "full"],
-    グリッチ: ["diagonal", "four-panel", "battle-break", "split-vertical"],
     サビ爆発: ["center-focus", "battle-break", "big-plus-small", "diagonal"],
   };
   const getSafePanelCandidates = useCallback((preset: EffectPresetName): PanelPattern[] => {
@@ -1908,8 +1907,6 @@ export default function Home() {
                 setShowSfx={setShowSfx}
                 sfxText={sfxText}
                 setSfxText={setSfxText}
-                autoSfx={autoSfx}
-                setAutoSfx={setAutoSfx}
                 randomSfxScaleEnabled={randomSfxScaleEnabled}
                 randomSfxCountEnabled={randomSfxCountEnabled}
                 setRandomSfxScaleEnabled={handleRandomSfxScaleEnabled}
@@ -2056,47 +2053,6 @@ export default function Home() {
           {mobileTab === "effects" ? (
             <div className="space-y-3">
               <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3"><PresetPanel presetList={effectPresetList} activePreset={activePreset} isCustomAdjusted={isCustomAdjusted} applyPreset={applyPreset} customControls={customControls} onCustomControlChange={handleCustomControlChange} /></div>
-              <div className="rounded-xl border border-cyan-500/30 bg-zinc-900/60 p-3 space-y-3">
-                <p className="text-sm font-bold text-cyan-300">タイミング</p>
-                <p className="text-xs text-zinc-400">画面切り替えタイミング（速い / 標準 / 遅い）</p>
-                <div className="grid grid-cols-3 gap-2">
-                  <button onClick={() => { setSwitchMode("equal"); setImageDuration(1200); }} className={`rounded p-2 font-bold ${switchMode === "equal" && imageDuration <= 1400 ? "bg-cyan-500 text-black" : "bg-zinc-800"}`}>速い</button>
-                  <button onClick={() => { setSwitchMode("equal"); setImageDuration(2000); }} className={`rounded p-2 font-bold ${switchMode === "equal" && imageDuration > 1400 && imageDuration < 2800 ? "bg-cyan-500 text-black" : "bg-zinc-800"}`}>標準</button>
-                  <button onClick={() => { setSwitchMode("equal"); setImageDuration(3200); }} className={`rounded p-2 font-bold ${switchMode === "equal" && imageDuration >= 2800 ? "bg-cyan-500 text-black" : "bg-zinc-800"}`}>遅い</button>
-                </div>
-                <p className="text-xs text-zinc-400">シーン切替速度: {(imageDuration / 1000).toFixed(1)}秒</p>
-              </div>
-              <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3 space-y-2">
-                <p className="text-sm font-bold text-pink-300">漫画演出 ON/OFF</p>
-                <button onClick={() => setShowBubble(!showBubble)} className={`w-full rounded p-2 ${showBubble ? "bg-pink-600" : "bg-zinc-800"}`}>タイトル表示 {showBubble ? "ON" : "OFF"}</button>
-                <button onClick={() => setShowSfx(!showSfx)} className={`w-full rounded p-2 ${showSfx ? "bg-pink-600" : "bg-zinc-800"}`}>擬音表示 {showSfx ? "ON" : "OFF"}</button>
-                <button onClick={() => setShowPanels(!showPanels)} className={`w-full rounded p-2 ${showPanels ? "bg-white text-black" : "bg-zinc-800"}`}>集中線/コマ割り {showPanels ? "ON" : "OFF"}</button>
-                <button onClick={() => setShowGlitch(!showGlitch)} className={`w-full rounded p-2 ${showGlitch ? "bg-pink-600" : "bg-zinc-800"}`}>グリッチ {showGlitch ? "ON" : "OFF"}</button>
-                <button onClick={() => setShowEqualizer(!showEqualizer)} className={`w-full rounded p-2 ${showEqualizer ? "bg-cyan-600 text-black" : "bg-zinc-800"}`}>イコライザー {showEqualizer ? "ON" : "OFF"}</button>
-                <button onClick={() => setShowFlash(!showFlash)} className={`w-full rounded p-2 ${showFlash ? "bg-yellow-400 text-black" : "bg-zinc-800"}`}>テキスト演出フラッシュ {showFlash ? "ON" : "OFF"}</button>
-              </div>
-              <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3 space-y-3">
-                <p className="text-sm font-bold text-cyan-300">エコライザータイプ</p>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  {[
-                    ["bars", "バー"], ["wideBars", "ワイド"], ["mirror", "ミラー"], ["wave", "波形"], ["block", "ブロック"], ["dot", "ドット"], ["laser", "レーザー"],
-                  ].map(([value, label]) => (
-                    <button key={value} onClick={() => setEqualizerType(value as EqualizerType)} className={`rounded p-2 font-bold ${equalizerType === value ? "bg-cyan-500 text-black" : "bg-zinc-800"}`}>{label}</button>
-                  ))}
-                </div>
-                <p className="text-sm font-bold text-cyan-300">エコライザー色</p>
-                <div className="grid grid-cols-4 gap-2 text-xs">
-                  {[
-                    ["neon", "ネオン"], ["redBlue", "赤青"], ["yellowBlack", "黄黒"], ["green", "緑"], ["pink", "ピンク"], ["mono", "白黒"], ["rainbow", "虹"],
-                  ].map(([value, label]) => (
-                    <button key={value} onClick={() => setEqualizerColorTheme(value as EqualizerColorTheme)} className={`rounded p-2 font-bold ${equalizerColorTheme === value ? "bg-fuchsia-500 text-white" : "bg-zinc-800"}`}>{label}</button>
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
-                <details open>
-                  <summary className="cursor-pointer text-sm font-bold text-cyan-300">カスタム調整 / 詳細</summary>
-                  <div className="mt-3 space-y-3">
                     <SettingsPanel
                       switchMode={switchMode}
                       setSwitchMode={setSwitchMode}
@@ -2129,8 +2085,6 @@ export default function Home() {
                       setShowSfx={setShowSfx}
                       sfxText={sfxText}
                       setSfxText={setSfxText}
-                      autoSfx={autoSfx}
-                      setAutoSfx={setAutoSfx}
                       randomSfxScaleEnabled={randomSfxScaleEnabled}
                       randomSfxCountEnabled={randomSfxCountEnabled}
                       setRandomSfxScaleEnabled={handleRandomSfxScaleEnabled}
@@ -2167,9 +2121,6 @@ export default function Home() {
                       applyRandomMotions={applyRandomMotions}
                       randomMotionApplied={randomMotionApplied}
                     />
-                  </div>
-                </details>
-              </div>
             </div>
           ) : null}
           {mobileTab === "export" ? (

@@ -11,7 +11,6 @@ type PresetPanelProps = {
     sfxAmount: number;
     sfxSize: number;
     focusLine: number;
-    glitch: number;
     shake: number;
     textFrequency: number;
     chorusMultiplier: number;
@@ -23,12 +22,11 @@ type PresetPanelProps = {
 };
 
 const presetDescriptions: Record<EffectPresetName, string> = {
-  標準: "現在のバランスに近い基準演出",
-  バトル: "擬音・集中線・揺れを強化",
-  エモ: "余白と揺らぎを活かした繊細演出",
-  ライブ: "テンポ重視でサビを派手に",
-  グリッチ: "ノイズ・ブレ・点滅を強化",
-  サビ爆発: "通常は抑えめ、サビで一気に爆発",
+  標準: "使いやすいバランス型",
+  バトル: "擬音・動き・フラッシュ強め",
+  エモ: "余白とセリフ重視で落ち着いた演出",
+  ライブ: "音反応とテンポ感を強調",
+  サビ爆発: "見せ場を最大火力で演出",
 };
 
 const sliderClass = "w-full accent-fuchsia-400";
@@ -77,12 +75,6 @@ export default function PresetPanel({ presetList, activePreset, isCustomAdjusted
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.focusLine} onChange={(e) => onCustomControlChange("focusLine", Number(e.target.value))} />
             <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>控えめ</span><span>強め</span></p>
             <p className="text-[10px] text-zinc-400">現在: {valueHint(customControls.focusLine)}</p>
-          </label>
-          <label className="block">グリッチ {customControls.glitch}
-            <p className="text-[10px] text-zinc-400">画面のノイズ感や崩し表現の強さです。</p>
-            <input className={sliderClass} type="range" min={0} max={100} value={customControls.glitch} onChange={(e) => onCustomControlChange("glitch", Number(e.target.value))} />
-            <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>きれいめ</span><span>ノイズ多め</span></p>
-            <p className="text-[10px] text-zinc-400">現在: {valueHint(customControls.glitch)}</p>
           </label>
           <label className="block">画面揺れ {customControls.shake}
             <p className="text-[10px] text-zinc-400">カメラが揺れるような動きの強さです。</p>

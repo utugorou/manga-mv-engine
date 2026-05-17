@@ -2,11 +2,10 @@
 
 import { MutableRefObject } from "react";
 import {
-  AudioMood,
   MotionType,
+  PositionType,
   PanelMode,
   PanelPattern,
-  PositionType,
   PresetName,
   SwitchMode,
   TextMode,
@@ -36,30 +35,12 @@ type SettingsPanelProps = {
   setFallbackSwitchInterval: (value: number) => void;
   showBubble: boolean;
   setShowBubble: (value: boolean) => void;
-  bubbleText: string;
-  setBubbleText: (value: string) => void;
   autoBubble: boolean;
   setAutoBubble: (value: boolean) => void;
   textMode: TextMode;
   setTextMode: (mode: TextMode) => void;
-  audioMood: AudioMood;
   showSfx: boolean;
   setShowSfx: (value: boolean) => void;
-  sfxText: string;
-  setSfxText: (value: string) => void;
-  autoSfx: boolean;
-  setAutoSfx: (value: boolean) => void;
-  randomSfxScaleEnabled: boolean;
-  randomSfxCountEnabled: boolean;
-  setRandomSfxScaleEnabled: (value: boolean) => void;
-  setRandomSfxCountEnabled: (value: boolean) => void;
-  regenerateSfxItems: () => void;
-  setBubblePosition: (position: PositionType) => void;
-  bubbleTexts: string[];
-  positions: PositionType[];
-  randomItem: <T>(list: T[]) => T;
-  showGlitch: boolean;
-  setShowGlitch: (value: boolean) => void;
   showEqualizer: boolean;
   setShowEqualizer: (value: boolean) => void;
   equalizerType: EqualizerType;
@@ -67,14 +48,31 @@ type SettingsPanelProps = {
   equalizerColorTheme: EqualizerColorTheme;
   setEqualizerColorTheme: (value: EqualizerColorTheme) => void;
   showFlash: boolean;
+
+  bubbleText?: string;
+  setBubbleText?: (value: string) => void;
+  sfxText?: string;
+  setSfxText?: (value: string) => void;
+  randomSfxScaleEnabled?: boolean;
+  randomSfxCountEnabled?: boolean;
+  setRandomSfxScaleEnabled?: (value: boolean) => void;
+  setRandomSfxCountEnabled?: (value: boolean) => void;
+  regenerateSfxItems?: () => void;
+  setBubblePosition?: (position: PositionType) => void;
+  bubbleTexts?: string[];
+  positions?: PositionType[];
+  randomItem?: <T>(list: T[]) => T;
+  showGlitch?: boolean;
+  setShowGlitch?: (value: boolean) => void;
+  showPanels?: boolean;
+  setShowPanels?: (value: boolean) => void;
+  panelMode?: string;
+  setPanelMode?: (mode: PanelMode) => void;
+  panelPattern?: string;
+  setPanelPattern?: (pattern: PanelPattern) => void;
+  chorusBoost?: boolean;
+  audioMood?: string;
   setShowFlash: (value: boolean) => void;
-  showPanels: boolean;
-  setShowPanels: (value: boolean) => void;
-  panelMode: PanelMode;
-  setPanelMode: (mode: PanelMode) => void;
-  panelPattern: PanelPattern;
-  setPanelPattern: (pattern: PanelPattern) => void;
-  chorusBoost: boolean;
   chorusSensitivity: number;
   setChorusSensitivity: (value: number) => void;
   selectedMotion: MotionType;
@@ -86,643 +84,71 @@ type SettingsPanelProps = {
   setMotionAmplitude: (value: MotionAmplitude) => void;
 };
 
-export default function SettingsPanel({
-  switchMode,
-  setSwitchMode,
-  wasAboveThresholdRef,
-  lastLowEnergyRef,
-  setActivePreset,
-  imageDuration,
-  setImageDuration,
-  handleAutoDuration,
-  peakSensitivity,
-  setPeakSensitivity,
-  kickSensitivity,
-  setKickSensitivity,
-  minSwitchInterval,
-  setMinSwitchInterval,
-  idealSwitchInterval,
-  setIdealSwitchInterval,
-  fallbackSwitchInterval,
-  setFallbackSwitchInterval,
-  showBubble,
-  setShowBubble,
-  bubbleText,
-  setBubbleText,
-  autoBubble,
-  setAutoBubble,
-  textMode,
-  setTextMode,
-  audioMood,
-  showSfx,
-  setShowSfx,
-  sfxText,
-  setSfxText,
-  autoSfx,
-  setAutoSfx,
-  randomSfxScaleEnabled,
-  randomSfxCountEnabled,
-  setRandomSfxScaleEnabled,
-  setRandomSfxCountEnabled,
-  regenerateSfxItems,
-  setBubblePosition,
-  bubbleTexts,
-  positions,
-  randomItem,
-  showGlitch,
-  setShowGlitch,
-  showEqualizer,
-  setShowEqualizer,
-  equalizerType,
-  setEqualizerType,
-  equalizerColorTheme,
-  setEqualizerColorTheme,
-  showFlash,
-  setShowFlash,
-  showPanels,
-  setShowPanels,
-  panelMode,
-  setPanelMode,
-  panelPattern,
-  setPanelPattern,
-  chorusBoost,
-  chorusSensitivity,
-  setChorusSensitivity,
-  selectedMotion,
-  setSelectedMotion,
-  applyMotionToCurrent,
-  applyRandomMotions,
-  randomMotionApplied,
-  motionAmplitude,
-  setMotionAmplitude,
-}: SettingsPanelProps) {
-  return (
-    <>
-      <div className="pt-1 pb-3 border-b border-zinc-700">
-        <p className="text-sm mb-1 text-cyan-300">切り替えの決め方</p>
-        <p className="text-xs text-zinc-400 mb-2">一定間隔か、音に合わせるかを選びます。</p>
+const cardClass = "rounded-xl border border-zinc-700 bg-zinc-900/70 p-3 space-y-2";
 
-        <div className="grid grid-cols-1 gap-2">
-          <button
-            onClick={() => {
-              setSwitchMode("equal");
-              wasAboveThresholdRef.current = false;
-              setActivePreset(null);
-            }}
-            className={`p-2 rounded text-sm font-bold ${
-              switchMode === "equal"
-                ? "bg-pink-600"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            一定間隔
-          </button>
+export default function SettingsPanel(props: SettingsPanelProps) {
+  const {
+    switchMode, setSwitchMode, wasAboveThresholdRef, lastLowEnergyRef, setActivePreset,
+    imageDuration, setImageDuration, handleAutoDuration, peakSensitivity, setPeakSensitivity,
+    kickSensitivity, setKickSensitivity, minSwitchInterval, setMinSwitchInterval,
+    idealSwitchInterval, setIdealSwitchInterval, fallbackSwitchInterval, setFallbackSwitchInterval,
+    showBubble, setShowBubble, autoBubble, setAutoBubble, textMode, setTextMode,
+    showSfx, setShowSfx, showEqualizer, setShowEqualizer,
+    equalizerType, setEqualizerType, equalizerColorTheme, setEqualizerColorTheme,
+    showFlash, setShowFlash, chorusSensitivity, setChorusSensitivity, selectedMotion,
+    setSelectedMotion, applyMotionToCurrent, applyRandomMotions, randomMotionApplied,
+    motionAmplitude, setMotionAmplitude,
+  } = props;
 
-          <button
-            onClick={() => {
-              setSwitchMode("peak");
-              wasAboveThresholdRef.current = false;
-              setActivePreset(null);
-            }}
-            className={`p-2 rounded text-sm font-bold ${
-              switchMode === "peak"
-                ? "bg-cyan-600 text-black"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            音に合わせる（ピーク）
-          </button>
-
-          <button
-            onClick={() => {
-              setSwitchMode("kick");
-              wasAboveThresholdRef.current = false;
-              lastLowEnergyRef.current = 0;
-              setActivePreset(null);
-            }}
-            className={`p-2 rounded text-sm font-bold ${
-              switchMode === "kick"
-                ? "bg-yellow-400 text-black"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            サビ/低音重視（キック）
-          </button>
-        </div>
+  return <div className="space-y-3">
+    <section className={cardClass}>
+      <p className="text-sm font-bold text-cyan-300">画面切り替え</p><p className="text-xs text-zinc-400">一定間隔で切り替えるか、音の盛り上がりで切り替えるかを選びます。</p>
+      <div className="grid grid-cols-1 gap-2 text-sm">
+        <button onClick={() => { setSwitchMode("equal"); wasAboveThresholdRef.current = false; setActivePreset(null); }} className={`p-2 rounded font-bold ${switchMode === "equal" ? "bg-pink-600" : "bg-zinc-800"}`}>一定間隔</button>
+        <button onClick={() => { setSwitchMode("peak"); wasAboveThresholdRef.current = false; setActivePreset(null); }} className={`p-2 rounded font-bold ${switchMode === "peak" ? "bg-cyan-600 text-black" : "bg-zinc-800"}`}>音に合わせる</button>
+        <button onClick={() => { setSwitchMode("kick"); wasAboveThresholdRef.current = false; lastLowEnergyRef.current = 0; setActivePreset(null); }} className={`p-2 rounded font-bold ${switchMode === "kick" ? "bg-yellow-400 text-black" : "bg-zinc-800"}`}>サビ重視</button>
       </div>
+      <p className="text-xs text-zinc-300">画面切り替えタイミング: {(imageDuration / 1000).toFixed(1)}秒</p>
+      <input type="range" min="500" max="10000" step="100" value={imageDuration} onChange={(e) => { setImageDuration(Number(e.target.value)); setActivePreset(null); }} className="w-full" />
+      <p className="flex justify-between text-[10px] text-zinc-500"><span>速い</span><span>遅い</span></p>
+      {switchMode !== "equal" ? <>
+        <p className="text-xs text-zinc-300">音反応の敏感さ: {switchMode === "peak" ? peakSensitivity : kickSensitivity}%</p>
+        <input type="range" min={switchMode === "peak" ? 5 : 2} max={switchMode === "peak" ? 35 : 20} step="1" value={switchMode === "peak" ? peakSensitivity : kickSensitivity} onChange={(e) => { const v = Number(e.target.value); if (switchMode === "peak") { setPeakSensitivity(v); } else { setKickSensitivity(v); } setActivePreset(null); }} className="w-full" />
+        <p className="flex justify-between text-[10px] text-zinc-500"><span>大きな音だけ</span><span>小さな音にも反応</span></p>
+      </> : null}
+      <button onClick={handleAutoDuration} className="w-full rounded bg-pink-600 p-2 font-bold">曲尺に合わせる</button>
+    </section>
 
-      {switchMode === "equal" ? (
-        <div className="pt-2 border-b border-zinc-700 pb-4">
-          <p className="text-sm mb-1 text-cyan-300">画面切り替えタイミング</p>
-          <p className="text-xs text-zinc-400 mb-2">短いほどテンポよく、長いほどゆっくり切り替わります。</p>
+    <section className={cardClass}><p className="text-sm font-bold text-cyan-300">モーション</p><p className="text-xs text-zinc-400">背景や画面の動きの大きさを調整します。</p>
+    <div className="grid grid-cols-3 gap-2">{(["normal","x2","x3"] as MotionAmplitude[]).map((v) => <button key={v} onClick={() => { setMotionAmplitude(v); setActivePreset(null); }} className={`rounded p-2 ${motionAmplitude===v?"bg-cyan-500 text-black font-bold":"bg-zinc-800"}`}>{v === "normal" ? "通常" : v === "x2" ? "2倍" : "3倍"}</button>)}</div>
+    <select value={selectedMotion} onChange={(e)=>{setSelectedMotion(e.target.value as MotionType); setActivePreset(null);}} className="w-full rounded border border-zinc-700 bg-black p-2">
+      <option value="zoomIn">ズームイン</option><option value="zoomOut">ズームアウト</option><option value="panLeft">左パン</option><option value="panRight">右パン</option><option value="shake">シェイク</option><option value="comic">漫画揺れ</option><option value="panUp">上パン</option><option value="panDown">下パン</option><option value="diagonalPan">斜めパン</option><option value="slowZoomIn">ゆっくりズームイン</option><option value="breathZoom">呼吸ズーム</option><option value="impactZoom">インパクトズーム</option><option value="grooveBounce">グルーヴバウンス</option><option value="sideGroove">横ノリ</option><option value="handheld">手持ちカメラ風</option>
+    </select><button onClick={applyMotionToCurrent} className="w-full rounded bg-pink-600 p-2">この画像に適用</button><button onClick={applyRandomMotions} className={`w-full rounded p-2 ${randomMotionApplied?"bg-cyan-500 text-black font-bold":"bg-zinc-800"}`}>全画像ランダム {randomMotionApplied ? "適用中" : "未適用"}</button></section>
 
-          <input
-            type="range"
-            min="500"
-            max="10000"
-            step="100"
-            value={imageDuration}
-            onChange={(e) => {
-              setImageDuration(Number(e.target.value));
-              setActivePreset(null);
-            }}
-            className="w-full"
-          />
+    <section className={cardClass}><p className="text-sm font-bold text-cyan-300">音反応 / エコライザー</p><p className="text-xs text-zinc-400">曲の音に合わせて下部のエコライザーを動かします。</p>
+    <button onClick={()=>{setShowEqualizer(!showEqualizer); setActivePreset(null);}} className={`w-full rounded p-2 ${showEqualizer?"bg-cyan-600 text-black":"bg-zinc-800"}`}>エコライザー {showEqualizer?"ON":"OFF"}</button>
+    <select value={equalizerType} onChange={(e)=>{setEqualizerType(e.target.value as EqualizerType); setActivePreset(null);}} className="w-full rounded border border-zinc-700 bg-black p-2"><option value="bars">バー</option><option value="wideBars">ワイドバー</option><option value="mirror">ミラー</option><option value="wave">波形</option><option value="block">ブロック</option><option value="dot">ドット</option><option value="laser">レーザー</option></select>
+    <select value={equalizerColorTheme} onChange={(e)=>{setEqualizerColorTheme(e.target.value as EqualizerColorTheme); setActivePreset(null);}} className="w-full rounded border border-zinc-700 bg-black p-2"><option value="neon">ネオン</option><option value="redBlue">赤青</option><option value="yellowBlack">黄黒</option><option value="green">緑</option><option value="pink">ピンク</option><option value="mono">白黒</option><option value="rainbow">レインボー</option></select>
+    </section>
 
-          <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>速い</span><span>遅い</span></p>
+    <section className={cardClass}><p className="text-sm font-bold text-yellow-300">フラッシュ</p><p className="text-xs text-zinc-400">音のピークやサビで一瞬光らせて、インパクトを出します。</p>
+    <button onClick={()=>{setShowFlash(!showFlash); setActivePreset(null);}} className={`w-full rounded p-2 ${showFlash?"bg-yellow-400 text-black font-bold":"bg-zinc-800"}`}>フラッシュ {showFlash ? "ON" : "OFF"}</button>
+    </section>
 
-          <p className="text-xs text-zinc-400 mt-1">
-            {(imageDuration / 1000).toFixed(1)} 秒（{imageDuration <= 1500 ? "速い" : imageDuration <= 3500 ? "標準" : "遅い"}）
-          </p>
-          <p className="text-[10px] text-zinc-400">{imageDuration <= 1500 ? "短い間隔でテンポよく切り替えます" : imageDuration <= 3500 ? "曲に合わせやすいバランスです" : "ゆっくり見せたい時に向いています"}</p>
+    <section className={cardClass}><p className="text-sm font-bold text-pink-300">文字演出の表示ON/OFF</p><p className="text-xs text-zinc-400">画面に出す文字演出を選びます。</p>
+    <button onClick={()=>{setShowBubble(!showBubble); setActivePreset(null);}} className={`w-full rounded p-2 ${showBubble?"bg-pink-600":"bg-zinc-800"}`}>タイトル表示 {showBubble?"ON":"OFF"}</button>
+    <button onClick={()=>{setShowSfx(!showSfx); setActivePreset(null);}} className={`w-full rounded p-2 ${showSfx?"bg-pink-600":"bg-zinc-800"}`}>擬音表示 {showSfx?"ON":"OFF"}</button>
+    <button onClick={()=>{setAutoBubble(!autoBubble); setActivePreset(null);}} className={`w-full rounded p-2 ${autoBubble?"bg-cyan-600 text-black":"bg-zinc-800"}`}>セリフ表示（自動） {autoBubble?"ON":"OFF"}</button>
+    <button onClick={()=>{setTextMode(textMode === "smart" ? "random" : "smart"); setActivePreset(null);}} className={`w-full rounded p-2 ${textMode === "smart" ? "bg-cyan-500 text-black font-bold" : "bg-zinc-800"}`}>スマート文字 {textMode === "smart" ? "ON" : "OFF"}</button>
+    </section>
 
-          <button
-            onClick={handleAutoDuration}
-            className="w-full bg-pink-600 hover:bg-pink-500 p-2 rounded mt-3 font-bold"
-          >
-            曲尺に合わせる
-          </button>
-        </div>
-      ) : (
-        <div className="pt-2 border-b border-zinc-700 pb-4 space-y-3">
-          {switchMode === "peak" && (
-            <div>
-              <p className="text-sm mb-1 text-cyan-300">音反応の敏感さ</p>
-              <p className="text-xs text-zinc-400 mb-2">曲のどのくらい小さな音まで拾うかを調整します。</p>
-
-              <input
-                type="range"
-                min="5"
-                max="35"
-                step="1"
-                value={peakSensitivity}
-                onChange={(e) => {
-                  setPeakSensitivity(Number(e.target.value));
-                  setActivePreset(null);
-                }}
-                className="w-full"
-              />
-
-              <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>大きな音だけ</span><span>小さな音にも反応</span></p>
-              <p className="text-xs text-zinc-400 mt-1">{peakSensitivity}%（{peakSensitivity <= 12 ? "低い" : peakSensitivity <= 24 ? "標準" : "高い"}）</p>
-              <p className="text-[10px] text-zinc-400">{peakSensitivity <= 12 ? "強いビートだけ拾います" : peakSensitivity <= 24 ? "自然に反応します" : "細かい音にも反応します"}</p>
-              <p className="text-[10px] text-zinc-500">右にするほど細かく反応しますが、動きが多くなります。</p>
-            </div>
-          )}
-
-          {switchMode === "kick" && (
-            <div>
-              <p className="text-sm mb-2 text-yellow-300">低音キック感度</p>
-
-              <input
-                type="range"
-                min="2"
-                max="20"
-                step="1"
-                value={kickSensitivity}
-                onChange={(e) => {
-                  setKickSensitivity(Number(e.target.value));
-                  setActivePreset(null);
-                }}
-                className="w-full"
-              />
-
-              <p className="text-xs text-zinc-400 mt-1">{kickSensitivity}%</p>
-            </div>
-          )}
-
-          <div>
-            <p className="text-sm mb-2 text-cyan-300">最短切替間隔</p>
-
-            <input
-              type="range"
-              min="200"
-              max="3000"
-              step="100"
-              value={minSwitchInterval}
-              onChange={(e) => {
-                setMinSwitchInterval(Number(e.target.value));
-                setActivePreset(null);
-              }}
-              className="w-full"
-            />
-
-            <p className="text-xs text-zinc-400 mt-1">
-              {(minSwitchInterval / 1000).toFixed(1)} 秒
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm mb-2 text-yellow-300">理想切替間隔</p>
-
-            <input
-              type="range"
-              min="400"
-              max="4000"
-              step="100"
-              value={idealSwitchInterval}
-              onChange={(e) => {
-                setIdealSwitchInterval(Number(e.target.value));
-                setActivePreset(null);
-              }}
-              className="w-full"
-            />
-
-            <p className="text-xs text-zinc-400 mt-1">
-              {(idealSwitchInterval / 1000).toFixed(1)} 秒
-            </p>
-          </div>
-
-          <div>
-            <p className="text-sm mb-2 text-pink-300">補助切替間隔</p>
-
-            <input
-              type="range"
-              min="400"
-              max="5000"
-              step="100"
-              value={fallbackSwitchInterval}
-              onChange={(e) => {
-                setFallbackSwitchInterval(Number(e.target.value));
-                setActivePreset(null);
-              }}
-              className="w-full"
-            />
-
-            <p className="text-xs text-zinc-400 mt-1">
-              {(fallbackSwitchInterval / 1000).toFixed(1)} 秒
-            </p>
-          </div>
-        </div>
-      )}
-
-      <button
-        onClick={() => {
-          setShowBubble(true);
-          setActivePreset(null);
-        }}
-        className={`w-full p-2 rounded ${
-          showBubble
-            ? "bg-pink-600 hover:bg-pink-500"
-            : "bg-zinc-800 hover:bg-zinc-700"
-        }`}
-      >
-        吹き出し {showBubble ? "ON" : "追加"}
-      </button>
-      <div className="pt-3">
-        <p className="text-sm mb-1 text-cyan-300">エコライザータイプ</p>
-        <p className="text-xs text-zinc-400 mb-2">音への反応をどの形で見せるかを選びます。</p>
-        <select value={equalizerType} onChange={(e) => { setEqualizerType(e.target.value as EqualizerType); setActivePreset(null); }} className="w-full bg-black border border-zinc-600 p-2 rounded text-white">
-          <option value="bars">バー</option><option value="wideBars">ワイドバー</option><option value="mirror">ミラー</option><option value="wave">波形</option><option value="block">ブロック</option><option value="dot">ドット</option><option value="laser">レーザー</option>
-        </select>
+    <details className={cardClass}><summary className="cursor-pointer text-sm font-bold text-cyan-300">詳細調整 / カスタム調整</summary><p className="mt-2 text-xs text-zinc-400">細かく調整したい人向けの設定です。</p>
+      <div className="space-y-2 pt-2">
+        <p className="text-xs text-zinc-300">最短切替間隔: {(minSwitchInterval / 1000).toFixed(1)}秒</p><input type="range" min="200" max="3000" step="100" value={minSwitchInterval} onChange={(e) => { setMinSwitchInterval(Number(e.target.value)); setActivePreset(null); }} className="w-full" />
+        <p className="text-xs text-zinc-300">理想切替間隔: {(idealSwitchInterval / 1000).toFixed(1)}秒</p><input type="range" min="400" max="4000" step="100" value={idealSwitchInterval} onChange={(e) => { setIdealSwitchInterval(Number(e.target.value)); setActivePreset(null); }} className="w-full" />
+        <p className="text-xs text-zinc-300">補助切替間隔: {(fallbackSwitchInterval / 1000).toFixed(1)}秒</p><input type="range" min="400" max="5000" step="100" value={fallbackSwitchInterval} onChange={(e) => { setFallbackSwitchInterval(Number(e.target.value)); setActivePreset(null); }} className="w-full" />
+        <p className="text-xs text-zinc-300">サビ演出倍率感度: {chorusSensitivity}%</p><input type="range" min="10" max="45" step="1" value={chorusSensitivity} onChange={(e)=>{setChorusSensitivity(Number(e.target.value)); setActivePreset(null);}} className="w-full" />
       </div>
-      <div className="pt-3">
-        <p className="text-sm mb-1 text-cyan-300">エコライザー色</p>
-        <select value={equalizerColorTheme} onChange={(e) => { setEqualizerColorTheme(e.target.value as EqualizerColorTheme); setActivePreset(null); }} className="w-full bg-black border border-zinc-600 p-2 rounded text-white">
-          <option value="neon">ネオン</option><option value="redBlue">赤青</option><option value="yellowBlack">黄黒</option><option value="green">緑</option><option value="pink">ピンク</option><option value="mono">白黒</option><option value="rainbow">レインボー</option>
-        </select>
-      </div>
-
-      <input
-        value={bubbleText}
-        onChange={(e) => {
-          setBubbleText(e.target.value);
-          setActivePreset(null);
-        }}
-        className="w-full bg-black border border-zinc-600 p-2 rounded text-white"
-      />
-
-      <button
-        onClick={() => {
-          setAutoBubble(!autoBubble);
-          setActivePreset(null);
-        }}
-        className={`w-full p-2 rounded ${
-          autoBubble
-            ? "bg-pink-600 hover:bg-pink-500"
-            : "bg-zinc-800 hover:bg-zinc-700"
-        }`}
-      >
-        セリフ全自動 {autoBubble ? "ON" : "OFF"}
-      </button>
-
-      <div className="pt-3 pb-3 border-b border-zinc-700">
-        <p className="text-sm mb-2 text-pink-300 font-bold">文字生成モード</p>
-
-        <div className="grid grid-cols-1 gap-2">
-          <button
-            onClick={() => {
-              setTextMode("fixed");
-              setActivePreset(null);
-            }}
-            className={`p-2 rounded text-sm ${
-              textMode === "fixed"
-                ? "bg-white text-black font-bold"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            固定
-          </button>
-
-          <button
-            onClick={() => {
-              setTextMode("random");
-              setActivePreset(null);
-            }}
-            className={`p-2 rounded text-sm ${
-              textMode === "random"
-                ? "bg-cyan-500 text-black font-bold"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            ランダム
-          </button>
-
-          <button
-            onClick={() => {
-              setTextMode("smart");
-              setActivePreset(null);
-            }}
-            className={`p-2 rounded text-sm ${
-              textMode === "smart"
-                ? "bg-pink-600 font-bold"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            スマート
-          </button>
-        </div>
-
-        <p className="text-xs text-zinc-400 mt-2">
-          現在：{textMode} / 状態：{audioMood}
-        </p>
-      </div>
-
-      <button
-        onClick={() => {
-          setShowBubble(true);
-          setBubbleText(randomItem(bubbleTexts));
-          setBubblePosition(randomItem(positions));
-          setActivePreset(null);
-        }}
-        className="w-full bg-zinc-800 hover:bg-zinc-700 p-2 rounded"
-      >
-        セリフだけランダム
-      </button>
-
-      <button
-        onClick={() => {
-          setShowSfx(!showSfx);
-          setActivePreset(null);
-        }}
-        className={`w-full p-2 rounded ${
-          showSfx
-            ? "bg-pink-600 hover:bg-pink-500"
-            : "bg-zinc-800 hover:bg-zinc-700"
-        }`}
-      >
-        擬音 {showSfx ? "ON" : "OFF"}
-      </button>
-
-      <input
-        value={sfxText}
-        onChange={(e) => {
-          setSfxText(e.target.value);
-          setActivePreset(null);
-        }}
-        className="w-full bg-black border border-zinc-600 p-2 rounded text-white"
-      />
-
-      <button
-        onClick={() => {
-          setAutoSfx(!autoSfx);
-          setActivePreset(null);
-        }}
-        className={`w-full p-2 rounded ${
-          autoSfx
-            ? "bg-pink-600 hover:bg-pink-500"
-            : "bg-zinc-800 hover:bg-zinc-700"
-        }`}
-      >
-        擬音全自動 {autoSfx ? "ON" : "OFF"}
-      </button>
-
-      <button
-        onClick={() => {
-          setShowSfx(true);
-          regenerateSfxItems();
-          setActivePreset(null);
-        }}
-        className="w-full bg-zinc-800 hover:bg-zinc-700 p-2 rounded"
-      >
-        擬音だけランダム
-      </button>
-      <button
-        onClick={() => {
-          setRandomSfxCountEnabled(!randomSfxCountEnabled);
-          setActivePreset(null);
-        }}
-        className={`w-full p-2 rounded ${randomSfxCountEnabled ? "bg-yellow-400 text-black font-bold" : "bg-zinc-800 hover:bg-zinc-700"}`}
-      >
-        擬音数ランダム {randomSfxCountEnabled ? "ON" : "OFF"}
-      </button>
-
-      <button
-        onClick={() => {
-          setRandomSfxScaleEnabled(!randomSfxScaleEnabled);
-          setActivePreset(null);
-        }}
-        className={`w-full p-2 rounded ${
-          randomSfxScaleEnabled
-            ? "bg-yellow-400 text-black font-bold"
-            : "bg-zinc-800 hover:bg-zinc-700"
-        }`}
-      >
-        擬音巨大化 {randomSfxScaleEnabled ? "ON" : "OFF"}
-      </button>
-
-      <button
-        onClick={() => {
-          setShowGlitch(!showGlitch);
-          setActivePreset(null);
-        }}
-        className={`w-full p-2 rounded ${
-          showGlitch
-            ? "bg-pink-600 hover:bg-pink-500"
-            : "bg-zinc-800 hover:bg-zinc-700"
-        }`}
-      >
-        グリッチ {showGlitch ? "ON" : "OFF"}
-      </button>
-
-      <button
-        onClick={() => {
-          setShowEqualizer(!showEqualizer);
-          setActivePreset(null);
-        }}
-        className={`w-full p-2 rounded ${
-          showEqualizer
-            ? "bg-cyan-600 hover:bg-cyan-500 text-black"
-            : "bg-zinc-800 hover:bg-zinc-700"
-        }`}
-      >
-        イコライザー {showEqualizer ? "ON" : "OFF"}
-      </button>
-      <p className="text-[10px] text-zinc-400 -mt-1 mb-1">ONで音に合わせたバー演出を表示します。</p>
-
-      <button
-        onClick={() => {
-          setShowFlash(!showFlash);
-          setActivePreset(null);
-        }}
-        className={`w-full p-2 rounded ${
-          showFlash
-            ? "bg-yellow-400 text-black font-bold"
-            : "bg-zinc-800 hover:bg-zinc-700"
-        }`}
-      >
-        カメラフラッシュ {showFlash ? "ON" : "OFF"}
-      </button>
-
-      <button
-        onClick={() => {
-          setShowPanels(!showPanels);
-          setActivePreset(null);
-        }}
-        className={`w-full p-2 rounded ${
-          showPanels
-            ? "bg-white text-black font-bold"
-            : "bg-zinc-800 hover:bg-zinc-700"
-        }`}
-      >
-        漫画コマ割り {showPanels ? "ON" : "OFF"}
-      </button>
-
-      <div className="pt-3 pb-3 border-b border-zinc-700">
-        <p className="text-sm mb-2 text-cyan-300">コマ割り方式</p>
-        <div className="grid grid-cols-1 gap-2">
-          <button
-            onClick={() => {
-              setPanelMode("fixed");
-              setPanelPattern("full");
-              setActivePreset(null);
-            }}
-            className={`p-2 rounded text-sm ${
-              panelMode === "fixed"
-                ? "bg-white text-black font-bold"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            固定
-          </button>
-          <button
-            onClick={() => {
-              setPanelMode("random");
-              setActivePreset(null);
-            }}
-            className={`p-2 rounded text-sm ${
-              panelMode === "random"
-                ? "bg-cyan-500 text-black font-bold"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            画像切替ごとにランダム
-          </button>
-          <button
-            onClick={() => {
-              setPanelMode("chorus");
-              setActivePreset(null);
-            }}
-            className={`p-2 rounded text-sm ${
-              panelMode === "chorus"
-                ? "bg-pink-600 font-bold"
-                : "bg-zinc-800 hover:bg-zinc-700"
-            }`}
-          >
-            サビだけランダム
-          </button>
-        </div>
-        <p className="text-xs text-zinc-400 mt-2">現在：{panelPattern}</p>
-      </div>
-
-      <div className="pt-4 border-t border-zinc-700">
-        <p className="text-sm mb-1 text-pink-300">サビ演出倍率</p>
-        <p className="text-xs text-zinc-400 mb-2">サビ部分だけ演出をどれだけ強めるかを調整します。</p>
-        <div
-          className={`w-full p-2 rounded text-center font-bold mb-3 ${
-            chorusBoost ? "bg-pink-600" : "bg-zinc-800 text-zinc-400"
-          }`}
-        >
-          {chorusBoost ? "暴走中" : "待機中"}
-        </div>
-        <p className="text-xs text-zinc-400 mb-1">暴走感度：{chorusSensitivity}%</p>
-        <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>自然</span><span>サビ爆発</span></p>
-        <input
-          type="range"
-          min="10"
-          max="45"
-          step="1"
-          value={chorusSensitivity}
-          onChange={(e) => {
-            setChorusSensitivity(Number(e.target.value));
-            setActivePreset(null);
-          }}
-          className="w-full"
-        />
-      </div>
-
-      <div className="pt-4 border-t border-zinc-700">
-        <p className="text-sm mb-1 text-cyan-300">モーション動き幅</p>
-        <p className="text-xs text-zinc-400 mb-2">右側ほど画像が大きく動き、派手になります。</p>
-        <div className="grid grid-cols-3 gap-2 mb-3">
-          <button onClick={() => { setMotionAmplitude("normal"); setActivePreset(null); }} className={`p-2 rounded ${motionAmplitude === "normal" ? "bg-cyan-500 text-black font-bold" : "bg-zinc-800 hover:bg-zinc-700"}`}>通常</button>
-          <button onClick={() => { setMotionAmplitude("x2"); setActivePreset(null); }} className={`p-2 rounded ${motionAmplitude === "x2" ? "bg-cyan-500 text-black font-bold" : "bg-zinc-800 hover:bg-zinc-700"}`}>2倍</button>
-          <button onClick={() => { setMotionAmplitude("x3"); setActivePreset(null); }} className={`p-2 rounded ${motionAmplitude === "x3" ? "bg-cyan-500 text-black font-bold" : "bg-zinc-800 hover:bg-zinc-700"}`}>3倍</button>
-        </div>
-        <p className="text-[10px] text-zinc-400 mb-2">現在: {motionAmplitude === "normal" ? "通常：控えめな動き" : motionAmplitude === "x2" ? "2倍：動きが分かりやすい" : "3倍：かなり派手に動く"}</p>
-        <p className="text-sm mb-2 text-cyan-300">現在画像のモーション</p>
-        <select
-          value={selectedMotion}
-          onChange={(e) => {
-            setSelectedMotion(e.target.value as MotionType);
-            setActivePreset(null);
-          }}
-          className="w-full bg-black border border-zinc-600 p-2 rounded text-white"
-        >
-          <option value="zoomIn">ズームイン</option>
-          <option value="zoomOut">ズームアウト</option>
-          <option value="panLeft">左パン</option>
-          <option value="panRight">右パン</option>
-          <option value="shake">シェイク</option>
-          <option value="comic">漫画揺れ</option>
-          <option value="panUp">上パン</option>
-          <option value="panDown">下パン</option>
-          <option value="diagonalPan">斜めパン</option>
-          <option value="slowZoomIn">ゆっくりズームイン</option>
-          <option value="breathZoom">呼吸ズーム</option>
-          <option value="impactZoom">インパクトズーム</option>
-          <option value="glitchJump">グリッチジャンプ</option>
-          <option value="grooveBounce">グルーヴバウンス</option>
-          <option value="sideGroove">横ノリ</option>
-          <option value="handheld">手持ちカメラ風</option>
-        </select>
-        <button
-          onClick={applyMotionToCurrent}
-          className="w-full bg-pink-600 hover:bg-pink-500 p-2 rounded mt-3"
-        >
-          この画像に適用
-        </button>
-        <button
-          onClick={applyRandomMotions}
-          className={`w-full p-2 rounded mt-3 ${
-            randomMotionApplied
-              ? "bg-cyan-500 text-black font-bold"
-              : "bg-zinc-800 hover:bg-zinc-700"
-          }`}
-        >
-          全画像ランダム {randomMotionApplied ? "適用中" : "未適用"}
-        </button>
-      </div>
-    </>
-  );
+    </details>
+  </div>;
 }

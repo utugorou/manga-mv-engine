@@ -1,6 +1,6 @@
 import type { EffectPresetName } from "../types/mv";
 
-export const effectPresetList: EffectPresetName[] = ["標準", "バトル", "エモ", "ライブ", "グリッチ", "サビ爆発"];
+export const effectPresetList: EffectPresetName[] = ["標準", "バトル", "エモ", "ライブ", "サビ爆発"];
 
 export type EffectPresetConfig = {
   sfxFrequency: number;
@@ -50,15 +50,6 @@ export const effectPresetConfigs: Record<EffectPresetName, EffectPresetConfig> =
     screenShakeIntensity: clamp(1.28, 0.4, 1.9),
     textFrequency: clamp(0.82, 0, 1),
     chorusEffectMultiplier: clamp(1.62, 1, 2.4),
-  },
-  グリッチ: {
-    sfxFrequency: clamp(0.66, 0, 1),
-    sfxScale: clamp(1.46, 0.8, 1.9),
-    focusLineIntensity: clamp(1.12, 0.5, 2),
-    glitchIntensity: clamp(1.18, 0, 1.8),
-    screenShakeIntensity: clamp(1.24, 0.4, 1.9),
-    textFrequency: clamp(0.68, 0, 1),
-    chorusEffectMultiplier: clamp(1.52, 1, 2.4),
   },
   サビ爆発: {
     sfxFrequency: clamp(0.88, 0, 1),

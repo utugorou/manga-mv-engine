@@ -15,7 +15,7 @@ import {
   smartBubbleTexts,
   smartSfxTexts,
 } from "../src/lib/textEngine";
-import { getExportResolution } from "../src/lib/exportHelpers";
+import { getExportQualityLabel, getExportResolution } from "../src/lib/exportHelpers";
 import { withBasePath } from "../src/lib/assetPath";
 import {
   createExportCanvas,
@@ -124,6 +124,7 @@ export default function Home() {
   const latestTextSceneIndexRef = useRef<number | null>(null);
   const recordingStartedAtRef = useRef<number | null>(null);
   const recordingElapsedMsRef = useRef(0);
+  const recordingFpsRef = useRef(30);
   const equalModeFallbackStartedAtRef = useRef<number | null>(null);
 
   const lastSwitchTimeRef = useRef(0);
@@ -150,6 +151,11 @@ export default function Home() {
   const [exportMode] = useState<ExportMode>("preview");
   const [exportQuality, setExportQuality] =
     useState<ExportQuality>("standard");
+  const qualityProfiles: Record<ExportQuality, { fps: number; videoBitsPerSecond: number; audioBitsPerSecond: number }> = {
+    stable: { fps: 24, videoBitsPerSecond: 2_500_000, audioBitsPerSecond: 128_000 },
+    standard: { fps: 30, videoBitsPerSecond: 5_000_000, audioBitsPerSecond: 160_000 },
+    high: { fps: 30, videoBitsPerSecond: 8_000_000, audioBitsPerSecond: 192_000 },
+  };
   const [exportStatus, setExportStatus] = useState<ExportStatus>("idle");
   const [exportMessage, setExportMessage] = useState("未準備");
   const [isRecording, setIsRecording] = useState(false);
@@ -1233,9 +1239,7 @@ export default function Home() {
 
     setExportStatus("ready");
     setExportMessage(
-      `準備OK：${aspectRatio} / ${
-        exportQuality === "high" ? "高画質" : "標準"
-      } / ${resolution.width} x ${resolution.height} / ${formatTime(audioDuration)} / ${images.length}枚`
+      `準備OK：${aspectRatio} / ${getExportQualityLabel(exportQuality)} / ${resolution.width} x ${resolution.height} / ${formatTime(audioDuration)} / ${images.length}枚`
     );
   };
 
@@ -1312,18 +1316,25 @@ export default function Home() {
         throw new Error("Canvas context の作成に失敗しました");
       }
 
+      const activeQualityProfile = qualityProfiles[exportQuality];
+      const recordingFps = activeQualityProfile.fps;
+      recordingFpsRef.current = recordingFps;
+      const recordingBitrates = {
+        videoBitsPerSecond: activeQualityProfile.videoBitsPerSecond,
+        audioBitsPerSecond: activeQualityProfile.audioBitsPerSecond,
+      };
       let recordingInfo = { ...formatSelection };
       let fallbackReason: string | null = formatSelection.fallbackMessage;
       let recordingStartResult: { recorder: MediaRecorder; hasAudio: boolean };
       try {
-        recordingStartResult = startCanvasRecording(canvas, 30, getRecordingAudioElement(), true, formatSelection.selectedMimeType);
+        recordingStartResult = startCanvasRecording(canvas, recordingFps, getRecordingAudioElement(), true, formatSelection.selectedMimeType, recordingBitrates);
       } catch (error) {
         if (formatSelection.actualFormat === "mp4") {
           const fallbackSelection = selectRecordingFormat("webm");
           recordingInfo = { ...fallbackSelection, fallbackMessage: "MP4録画に失敗したため、WebMで録画します" };
           fallbackReason = recordingInfo.fallbackMessage;
           setMp4FallbackMessage(recordingInfo.fallbackMessage);
-          recordingStartResult = startCanvasRecording(canvas, 30, getRecordingAudioElement(), true, recordingInfo.selectedMimeType);
+          recordingStartResult = startCanvasRecording(canvas, recordingFps, getRecordingAudioElement(), true, recordingInfo.selectedMimeType, recordingBitrates);
         } else { throw error; }
       }
 
@@ -1341,18 +1352,24 @@ export default function Home() {
         format: recordingInfo.actualFormat,
         canvasWidth: safeWidth,
         canvasHeight: safeHeight,
+        qualityMode: exportQuality,
+        fps: recordingFps,
+        videoBitsPerSecond: recordingBitrates.videoBitsPerSecond,
+        audioBitsPerSecond: recordingBitrates.audioBitsPerSecond,
         hasBgm: Boolean(audioUrl),
         audioPaused: audio?.paused ?? true,
         audioMuted: audio?.muted ?? false,
         audioVolume: audio?.volume ?? 1,
         fallbackReason,
+        blobSizeBytes: null,
+        durationMs: null,
       });
       if (recordingInfo.actualFormat === "mp4" && audioTrackCount === 0) {
         setMp4FallbackMessage("録画音声トラックが取得できません。音声ありWebMを試してください。");
         const fallbackSelection = selectRecordingFormat("webm");
         if (fallbackSelection.selectedMimeType) {
           recorder.stream.getTracks().forEach((track) => track.stop());
-          const webmStartResult = startCanvasRecording(canvas, 30, getRecordingAudioElement(), true, fallbackSelection.selectedMimeType);
+          const webmStartResult = startCanvasRecording(canvas, recordingFps, getRecordingAudioElement(), true, fallbackSelection.selectedMimeType, recordingBitrates);
           recordingInfo = { ...fallbackSelection, fallbackMessage: "MP4では音声を取得できないため、音声ありWebMで録画します" };
           fallbackReason = recordingInfo.fallbackMessage;
           setMp4FallbackMessage(recordingInfo.fallbackMessage);
@@ -1368,11 +1385,17 @@ export default function Home() {
             format: recordingInfo.actualFormat,
             canvasWidth: safeWidth,
             canvasHeight: safeHeight,
+            qualityMode: exportQuality,
+            fps: recordingFps,
+            videoBitsPerSecond: recordingBitrates.videoBitsPerSecond,
+            audioBitsPerSecond: recordingBitrates.audioBitsPerSecond,
             hasBgm: Boolean(audioUrl),
             audioPaused: audio?.paused ?? true,
             audioMuted: audio?.muted ?? false,
             audioVolume: audio?.volume ?? 1,
             fallbackReason,
+            blobSizeBytes: null,
+            durationMs: null,
           });
           recordingStartResult = webmStartResult;
           ({ recorder, hasAudio } = recordingStartResult);
@@ -1427,7 +1450,7 @@ export default function Home() {
         if (!recordingCanvasRef.current || !ctx) return;
 
         ctx.fillStyle = "#000000";
-        ctx.fillRect(0, 0, resolution.width, resolution.height);
+        ctx.fillRect(0, 0, safeWidth, safeHeight);
 
         const startedAt = recordingStartedAtRef.current ?? performance.now();
         if (recordingStartedAtRef.current === null) {
@@ -1438,7 +1461,7 @@ export default function Home() {
         const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";
         if (activeState.imageUrl) {
           try {
-            await drawImageToCanvas(ctx, activeState.imageUrl, resolution.width, resolution.height, {
+            await drawImageToCanvas(ctx, activeState.imageUrl, safeWidth, safeHeight, {
               motionType: activeMotion,
               chorusBoost: latestChorusBoostRef.current,
               recordingElapsedMs: recordingElapsedMsRef.current,
@@ -1467,7 +1490,7 @@ export default function Home() {
 
         recordingFrameRef.current = window.setTimeout(() => {
           void drawFrame();
-        }, 1000 / 30) as unknown as number;
+        }, 1000 / recordingFpsRef.current) as unknown as number;
       };
 
       await drawFrame();
@@ -1513,6 +1536,11 @@ export default function Home() {
         URL.revokeObjectURL(recordedVideoUrl);
       }
       const videoUrl = URL.createObjectURL(blob);
+      setRecordingStreamDiagnostics((prev) => prev ? {
+        ...prev,
+        blobSizeBytes: blob.size,
+        durationMs,
+      } : prev);
 
       setRecordedVideoUrl(videoUrl);
       setExportStatus("finished");
@@ -1536,7 +1564,6 @@ export default function Home() {
       setIsRecording(false);
       setRecordingMode(null);
       setIsPlaying(false);
-      setRecordingStreamDiagnostics(null);
     }
   };
 

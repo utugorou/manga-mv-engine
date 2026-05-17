@@ -7,18 +7,22 @@ type ExportResolution = {
 
 const resolutionMap: Record<AspectRatio, Record<ExportQuality, ExportResolution>> = {
   "16:9": {
+    stable: { width: 960, height: 540 },
     standard: { width: 1280, height: 720 },
     high: { width: 1920, height: 1080 },
   },
   "9:16": {
+    stable: { width: 540, height: 960 },
     standard: { width: 720, height: 1280 },
     high: { width: 1080, height: 1920 },
   },
   "1:1": {
+    stable: { width: 720, height: 720 },
     standard: { width: 1080, height: 1080 },
     high: { width: 1440, height: 1440 },
   },
   "4:5": {
+    stable: { width: 720, height: 900 },
     standard: { width: 1080, height: 1350 },
     high: { width: 1440, height: 1800 },
   },
@@ -31,7 +35,20 @@ export const getExportResolution = (
 ): ExportResolution => {
   const base = resolutionMap[aspectRatio][exportQuality];
   if (!isMobileViewport) return base;
-  return resolutionMap[aspectRatio].standard;
+  return base;
+};
+
+export const getExportQualityLabel = (quality: ExportQuality): string => {
+  switch (quality) {
+    case "stable":
+      return "安定";
+    case "standard":
+      return "標準";
+    case "high":
+      return "高品質";
+    default:
+      return "標準";
+  }
 };
 
 export const getExportModeLabel = (exportMode: ExportMode): string => {

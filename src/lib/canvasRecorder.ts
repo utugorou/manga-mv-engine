@@ -592,13 +592,25 @@ export const startCanvasRecording = (
   fps: number,
   mediaElement?: HTMLMediaElement | null,
   includeAudio = true,
-  mimeType?: string
+  mimeType?: string,
+  bitrates?: { videoBitsPerSecond: number; audioBitsPerSecond: number }
 ): { recorder: MediaRecorder; hasAudio: boolean } => {
   const canvasStream = canvas.captureStream(fps);
   const audioStream = includeAudio ? getAudioStreamFromElement(mediaElement) : null;
   const { stream, hasAudio } = combineCanvasAndAudioStreams(canvasStream, audioStream);
-  const options = mimeType ? { mimeType } : undefined;
-  return { recorder: options ? new MediaRecorder(stream, options) : new MediaRecorder(stream), hasAudio };
+  const fullOptions = {
+    ...(mimeType ? { mimeType } : {}),
+    ...(bitrates ?? {}),
+  };
+  const hasFullOptions = Object.keys(fullOptions).length > 0;
+  try {
+    return { recorder: hasFullOptions ? new MediaRecorder(stream, fullOptions) : new MediaRecorder(stream), hasAudio };
+  } catch {
+    if (mimeType) {
+      return { recorder: new MediaRecorder(stream, { mimeType }), hasAudio };
+    }
+    return { recorder: new MediaRecorder(stream), hasAudio };
+  }
 };
 
 export const stopCanvasRecording = async (

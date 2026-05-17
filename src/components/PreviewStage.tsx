@@ -34,19 +34,22 @@ type PreviewStageProps = {
   bubbleVariant: BubbleVariant;
   bubbleScale: 1 | 2;
   flashActive: boolean;
+  showStatusOverlay?: boolean;
 };
 
 export default function PreviewStage(props: PreviewStageProps) {
-  const { previewSizeClass, chorusBoost, showGlitch, selectedImage, isPlaying, isRecording, getMotionStyle, getMotionAmplitude } = props;
+  const { previewSizeClass, chorusBoost, showGlitch, selectedImage, isPlaying, isRecording, getMotionStyle, getMotionAmplitude, showStatusOverlay = true } = props;
 
   const imageStyle = { animation: isPlaying ? getMotionStyle() : "none", ["--motion-amp"]: String(getMotionAmplitude()) } as CSSProperties;
   return (
     <div className="relative flex w-full items-center justify-center">
-      <div className="absolute left-2 top-2 z-20 flex gap-2 text-xs font-bold">
-        <span className={`rounded-full border px-3 py-1 ${isPlaying ? "border-fuchsia-300 bg-fuchsia-500/30 text-fuchsia-100 shadow-[0_0_14px_#ec4899]" : "border-zinc-600 bg-zinc-900 text-zinc-400"}`}>再生中</span>
-        <span className={`rounded-full border px-3 py-1 ${isRecording ? "border-rose-300 bg-rose-500/30 text-rose-100 shadow-[0_0_14px_#f43f5e]" : "border-zinc-600 bg-zinc-900 text-zinc-400"}`}>録画中</span>
-        <span className={`rounded-full border px-3 py-1 ${chorusBoost ? "border-yellow-200 bg-yellow-400/30 text-yellow-100 shadow-[0_0_14px_#facc15]" : "border-zinc-600 bg-zinc-900 text-zinc-400"}`}>サビ暴走中</span>
-      </div>
+      {showStatusOverlay ? (
+        <div className="absolute left-2 top-2 z-20 flex gap-2 text-xs font-bold">
+          {isPlaying ? <span className="rounded-full border border-fuchsia-300 bg-fuchsia-500/30 px-3 py-1 text-fuchsia-100 shadow-[0_0_14px_#ec4899]">再生中</span> : null}
+          {isRecording ? <span className="rounded-full border border-rose-300 bg-rose-500/30 px-3 py-1 text-rose-100 shadow-[0_0_14px_#f43f5e]">録画中</span> : null}
+          {chorusBoost ? <span className="rounded-full border border-yellow-200 bg-yellow-400/30 px-3 py-1 text-yellow-100 shadow-[0_0_14px_#facc15]">サビ暴走中</span> : null}
+        </div>
+      ) : null}
 
       <div className={`${previewSizeClass} mt-10 bg-zinc-900 border-2 border-cyan-300/80 rounded-2xl relative overflow-hidden flex items-center justify-center transition-all duration-150 shadow-[0_0_40px_rgba(34,211,238,0.2)] ${chorusBoost ? "shadow-[0_0_70px_#ec4899] scale-[1.02]" : showGlitch ? "shadow-[0_0_40px_#ec4899]" : ""}`}>
         {selectedImage ? (

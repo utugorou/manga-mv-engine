@@ -33,6 +33,12 @@ const presetDescriptions: Record<EffectPresetName, string> = {
 
 const sliderClass = "w-full accent-fuchsia-400";
 
+function valueHint(level: number) {
+  if (level <= 33) return "低め（落ち着いた演出）";
+  if (level <= 66) return "標準（バランス型）";
+  return "高め（派手な演出）";
+}
+
 export default function PresetPanel({ presetList, activePreset, isCustomAdjusted, applyPreset, customControls, onCustomControlChange }: PresetPanelProps) {
   return (
     <div>
@@ -52,27 +58,49 @@ export default function PresetPanel({ presetList, activePreset, isCustomAdjusted
             {isCustomAdjusted ? "調整済み" : "プリセット値"}
           </span>
         </div>
-        <div className="space-y-2 text-xs">
-          <label>擬音量 {customControls.sfxAmount}
+        <p className="mb-2 text-[11px] text-zinc-400">左右のラベルを目安に、右にするほど派手な演出になります。</p>
+        <div className="space-y-3 text-xs">
+          <label className="block">擬音量 {customControls.sfxAmount}
+            <p className="text-[10px] text-zinc-400">擬音の出る量を調整します。</p>
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.sfxAmount} onChange={(e) => onCustomControlChange("sfxAmount", Number(e.target.value))} />
+            <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>少なめ</span><span>多め</span></p>
+            <p className="text-[10px] text-zinc-400">現在: {valueHint(customControls.sfxAmount)}</p>
           </label>
-          <label>擬音サイズ {customControls.sfxSize}
+          <label className="block">擬音サイズ {customControls.sfxSize}
+            <p className="text-[10px] text-zinc-400">擬音1つあたりの大きさです。</p>
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.sfxSize} onChange={(e) => onCustomControlChange("sfxSize", Number(e.target.value))} />
+            <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>小さめ</span><span>大きめ</span></p>
+            <p className="text-[10px] text-zinc-400">現在: {valueHint(customControls.sfxSize)}</p>
           </label>
-          <label>集中線 {customControls.focusLine}
+          <label className="block">集中線 {customControls.focusLine}
+            <p className="text-[10px] text-zinc-400">緊張感を出す線エフェクトの強さです。</p>
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.focusLine} onChange={(e) => onCustomControlChange("focusLine", Number(e.target.value))} />
+            <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>控えめ</span><span>強め</span></p>
+            <p className="text-[10px] text-zinc-400">現在: {valueHint(customControls.focusLine)}</p>
           </label>
-          <label>グリッチ {customControls.glitch}
+          <label className="block">グリッチ {customControls.glitch}
+            <p className="text-[10px] text-zinc-400">画面のノイズ感や崩し表現の強さです。</p>
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.glitch} onChange={(e) => onCustomControlChange("glitch", Number(e.target.value))} />
+            <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>きれいめ</span><span>ノイズ多め</span></p>
+            <p className="text-[10px] text-zinc-400">現在: {valueHint(customControls.glitch)}</p>
           </label>
-          <label>画面揺れ {customControls.shake}
+          <label className="block">画面揺れ {customControls.shake}
+            <p className="text-[10px] text-zinc-400">カメラが揺れるような動きの強さです。</p>
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.shake} onChange={(e) => onCustomControlChange("shake", Number(e.target.value))} />
+            <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>安定</span><span>激しく</span></p>
+            <p className="text-[10px] text-zinc-400">現在: {valueHint(customControls.shake)}</p>
           </label>
-          <label>テキスト頻度 {customControls.textFrequency}
+          <label className="block">テキスト頻度 {customControls.textFrequency}
+            <p className="text-[10px] text-zinc-400">セリフや文字演出が出る回数の目安です。</p>
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.textFrequency} onChange={(e) => onCustomControlChange("textFrequency", Number(e.target.value))} />
+            <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>少なめ</span><span>多め</span></p>
+            <p className="text-[10px] text-zinc-400">現在: {valueHint(customControls.textFrequency)}</p>
           </label>
-          <label>サビ演出倍率 {customControls.chorusMultiplier.toFixed(1)}x
+          <label className="block">サビ演出倍率 {customControls.chorusMultiplier.toFixed(1)}x
+            <p className="text-[10px] text-zinc-400">サビでどれだけ演出を強めるかを調整します。</p>
             <input className={sliderClass} type="range" min={1} max={3} step={0.1} value={customControls.chorusMultiplier} onChange={(e) => onCustomControlChange("chorusMultiplier", Number(e.target.value))} />
+            <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>自然</span><span>サビ爆発</span></p>
+            <p className="text-[10px] text-zinc-400">現在: {customControls.chorusMultiplier < 1.5 ? "控えめ" : customControls.chorusMultiplier < 2.3 ? "標準" : "かなり派手"}</p>
           </label>
         </div>
       </div>

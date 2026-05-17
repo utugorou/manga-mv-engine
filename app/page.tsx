@@ -1726,6 +1726,7 @@ export default function Home() {
           <div className="mt-6 space-y-3">
             <ControlButtons
               isPlaying={isPlaying}
+              isRecording={isRecording}
               onPlay={handlePlay}
               onPause={handlePause}
               onReset={handleReset}
@@ -1864,8 +1865,8 @@ export default function Home() {
           </div>
         </div>
       </div>
-      <div className="md:hidden px-3 pb-4 overflow-x-hidden">
-        <div className="rounded-2xl border border-cyan-500/30 bg-zinc-950/95 p-3">
+      <div className="md:hidden flex h-[calc(100vh-72px)] h-[calc(100dvh-72px)] min-h-0 flex-col overflow-hidden px-3 pb-3">
+        <div className="shrink-0 rounded-2xl border border-cyan-500/30 bg-zinc-950/95 p-3">
           <PreviewStage
             previewSizeClass="w-full max-w-none aspect-video"
             chorusBoost={chorusBoost}
@@ -1894,9 +1895,9 @@ export default function Home() {
             bubbleScale={bubbleScale}
             flashActive={flashActive}
           />
-          <div className="mt-3"><ControlButtons isPlaying={isPlaying} onPlay={handlePlay} onPause={handlePause} onReset={handleReset} /></div>
+          <div className="mt-3"><ControlButtons isPlaying={isPlaying} isRecording={isRecording} onPlay={handlePlay} onPause={handlePause} onReset={handleReset} /></div>
         </div>
-        <div className="mt-3 grid grid-cols-4 gap-2">
+        <div className="mt-3 grid shrink-0 grid-cols-4 gap-2">
           {[
             { id: "assets", label: "素材" },
             { id: "text", label: "テキスト" },
@@ -1906,7 +1907,7 @@ export default function Home() {
             <button key={tab.id} onClick={() => setMobileTab(tab.id as "assets" | "text" | "effects" | "export")} className={`min-h-11 rounded-xl border text-sm font-bold ${mobileTab === tab.id ? "border-cyan-300 bg-cyan-500/25 text-cyan-100" : "border-zinc-700 bg-zinc-900/90 text-zinc-200"}`}>{tab.label}</button>
           ))}
         </div>
-        <div className="mt-3 rounded-2xl border border-zinc-700 bg-zinc-950/90 p-3 pb-5 [&_button]:min-h-11 [&_button]:text-sm [&_input]:min-h-11 [&_input]:text-base [&_select]:min-h-11 [&_select]:text-base [&_textarea]:min-h-11 [&_textarea]:text-base [&_input[type='range']]:min-h-8">
+        <div className="mt-3 min-h-0 flex-1 overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-950/90 p-3 pb-5 shadow-inner shadow-cyan-950/40 [&_button]:min-h-11 [&_button]:text-sm [&_input]:min-h-11 [&_input]:text-base [&_select]:min-h-11 [&_select]:text-base [&_textarea]:min-h-11 [&_textarea]:text-base [&_input[type='range']]:min-h-8">
           {mobileTab === "assets" ? (
             <UploadPanel
               handleImageUpload={handleImageUpload}

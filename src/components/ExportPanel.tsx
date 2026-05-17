@@ -1,5 +1,7 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
+
 import {
   getExportModeLabel,
   getExportResultStatusMessage,
@@ -82,6 +84,12 @@ export default function ExportPanel({
   recordedFileExtension,
   recordingStreamDiagnostics,
 }: ExportPanelProps) {
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
   const resolution = getExportResolution(aspectRatio, exportQuality);
   const isRecordingNow = isRecording || exportStatus === "recording";
   const hasRecordingResult = Boolean(recordedVideoUrl);
@@ -183,9 +191,11 @@ export default function ExportPanel({
           ))}
         </div>
         <p className="text-xs text-zinc-300">
-          {supportsMp4Recording
-            ? "この端末はMP4書き出しに対応しています"
-            : "この端末はMP4録画に非対応のためWebMで保存します"}
+          {!mounted
+            ? "MP4対応確認中..."
+            : supportsMp4Recording
+              ? "この端末はMP4書き出しに対応しています"
+              : "この端末はMP4録画に非対応のためWebMで保存します"}
         </p>
         {mp4FallbackMessage && <p className="text-xs text-amber-300">{mp4FallbackMessage}</p>}
         <p className="text-xs text-cyan-300">実際の録画形式：{actualRecordingFormat.toUpperCase()}</p>

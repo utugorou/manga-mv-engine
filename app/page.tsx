@@ -2091,7 +2091,7 @@ export default function Home() {
                 <p className="text-sm font-bold text-fuchsia-300">基本文字</p>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={showBubble} onChange={(e) => setShowBubble(e.target.checked)} />
-                  タイトルを表示
+                  セリフを表示
                 </label>
                 <input className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2" value={bubbleText} onChange={(e) => setBubbleText(e.target.value)} placeholder="タイトル文言" />
                 <button className={`w-full rounded-lg p-2 font-bold ${autoBubble ? "bg-pink-600" : "bg-zinc-800"}`} onClick={() => setAutoBubble(!autoBubble)}>テキスト自動生成 {autoBubble ? "ON" : "OFF"}</button>

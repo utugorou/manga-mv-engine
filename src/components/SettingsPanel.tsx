@@ -138,7 +138,8 @@ export default function SettingsPanel(props: SettingsPanelProps) {
     <section className={cardClass}><p className="text-sm font-bold text-pink-300">文字演出の表示ON/OFF</p><p className="text-xs text-zinc-400">画面に出す文字演出を選びます。</p>
     <button onClick={()=>{setShowBubble(!showBubble); setActivePreset(null);}} className={`w-full rounded p-2 ${showBubble?"bg-pink-600":"bg-zinc-800"}`}>タイトル表示 {showBubble?"ON":"OFF"}</button>
     <button onClick={()=>{setShowSfx(!showSfx); setActivePreset(null);}} className={`w-full rounded p-2 ${showSfx?"bg-pink-600":"bg-zinc-800"}`}>擬音表示 {showSfx?"ON":"OFF"}</button>
-    <button onClick={()=>{setAutoBubble(!autoBubble); setActivePreset(null);}} className={`w-full rounded p-2 ${autoBubble?"bg-cyan-600 text-black":"bg-zinc-800"}`}>セリフ表示（自動） {autoBubble?"ON":"OFF"}</button>
+    <button onClick={()=>{setShowBubble(!showBubble); setActivePreset(null);}} className={`w-full rounded p-2 ${showBubble?"bg-cyan-600 text-black":"bg-zinc-800"}`}>セリフ表示 {showBubble?"ON":"OFF"}</button>
+    <button onClick={()=>{setAutoBubble(!autoBubble); setActivePreset(null);}} className={`w-full rounded p-2 ${autoBubble?"bg-zinc-700":"bg-zinc-800"}`}>セリフ自動生成 {autoBubble?"ON":"OFF"}</button>
     <button onClick={()=>{setTextMode(textMode === "smart" ? "random" : "smart"); setActivePreset(null);}} className={`w-full rounded p-2 ${textMode === "smart" ? "bg-cyan-500 text-black font-bold" : "bg-zinc-800"}`}>スマート文字 {textMode === "smart" ? "ON" : "OFF"}</button>
     </section>
 

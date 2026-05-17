@@ -20,6 +20,9 @@ import type {
 
 type ExportPanelProps = {
   aspectRatio: AspectRatio;
+  aspectList: AspectRatio[];
+  aspectLabels: Record<AspectRatio, string>;
+  setAspectRatio: (ratio: AspectRatio) => void;
   audioDuration: number;
   imageCount: number;
   exportMode: ExportMode;
@@ -56,6 +59,9 @@ type ExportPanelProps = {
 
 export default function ExportPanel({
   aspectRatio,
+  aspectList,
+  aspectLabels,
+  setAspectRatio,
   audioDuration,
   imageCount,
   exportMode,
@@ -112,6 +118,36 @@ export default function ExportPanel({
   return (
     <div className="pt-1">
       <p className="text-sm mb-2 text-yellow-300 font-bold">出力設定</p>
+
+      <div className="rounded-lg border border-pink-500/40 bg-zinc-950/70 p-3">
+        <p className="text-xs font-bold text-pink-300">画角</p>
+        <p className="mt-1 text-[11px] text-zinc-300">現在の画角：{aspectRatio}</p>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {aspectList.map((ratio) => {
+            const isActive = aspectRatio === ratio;
+            return (
+              <button
+                key={ratio}
+                onClick={() => setAspectRatio(ratio)}
+                className={`rounded border p-2 text-xs font-bold ${
+                  isActive
+                    ? "border-yellow-300 bg-yellow-300/90 text-black shadow-[0_0_0_1px_rgba(253,224,71,0.9)]"
+                    : "border-zinc-600 bg-zinc-800 hover:bg-zinc-700"
+                }`}
+              >
+                <span>{aspectLabels[ratio]}</span>
+                {isActive ? <span className="ml-1 inline-block text-[10px]">選択中</span> : null}
+              </button>
+            );
+          })}
+        </div>
+        <ul className="mt-2 space-y-0.5 text-[11px] text-zinc-300">
+          <li>・横長 16:9：YouTube向け</li>
+          <li>・縦長 9:16：ショート / TikTok / Reels向け</li>
+          <li>・正方形 1:1：SNS投稿向け</li>
+          <li>・縦SNS 4:5：Instagramフィード向け</li>
+        </ul>
+      </div>
 
       <div className="bg-zinc-900 border border-zinc-700 rounded p-3 text-xs text-zinc-300 space-y-2">
         <div className="flex justify-between">

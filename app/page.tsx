@@ -870,6 +870,17 @@ export default function Home() {
           lowSpike > kickThreshold || lowEnergy > kickThreshold * 2.2;
       }
 
+      if (switchMode === "equal" && images.length > 0) {
+        const durationMs = Math.max(1, imageDuration);
+        const nextIndex =
+          Math.floor((audio.currentTime * 1000) / durationMs) % images.length;
+
+        if (nextIndex !== latestCurrentImageIndexRef.current) {
+          setCurrentImageIndex(nextIndex);
+          setSelectedImage(images[nextIndex] ?? null);
+        }
+      }
+
       const timeSinceLastSwitch = now - lastSwitchTimeRef.current;
 
       const passedMinInterval = timeSinceLastSwitch > minSwitchInterval;
@@ -905,16 +916,6 @@ export default function Home() {
 
     rafRef.current = requestAnimationFrame(tick);
   };
-
-  useEffect(() => {
-    if (!isPlaying || images.length === 0 || switchMode !== "equal") return;
-
-    const timer = setInterval(() => {
-      stepToNextImage();
-    }, imageDuration);
-
-    return () => clearInterval(timer);
-  }, [isPlaying, images, switchMode, imageDuration, stepToNextImage]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {

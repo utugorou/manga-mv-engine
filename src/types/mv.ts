@@ -41,3 +41,19 @@ export type RecordingFormatSelection = {
   mp4RequestedButUnsupported: boolean;
   fallbackMessage: string | null;
 };
+
+export type RecordingStreamDiagnostics = {
+  videoTrackCount: number;
+  audioTrackCount: number;
+  audioEnabled: boolean;
+  audioReadyState: MediaStreamTrackState | "missing";
+  mimeType: string | null;
+  format: RecordingContainer;
+  canvasWidth: number;
+  canvasHeight: number;
+  hasBgm: boolean;
+  audioPaused: boolean;
+  audioMuted: boolean;
+  audioVolume: number;
+  fallbackReason: string | null;
+};

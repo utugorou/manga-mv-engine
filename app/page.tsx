@@ -50,6 +50,7 @@ import type {
   BubbleVariant,
   ExportFormatPreference,
   RecordingContainer,
+  RecordingStreamDiagnostics,
 } from "../src/types/mv";
 
 const randomItem = <T,>(list: T[]): T => {
@@ -159,12 +160,7 @@ export default function Home() {
   const [exportFormatPreference, setExportFormatPreference] = useState<ExportFormatPreference>("auto");
   const [recordedFileExtension, setRecordedFileExtension] = useState<RecordingContainer | null>(null);
   const [mp4FallbackMessage, setMp4FallbackMessage] = useState<string | null>(null);
-  const [recordingStreamDiagnostics, setRecordingStreamDiagnostics] = useState<{
-    videoTrackCount: number;
-    audioTrackCount: number;
-    mimeType: string | null;
-    format: RecordingContainer;
-  } | null>(null);
+  const [recordingStreamDiagnostics, setRecordingStreamDiagnostics] = useState<RecordingStreamDiagnostics | null>(null);
   const autoStopTriggeredRef = useRef(false);
 
   const [showBubble, setShowBubble] = useState(false);
@@ -466,7 +462,9 @@ export default function Home() {
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  const formatPreview = selectRecordingFormat(exportFormatPreference);
+  const formatPreview = typeof window === "undefined"
+    ? { supportsMp4: false, actualFormat: "webm" as RecordingContainer, selectedMimeType: null }
+    : selectRecordingFormat(exportFormatPreference);
 
   const getPreviewSizeClass = () => {
     switch (aspectRatio) {
@@ -1302,8 +1300,10 @@ export default function Home() {
       wasAboveThresholdRef.current = false;
       lastLowEnergyRef.current = 0;
 
-      const resolution = getExportResolution(aspectRatio, exportQuality);
-      const canvas = createExportCanvas(resolution.width, resolution.height);
+      const resolution = getExportResolution(aspectRatio, exportQuality, isMobileViewport);
+      const safeWidth = Number.isFinite(resolution.width) && resolution.width > 0 ? resolution.width : 1280;
+      const safeHeight = Number.isFinite(resolution.height) && resolution.height > 0 ? resolution.height : 720;
+      const canvas = createExportCanvas(safeWidth, safeHeight);
       recordingCanvasRef.current = canvas;
 
       const ctx = canvas.getContext("2d");
@@ -1313,6 +1313,7 @@ export default function Home() {
       }
 
       let recordingInfo = { ...formatSelection };
+      let fallbackReason: string | null = formatSelection.fallbackMessage;
       let recordingStartResult: { recorder: MediaRecorder; hasAudio: boolean };
       try {
         recordingStartResult = startCanvasRecording(canvas, 30, getRecordingAudioElement(), true, formatSelection.selectedMimeType);
@@ -1320,6 +1321,7 @@ export default function Home() {
         if (formatSelection.actualFormat === "mp4") {
           const fallbackSelection = selectRecordingFormat("webm");
           recordingInfo = { ...fallbackSelection, fallbackMessage: "MP4録画に失敗したため、WebMで録画します" };
+          fallbackReason = recordingInfo.fallbackMessage;
           setMp4FallbackMessage(recordingInfo.fallbackMessage);
           recordingStartResult = startCanvasRecording(canvas, 30, getRecordingAudioElement(), true, recordingInfo.selectedMimeType);
         } else { throw error; }
@@ -1327,34 +1329,59 @@ export default function Home() {
 
       let { recorder, hasAudio } = recordingStartResult;
       const videoTrackCount = recorder.stream.getVideoTracks().length;
+      const audioTrack = recorder.stream.getAudioTracks()[0] ?? null;
       const audioTrackCount = recorder.stream.getAudioTracks().length;
       const recorderMimeType = recorder.mimeType || (recordingInfo.selectedMimeType ?? null);
       setRecordingStreamDiagnostics({
         videoTrackCount,
         audioTrackCount,
+        audioEnabled: audioTrack?.enabled ?? false,
+        audioReadyState: audioTrack?.readyState ?? "missing",
         mimeType: recorderMimeType,
         format: recordingInfo.actualFormat,
+        canvasWidth: safeWidth,
+        canvasHeight: safeHeight,
+        hasBgm: Boolean(audioUrl),
+        audioPaused: audio?.paused ?? true,
+        audioMuted: audio?.muted ?? false,
+        audioVolume: audio?.volume ?? 1,
+        fallbackReason,
       });
       if (recordingInfo.actualFormat === "mp4" && audioTrackCount === 0) {
+        setMp4FallbackMessage("録画音声トラックが取得できません。音声ありWebMを試してください。");
         const fallbackSelection = selectRecordingFormat("webm");
         if (fallbackSelection.selectedMimeType) {
           recorder.stream.getTracks().forEach((track) => track.stop());
           const webmStartResult = startCanvasRecording(canvas, 30, getRecordingAudioElement(), true, fallbackSelection.selectedMimeType);
           recordingInfo = { ...fallbackSelection, fallbackMessage: "MP4では音声を取得できないため、音声ありWebMで録画します" };
+          fallbackReason = recordingInfo.fallbackMessage;
           setMp4FallbackMessage(recordingInfo.fallbackMessage);
           const webmVideoTrackCount = webmStartResult.recorder.stream.getVideoTracks().length;
+          const webmAudioTrack = webmStartResult.recorder.stream.getAudioTracks()[0] ?? null;
           const webmAudioTrackCount = webmStartResult.recorder.stream.getAudioTracks().length;
           setRecordingStreamDiagnostics({
             videoTrackCount: webmVideoTrackCount,
             audioTrackCount: webmAudioTrackCount,
+            audioEnabled: webmAudioTrack?.enabled ?? false,
+            audioReadyState: webmAudioTrack?.readyState ?? "missing",
             mimeType: webmStartResult.recorder.mimeType || (fallbackSelection.selectedMimeType ?? null),
             format: recordingInfo.actualFormat,
+            canvasWidth: safeWidth,
+            canvasHeight: safeHeight,
+            hasBgm: Boolean(audioUrl),
+            audioPaused: audio?.paused ?? true,
+            audioMuted: audio?.muted ?? false,
+            audioVolume: audio?.volume ?? 1,
+            fallbackReason,
           });
           recordingStartResult = webmStartResult;
           ({ recorder, hasAudio } = recordingStartResult);
         } else {
           setMp4FallbackMessage("MP4の音声取得に失敗しました。この端末ではMP4音声が入らない場合があります");
         }
+      }
+      if (recordingInfo.actualFormat === "webm" && recorder.stream.getAudioTracks().length === 0) {
+        setMp4FallbackMessage((prev) => prev ?? "音声トラックが0のため無音録画になります。");
       }
       mediaRecorderRef.current = recorder;
       recorder.start();
@@ -1472,17 +1499,32 @@ export default function Home() {
         recordingFrameRef.current = null;
       }
 
+      const stoppedAt = performance.now();
+      const durationMs = recordingStartedAtRef.current ? stoppedAt - recordingStartedAtRef.current : recordingElapsedMsRef.current;
       const blobMimeType = mediaRecorderRef.current.mimeType || (recordedFileExtension === "mp4" ? "video/mp4" : "video/webm");
       const blob = await stopCanvasRecording(mediaRecorderRef.current, blobMimeType);
+      if (blob.size === 0) {
+        throw new Error("録画データが空です。もう一度録画してください。");
+      }
+      if (blob.type && blobMimeType && blob.type !== blobMimeType) {
+        console.warn("blob.type が選択MIMEと一致しません", { blobType: blob.type, blobMimeType });
+      }
+      if (recordedVideoUrl) {
+        URL.revokeObjectURL(recordedVideoUrl);
+      }
       const videoUrl = URL.createObjectURL(blob);
 
       setRecordedVideoUrl(videoUrl);
       setExportStatus("finished");
-      setExportMessage(`録画完了：${(recordedFileExtension ?? formatPreview.actualFormat).toUpperCase()}リンクを生成しました`);
+      setExportMessage(
+        durationMs < 3000
+          ? "録画時間が短すぎます。5秒以上で試してください。"
+          : `録画完了：${(recordedFileExtension ?? formatPreview.actualFormat).toUpperCase()}リンクを生成しました`
+      );
     } catch (error) {
       console.error("録画停止に失敗:", error);
       setExportStatus("error");
-      setExportMessage("録画停止に失敗しました");
+      setExportMessage(error instanceof Error ? error.message : "録画停止に失敗しました");
     } finally {
       mediaRecorderRef.current?.stream.getTracks().forEach((track) => {
         track.stop();

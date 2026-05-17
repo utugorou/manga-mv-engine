@@ -53,6 +53,7 @@ import type {
 
 export default function Home() {
   const SETTINGS_STORAGE_KEY = "manga-mv-engine:settings:v1";
+  const SETTINGS_LIST_STORAGE_KEY = "manga-mv-engine:settings-list:v1";
   const DEFAULT_PRESET: EffectPresetName = "標準";
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -195,6 +196,24 @@ export default function Home() {
   const [isCustomAdjusted, setIsCustomAdjusted] = useState(false);
   const [settingsName, setSettingsName] = useState("マイ設定");
   const [settingsStatus, setSettingsStatus] = useState("");
+  type SavedSettingsSlot = {
+    id: string;
+    name: string;
+    createdAt: string;
+    updatedAt: string;
+    settings: {
+      activePreset: EffectPresetName;
+      customControls: typeof customControls;
+      backgroundMode: BackgroundMode;
+      audioSourceMode: AudioSourceMode;
+      textMode: TextMode;
+      bubbleText: string;
+      sfxText: string;
+      settingsName: string;
+    };
+  };
+  const [savedSettingsList, setSavedSettingsList] = useState<SavedSettingsSlot[]>([]);
+  const [selectedSettingsId, setSelectedSettingsId] = useState<string | null>(null);
 
   const mapPresetToControls = (config: (typeof effectPresetConfigs)[EffectPresetName]) => ({
     sfxAmount: Math.round(config.sfxFrequency * 100),
@@ -488,45 +507,77 @@ export default function Home() {
     if (saved.settingsName) setSettingsName(saved.settingsName);
   };
 
-  const saveCurrentSettings = () => {
-    const settingsPayload = {
-      version: 1,
-      savedAt: new Date().toISOString(),
-      settingsName,
-      activePreset,
-      customControls,
-      backgroundMode,
-      audioSourceMode,
-      textMode,
-      bubbleText,
-      sfxText,
-    };
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settingsPayload));
-    setSettingsStatus(`「${settingsName || "マイ設定"}」を保存しました`);
+  const createCurrentSettingsPayload = () => ({
+    activePreset,
+    customControls,
+    backgroundMode,
+    audioSourceMode,
+    textMode,
+    bubbleText,
+    sfxText,
+    settingsName,
+  });
+
+  const syncSettingsList = (nextList: SavedSettingsSlot[]) => {
+    setSavedSettingsList(nextList);
+    localStorage.setItem(SETTINGS_LIST_STORAGE_KEY, JSON.stringify(nextList));
   };
 
-  const loadSavedSettings = () => {
-    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
-    if (!raw) {
-      setSettingsStatus("保存済み設定がありません");
+  const saveAsNewSlot = () => {
+    const trimmedName = settingsName.trim() || "マイ設定";
+    const now = new Date().toISOString();
+    const newSlot: SavedSettingsSlot = {
+      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      name: trimmedName,
+      createdAt: now,
+      updatedAt: now,
+      settings: { ...createCurrentSettingsPayload(), settingsName: trimmedName },
+    };
+    const nextList = [newSlot, ...savedSettingsList];
+    syncSettingsList(nextList);
+    setSelectedSettingsId(newSlot.id);
+    setSettingsStatus(`「${trimmedName}」を新規保存しました`);
+  };
+
+  const overwriteSelectedSlot = () => {
+    if (!selectedSettingsId) {
+      setSettingsStatus("上書き対象のスロットを選択してください");
       return;
     }
-    try {
-      const parsed = JSON.parse(raw);
-      applySavedSettings({
-        activePreset: parsed.activePreset,
-        customControls: parsed.customControls,
-        backgroundMode: parsed.backgroundMode,
-        audioSourceMode: parsed.audioSourceMode,
-        textMode: parsed.textMode,
-        bubbleText: parsed.bubbleText,
-        sfxText: parsed.sfxText,
-        settingsName: parsed.settingsName,
-      });
-      setSettingsStatus(`「${parsed.settingsName || "マイ設定"}」を読み込みました`);
-    } catch {
-      setSettingsStatus("保存設定の読み込みに失敗しました");
+    const trimmedName = settingsName.trim() || "マイ設定";
+    const now = new Date().toISOString();
+    const nextList = savedSettingsList.map((slot) => (slot.id === selectedSettingsId
+      ? {
+        ...slot,
+        name: trimmedName,
+        updatedAt: now,
+        settings: { ...createCurrentSettingsPayload(), settingsName: trimmedName },
+      }
+      : slot));
+    syncSettingsList(nextList);
+    setSettingsStatus(`「${trimmedName}」を上書き保存しました`);
+  };
+
+  const loadSlot = (slotId: string) => {
+    const slot = savedSettingsList.find((item) => item.id === slotId);
+    if (!slot) {
+      setSettingsStatus("保存設定が見つかりません");
+      return;
     }
+    applySavedSettings(slot.settings);
+    setSelectedSettingsId(slot.id);
+    setSettingsName(slot.name);
+    setSettingsStatus(`「${slot.name}」を読み込みました`);
+  };
+
+  const deleteSlot = (slotId: string) => {
+    const slot = savedSettingsList.find((item) => item.id === slotId);
+    const nextList = savedSettingsList.filter((item) => item.id !== slotId);
+    syncSettingsList(nextList);
+    if (selectedSettingsId === slotId) {
+      setSelectedSettingsId(null);
+    }
+    setSettingsStatus(slot ? `「${slot.name}」を削除しました` : "保存設定を削除しました");
   };
 
   const resetToDefaultSettings = () => {
@@ -804,7 +855,45 @@ export default function Home() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      loadSavedSettings();
+      const listRaw = localStorage.getItem(SETTINGS_LIST_STORAGE_KEY);
+      if (listRaw) {
+        try {
+          const parsedList = JSON.parse(listRaw);
+          if (Array.isArray(parsedList)) {
+            setSavedSettingsList(parsedList);
+            return;
+          }
+        } catch {
+          setSettingsStatus("保存設定リストの読み込みに失敗しました");
+        }
+      }
+      const legacyRaw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      if (!legacyRaw) return;
+      try {
+        const legacy = JSON.parse(legacyRaw);
+        const migratedName = legacy.settingsName || "移行済み設定";
+        const now = legacy.savedAt || new Date().toISOString();
+        const migratedList: SavedSettingsSlot[] = [{
+          id: `migrated-${Date.now()}`,
+          name: migratedName,
+          createdAt: now,
+          updatedAt: now,
+          settings: {
+            activePreset: legacy.activePreset || DEFAULT_PRESET,
+            customControls: legacy.customControls || mapPresetToControls(effectPresetConfigs[DEFAULT_PRESET]),
+            backgroundMode: legacy.backgroundMode || "none",
+            audioSourceMode: legacy.audioSourceMode || "bgm",
+            textMode: legacy.textMode || "random",
+            bubbleText: legacy.bubbleText || "ここにセリフ",
+            sfxText: legacy.sfxText || "ドン!!",
+            settingsName: migratedName,
+          },
+        }];
+        syncSettingsList(migratedList);
+        setSettingsStatus("旧保存データを移行しました");
+      } catch {
+        setSettingsStatus("旧保存データの移行に失敗しました");
+      }
     }, 0);
     return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1736,9 +1825,35 @@ export default function Home() {
                 className="w-full rounded-lg border border-zinc-600 bg-zinc-950 px-2 py-1 text-xs text-zinc-100"
               />
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button onClick={saveCurrentSettings} className="rounded-lg border border-cyan-300/70 bg-cyan-500/20 px-2 py-1 text-xs font-bold text-cyan-100">設定を保存</button>
-                <button onClick={loadSavedSettings} className="rounded-lg border border-fuchsia-300/70 bg-fuchsia-500/20 px-2 py-1 text-xs font-bold text-fuchsia-100">保存設定を読み込み</button>
+                <button onClick={saveAsNewSlot} className="rounded-lg border border-cyan-300/70 bg-cyan-500/20 px-2 py-1 text-xs font-bold text-cyan-100">新規保存</button>
+                <button onClick={overwriteSelectedSlot} className="rounded-lg border border-fuchsia-300/70 bg-fuchsia-500/20 px-2 py-1 text-xs font-bold text-fuchsia-100">選択中へ上書き保存</button>
                 <button onClick={resetToDefaultSettings} className="rounded-lg border border-zinc-400/70 bg-zinc-700/30 px-2 py-1 text-xs font-bold text-zinc-100">初期設定に戻す</button>
+              </div>
+              <div className="space-y-2">
+                <p className="text-[11px] text-zinc-400">保存済み設定リスト（選択中は枠線で表示）</p>
+                {savedSettingsList.length === 0 ? (
+                  <p className="text-[11px] text-zinc-500">保存済みスロットはありません</p>
+                ) : (
+                  <ul className="space-y-1">
+                    {savedSettingsList.map((slot) => (
+                      <li
+                        key={slot.id}
+                        className={`rounded-md border p-2 ${selectedSettingsId === slot.id ? "border-cyan-300 bg-cyan-500/10" : "border-zinc-700 bg-zinc-900/50"}`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="text-xs font-bold text-zinc-100">{slot.name}</p>
+                            <p className="text-[10px] text-zinc-400">更新: {new Date(slot.updatedAt).toLocaleString("ja-JP")}</p>
+                          </div>
+                          <div className="flex gap-1">
+                            <button onClick={() => loadSlot(slot.id)} className="rounded border border-cyan-400/70 bg-cyan-500/20 px-2 py-1 text-[10px] font-bold text-cyan-100">読み込み</button>
+                            <button onClick={() => deleteSlot(slot.id)} className="rounded border border-rose-400/70 bg-rose-500/20 px-2 py-1 text-[10px] font-bold text-rose-100">削除</button>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
               {settingsStatus ? <p className="text-[11px] text-zinc-300">{settingsStatus}</p> : null}
             </div>

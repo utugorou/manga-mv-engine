@@ -10,26 +10,10 @@ type PositionType =
   | "bottomRight"
   | "center";
 
-type PanelPattern =
-  | "full"
-  | "split-horizontal"
-  | "split-vertical"
-  | "triple-vertical"
-  | "triple-horizontal"
-  | "big-plus-small"
-  | "diagonal"
-  | "four-panel"
-  | "center-focus"
-  | "battle-break";
-
 type EffectOverlaysProps = {
   selectedImage: string | null;
-  showPanels: boolean;
-  panelBurst: boolean;
-  panelPattern: PanelPattern;
   chorusBoost: boolean;
   isPlaying: boolean;
-  showGlitch: boolean;
   showEqualizer: boolean;
   eqBars: number[];
   equalizerType: EqualizerType;
@@ -46,12 +30,8 @@ type EffectOverlaysProps = {
 
 export default function EffectOverlays({
   selectedImage,
-  showPanels,
-  panelBurst,
-  panelPattern,
   chorusBoost,
   isPlaying,
-  showGlitch,
   showEqualizer,
   eqBars,
   equalizerType,
@@ -69,9 +49,9 @@ export default function EffectOverlays({
     animation: isPlaying ? animation : "none",
   });
   const minSide = selectedImage ? 405 : 360;
-  const baseSize = chorusBoost ? 64 : 48;
-  const maxFontSize = minSide * 0.4;
-  const normalizedSfxItems = sfxItems.slice(0, 4);
+  const baseSize = chorusBoost ? 56 : 44;
+  const maxFontSize = minSide * 0.32;
+  const normalizedSfxItems = sfxItems.slice(0, 2);
   const unifiedSfxText = normalizedSfxItems[0]?.text ?? "";
   const unifiedSfxScale = normalizedSfxItems[0]?.scale ?? 1;
   const getSfxPositionClass = (position: SfxItem["position"]) => {
@@ -92,46 +72,7 @@ export default function EffectOverlays({
 
   return (
     <>
-      {showPanels && selectedImage && (
-        <div
-          className={`absolute inset-0 pointer-events-none ${
-            panelBurst ? "opacity-100" : "opacity-70"
-          }`}
-          style={{
-            animation:
-              isPlaying && panelBurst ? "panelBurstAnim 0.26s ease-out" : "none",
-          }}
-        >
-          <div className="absolute inset-0 border-[10px] border-black/70" />
-
-          {panelPattern === "split-vertical" && <div className="absolute top-0 left-1/2 w-[10px] h-full -translate-x-1/2 bg-black/80" />}
-          {panelPattern === "split-horizontal" && <div className="absolute left-0 top-1/2 h-[10px] w-full -translate-y-1/2 bg-black/80" />}
-          {panelPattern === "triple-vertical" && <><div className="absolute top-0 left-1/3 w-[9px] h-full bg-black/80" /><div className="absolute top-0 left-2/3 w-[9px] h-full bg-black/80" /></>}
-          {panelPattern === "triple-horizontal" && <><div className="absolute top-1/3 left-0 w-full h-[9px] bg-black/80" /><div className="absolute top-2/3 left-0 w-full h-[9px] bg-black/80" /></>}
-          {panelPattern === "big-plus-small" && <><div className="absolute top-0 left-[62%] w-[10px] h-full bg-black/85" /><div className="absolute top-1/2 left-[62%] w-[38%] h-[10px] -translate-y-1/2 bg-black/85" /></>}
-          {panelPattern === "diagonal" && <><div className="absolute top-[16%] left-[-10%] w-[120%] h-[10px] bg-black/85 rotate-[18deg]" /><div className="absolute top-[55%] left-[-10%] w-[120%] h-[10px] bg-black/75 rotate-[-15deg]" /></>}
-          {panelPattern === "four-panel" && <><div className="absolute top-0 left-1/2 w-[9px] h-full -translate-x-1/2 bg-black/80" /><div className="absolute left-0 top-1/2 h-[9px] w-full -translate-y-1/2 bg-black/80" /></>}
-          {panelPattern === "center-focus" && <><div className="absolute top-[18%] left-[18%] w-[64%] h-[64%] border-[9px] border-black/80" /><div className="absolute top-0 left-[50%] w-[8px] h-[18%] -translate-x-1/2 bg-black/65" /><div className="absolute bottom-0 left-[50%] w-[8px] h-[18%] -translate-x-1/2 bg-black/65" /></>}
-          {panelPattern === "battle-break" && <><div className="absolute top-[8%] left-[-10%] w-[120%] h-[9px] bg-black/90 rotate-[11deg]" /><div className="absolute top-[35%] left-[-10%] w-[120%] h-[8px] bg-black/80 rotate-[-10deg]" /><div className="absolute top-[62%] left-[-10%] w-[120%] h-[10px] bg-black/90 rotate-[16deg]" /><div className="absolute top-0 left-[22%] w-[7px] h-full bg-black/75 rotate-[-17deg]" /></>}
-
-          {chorusBoost && (
-            <>
-              <div className="absolute top-[18%] left-0 w-full h-[5px] bg-white/30 rotate-[2deg]" />
-              <div className="absolute bottom-[22%] left-0 w-full h-[5px] bg-pink-400/30 rotate-[-2deg]" />
-            </>
-          )}
-        </div>
-      )}
-
-      {showGlitch && (
-        <>
-          <div className="absolute inset-0 bg-cyan-400/10 mix-blend-screen" style={playOrNone("glitchMove 0.35s steps(2) infinite")} />
-          <div className="absolute inset-0 bg-pink-500/10 mix-blend-screen" style={playOrNone("glitchMove 0.25s steps(2) infinite reverse")} />
-          <div className="absolute top-16 left-0 w-full h-2 bg-white/30" style={playOrNone("glitchLine 0.8s linear infinite")} />
-          <div className="absolute top-44 left-0 w-full h-1 bg-cyan-300/50" style={playOrNone("glitchLine 1.1s linear infinite")} />
-          <div className="absolute bottom-24 left-0 w-full h-2 bg-pink-400/40" style={playOrNone("glitchLine 0.65s linear infinite")} />
-        </>
-      )}
+      {chorusBoost && selectedImage ? <div className="absolute inset-0 border-[6px] border-white/25 pointer-events-none" /> : null}
 
       {showEqualizer && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">

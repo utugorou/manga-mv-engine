@@ -207,7 +207,7 @@ export default function Home() {
   const [chorusSensitivity, setChorusSensitivity] = useState(22);
 
   const [sfxFrequency, setSfxFrequency] = useState(0.65);
-  const [sfxMaxCount, setSfxMaxCount] = useState(3);
+  const [sfxMaxCount, setSfxMaxCount] = useState(2);
   const [focusLineIntensity, setFocusLineIntensity] = useState(1);
   const [, setGlitchIntensity] = useState(0.45);
   const [, setScreenShakeIntensity] = useState(1);
@@ -711,7 +711,7 @@ export default function Home() {
 
 
   const generateSfxItems = () => {
-    const maxCount = Math.min(4, Math.max(0, sfxMaxCount));
+    const maxCount = Math.min(2, Math.max(0, sfxMaxCount));
     const count = sfxFrequency <= 0
       ? 0
       : (randomSfxCountEnabled
@@ -1793,15 +1793,11 @@ export default function Home() {
             <PreviewStage
               previewSizeClass={getPreviewSizeClass()}
               chorusBoost={chorusBoost}
-              showGlitch={showGlitch}
               selectedImage={selectedImage}
               isPlaying={isPlaying}
               isRecording={isRecording}
               getMotionStyle={getMotionStyle}
               getMotionAmplitude={getMotionAmplitude}
-              showPanels={showPanels}
-              panelBurst={panelBurst}
-              panelPattern={panelPattern}
               showEqualizer={showEqualizer}
               eqBars={eqBars}
               equalizerType={equalizerType}
@@ -1960,15 +1956,11 @@ export default function Home() {
           <PreviewStage
             previewSizeClass={`w-full ${aspectRatio === "16:9" ? "aspect-[16/9]" : aspectRatio === "9:16" ? "aspect-[9/16] max-h-[58dvh]" : aspectRatio === "1:1" ? "aspect-square max-h-[52dvh]" : "aspect-[4/5] max-h-[56dvh]"} max-h-[58dvh]`}
             chorusBoost={chorusBoost}
-            showGlitch={showGlitch}
             selectedImage={selectedImage}
             isPlaying={isPlaying}
             isRecording={isRecording}
             getMotionStyle={getMotionStyle}
             getMotionAmplitude={getMotionAmplitude}
-            showPanels={showPanels}
-            panelBurst={panelBurst}
-            panelPattern={panelPattern}
             showEqualizer={showEqualizer}
             eqBars={eqBars}
             equalizerType={equalizerType}
@@ -1988,8 +1980,8 @@ export default function Home() {
           />
           <div className="mt-0.5 flex min-h-0 flex-wrap items-center justify-center gap-1 empty:hidden">
             {isPlaying ? <span className="rounded-full border border-emerald-300/70 bg-emerald-500/15 px-1.5 py-px text-[9px] font-bold tracking-wide text-emerald-100">再生中</span> : null}
-            {isRecording ? <span className="rounded-full border border-rose-300/80 bg-rose-500/20 px-1.5 py-px text-[9px] font-bold tracking-wide text-rose-100">録画中</span> : null}
-            {chorusBoost ? <span className="rounded-full border border-fuchsia-300/70 bg-amber-300/15 px-1.5 py-px text-[9px] font-bold tracking-wide text-fuchsia-100">サビ暴走中</span> : null}
+            
+            
           </div>
           <div className="mt-0.5"><ControlButtons isPlaying={isPlaying} isRecording={isRecording} chorusBoost={chorusBoost} isMobile onPlay={handlePlay} onPause={handlePause} onReset={handleReset} /></div>
         </div>

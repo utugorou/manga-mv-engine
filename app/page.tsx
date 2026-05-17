@@ -442,6 +442,12 @@ export default function Home() {
 
   const sfxPositions = ["topLeft", "top", "topRight", "left", "center", "right", "bottomLeft", "bottom", "bottomRight", "random"] as const;
   const aspectList: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5"];
+  const aspectLabels: Record<AspectRatio, string> = {
+    "16:9": "横長 16:9",
+    "9:16": "縦長 9:16",
+    "1:1": "正方形 1:1",
+    "4:5": "縦SNS 4:5",
+  };
 
   const handleRandomSfxScaleEnabled = (value: boolean) => {
     setRandomSfxScaleEnabled(value);
@@ -465,15 +471,15 @@ export default function Home() {
   const getPreviewSizeClass = () => {
     switch (aspectRatio) {
       case "16:9":
-        return "w-[720px] h-[405px]";
+        return "w-full max-w-[960px] aspect-[16/9]";
       case "9:16":
-        return "w-[315px] h-[560px]";
+        return "w-full max-w-[460px] aspect-[9/16]";
       case "1:1":
-        return "w-[500px] h-[500px]";
+        return "w-full max-w-[640px] aspect-square";
       case "4:5":
-        return "w-[400px] h-[500px]";
+        return "w-full max-w-[560px] aspect-[4/5]";
       default:
-        return "w-[720px] h-[405px]";
+        return "w-full max-w-[960px] aspect-[16/9]";
     }
   };
 
@@ -1603,6 +1609,27 @@ export default function Home() {
     }
   };
 
+  const renderAspectRatioSelector = (compact = false) => (
+    <div className={`rounded-xl border border-zinc-700 bg-zinc-900/70 ${compact ? "p-2" : "p-3"}`}>
+      <p className="mb-2 text-sm font-bold text-pink-300">画角</p>
+      <div className="grid grid-cols-2 gap-2">
+        {aspectList.map((ratio) => (
+          <button
+            key={ratio}
+            onClick={() => setAspectRatio(ratio)}
+            className={`rounded p-2 text-xs font-bold ${
+              aspectRatio === ratio
+                ? "bg-yellow-400 text-black shadow-[0_0_10px_#facc15]"
+                : "bg-zinc-800 hover:bg-zinc-700"
+            }`}
+          >
+            {aspectLabels[ratio]}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <main className="min-h-screen bg-black text-white">
       <style>{`
@@ -1841,24 +1868,7 @@ export default function Home() {
         <div className="max-h-[calc(100vh-140px)] overflow-y-auto rounded-2xl border border-cyan-500/30 bg-zinc-950/90 p-4">
           <h2 className="text-xl font-bold mb-4 text-cyan-300">演出設定と書き出し</h2>
           <div className="space-y-4">
-            <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
-              <p className="text-sm mb-2 text-pink-300 font-bold">画角</p>
-              <div className="grid grid-cols-2 gap-2">
-                {aspectList.map((ratio) => (
-                  <button
-                    key={ratio}
-                    onClick={() => setAspectRatio(ratio)}
-                    className={`p-2 rounded text-xs font-bold ${
-                      aspectRatio === ratio
-                        ? "bg-yellow-400 text-black shadow-[0_0_10px_#facc15]"
-                        : "bg-zinc-800 hover:bg-zinc-700"
-                    }`}
-                  >
-                    {ratio}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {renderAspectRatioSelector()}
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
               <ExportPanel
                 aspectRatio={aspectRatio}
@@ -1967,7 +1977,7 @@ export default function Home() {
       <div className="md:hidden flex h-[calc(100vh-56px)] h-[calc(100dvh-56px)] min-h-0 flex-col overflow-hidden px-2 pb-2">
         <div className="shrink-0">
           <PreviewStage
-            previewSizeClass="w-full max-w-none aspect-video max-h-[30dvh]"
+            previewSizeClass={`w-full ${aspectRatio === "16:9" ? "aspect-[16/9]" : aspectRatio === "9:16" ? "aspect-[9/16] max-h-[58dvh]" : aspectRatio === "1:1" ? "aspect-square max-h-[52dvh]" : "aspect-[4/5] max-h-[56dvh]"} max-h-[58dvh]`}
             chorusBoost={chorusBoost}
             showGlitch={showGlitch}
             selectedImage={selectedImage}
@@ -2013,6 +2023,7 @@ export default function Home() {
           ))}
         </div>
         <div className="mt-1 min-h-0 flex-1 overflow-y-auto overflow-x-hidden rounded-xl border border-zinc-700 bg-zinc-950/90 p-2 pb-4 shadow-inner shadow-cyan-950/40 [&_button]:min-h-10 [&_button]:text-sm [&_input]:min-h-10 [&_input]:text-base [&_select]:min-h-10 [&_select]:text-base [&_textarea]:min-h-10 [&_textarea]:text-base [&_input[type='range']]:min-h-7">
+          {(mobileTab === "assets" || mobileTab === "export") ? <div className="mb-3">{renderAspectRatioSelector(true)}</div> : null}
           {mobileTab === "assets" ? (
             <UploadPanel
               handleImageUpload={handleImageUpload}
@@ -2091,10 +2102,6 @@ export default function Home() {
                 <button onClick={() => setShowGlitch(!showGlitch)} className={`w-full rounded p-2 ${showGlitch ? "bg-pink-600" : "bg-zinc-800"}`}>グリッチ {showGlitch ? "ON" : "OFF"}</button>
                 <button onClick={() => setShowEqualizer(!showEqualizer)} className={`w-full rounded p-2 ${showEqualizer ? "bg-cyan-600 text-black" : "bg-zinc-800"}`}>イコライザー {showEqualizer ? "ON" : "OFF"}</button>
                 <button onClick={() => setShowFlash(!showFlash)} className={`w-full rounded p-2 ${showFlash ? "bg-yellow-400 text-black" : "bg-zinc-800"}`}>テキスト演出フラッシュ {showFlash ? "ON" : "OFF"}</button>
-              </div>
-              <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
-                <p className="mb-2 text-sm font-bold text-pink-300">画角</p>
-                <div className="grid grid-cols-2 gap-2">{aspectList.map((ratio) => (<button key={ratio} onClick={() => setAspectRatio(ratio)} className={`rounded p-2 font-bold ${aspectRatio === ratio ? "bg-yellow-400 text-black shadow-[0_0_10px_#facc15]" : "bg-zinc-800"}`}>{ratio}</button>))}</div>
               </div>
               <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
                 <details open>

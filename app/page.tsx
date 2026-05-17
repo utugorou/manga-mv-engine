@@ -17,6 +17,7 @@ import {
   smartSfxTexts,
 } from "../src/lib/textEngine";
 import { getExportResolution } from "../src/lib/exportHelpers";
+import { withBasePath } from "../src/lib/assetPath";
 import {
   createExportCanvas,
   drawImageToCanvas,
@@ -165,6 +166,7 @@ export default function Home() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLogoLoadError, setIsLogoLoadError] = useState(false);
+  const logoSrc = withBasePath("/ui/manga-mv-engine-logo.png");
 
   const [switchMode, setSwitchMode] = useState<SwitchMode>("equal");
   const [imageDuration, setImageDuration] = useState(2000);
@@ -1463,16 +1465,16 @@ export default function Home() {
             <h1 className="text-fuchsia-300">
               {!isLogoLoadError ? (
                 <Image
-                  src="/logo.png"
-                  alt="MANGA MV ENGINE"
+                  src={logoSrc}
+                  alt="manga-mv-engine"
                   width={560}
                   height={72}
                   priority
                   onError={() => setIsLogoLoadError(true)}
-                  className="h-8 sm:h-10 md:h-12 lg:h-14 w-auto max-w-[min(72vw,24rem)] object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
+                  className="h-8 sm:h-9 md:h-10 lg:h-11 w-auto max-w-[min(70vw,20rem)] object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
                 />
               ) : (
-                <span className="text-lg sm:text-xl md:text-8xl font-black tracking-[0.12em] md:tracking-[0.2em] leading-none">MANGA MV ENGINE</span>
+                <span className="text-lg sm:text-xl md:text-2xl font-black tracking-[0.12em] md:tracking-[0.16em] leading-none">MANGA MV ENGINE</span>
               )}
             </h1>
             <p className="text-xs text-zinc-400">Project: <span className="text-cyan-300">Untitled MV</span></p>

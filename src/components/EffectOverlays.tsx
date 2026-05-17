@@ -197,11 +197,11 @@ export default function EffectOverlays({
         <div
           className={`absolute ${getPositionClass(
             bubblePosition
-          )} bg-white text-black px-6 py-4 border-4 border-black text-center font-bold ${
+          )} bg-white/50 text-black px-6 py-4 border-4 border-black text-center font-bold [text-shadow:0_1px_0_rgba(255,255,255,0.35)] ${
             bubbleVariant === "spiky"
               ? "clip-path-bubble-spiky rounded-[20%]"
               : bubbleVariant === "thought"
-                ? "rounded-[45%] before:absolute before:-bottom-3 before:right-8 before:h-4 before:w-4 before:rounded-full before:border-4 before:border-black before:bg-white after:absolute after:-bottom-8 after:right-4 after:h-3 after:w-3 after:rounded-full after:border-2 after:border-black after:bg-white"
+                ? "rounded-[45%] before:absolute before:-bottom-3 before:right-8 before:h-4 before:w-4 before:rounded-full before:border-4 before:border-black before:bg-white/50 after:absolute after:-bottom-8 after:right-4 after:h-3 after:w-3 after:rounded-full after:border-2 after:border-black after:bg-white/50"
                 : "rounded-full"
           }`}
           style={{ ...playOrNone("bubbleFloat 1.4s ease-in-out infinite"), fontSize: `${bubbleScale}rem`, maxWidth: `${Math.min(420, 260 * bubbleScale)}px`, lineHeight: 1.25 }}

@@ -9,7 +9,7 @@ import PreviewStage from "../src/components/PreviewStage";
 import ExportPanel from "../src/components/ExportPanel";
 import PresetPanel from "../src/components/PresetPanel";
 import SettingsPanel from "../src/components/SettingsPanel";
-import { presetConfigs, presetList } from "../src/lib/presets";
+import { effectPresetConfigs, effectPresetList } from "../src/lib/presets";
 import {
   bubbleTexts,
   sfxTexts,
@@ -45,7 +45,7 @@ import type {
   PanelMode,
   PanelPattern,
   PositionType,
-  PresetName,
+  EffectPresetName,
   SfxItem,
   SwitchMode,
   TextMode,
@@ -156,6 +156,16 @@ export default function Home() {
   const [audioMood, setAudioMood] = useState<AudioMood>("quiet");
   const [chorusSensitivity, setChorusSensitivity] = useState(22);
 
+  const [sfxFrequency, setSfxFrequency] = useState(0.65);
+  const [sfxMaxCount, setSfxMaxCount] = useState(3);
+  const [focusLineIntensity, setFocusLineIntensity] = useState(1);
+  const [glitchIntensity, setGlitchIntensity] = useState(0.45);
+  const [screenShakeIntensity, setScreenShakeIntensity] = useState(1);
+  const [textFrequency, setTextFrequency] = useState(0.55);
+  const [chorusEffectMultiplier, setChorusEffectMultiplier] = useState(1.3);
+  const [fadeFlickerBlurIntensity, setFadeFlickerBlurIntensity] = useState(1);
+  const [baseContrast, setBaseContrast] = useState(1.05);
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLogoLoadError, setIsLogoLoadError] = useState(false);
 
@@ -170,7 +180,7 @@ export default function Home() {
   const [selectedMotion, setSelectedMotion] =
     useState<MotionType>("zoomIn");
 
-  const [activePreset, setActivePreset] = useState<PresetName | null>(null);
+  const [activePreset, setActivePreset] = useState<EffectPresetName>("標準");
 
 
   const getActiveMediaElement = () => {
@@ -269,9 +279,9 @@ export default function Home() {
   const sfxPositions = ["topLeft", "top", "topRight", "left", "center", "right", "bottomLeft", "bottom", "bottomRight", "random"] as const;
   const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
   const generateSfxItems = (): SfxItem[] => {
-    const count = randomSfxCountEnabled ? randomInt(0, 4) : 1;
+    const count = randomSfxCountEnabled ? randomInt(0, sfxMaxCount) : Math.min(1, sfxMaxCount);
     const unifiedText = pickSfxText();
-    const unifiedScale = randomSfxScaleEnabled ? randomItem([...sfxScaleOptions]) : 1;
+    const unifiedScale = randomSfxScaleEnabled ? randomItem([...sfxScaleOptions]) * sfxFrequency : sfxScale;
     return Array.from({ length: count }, (_, i) => ({
       id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`,
       text: unifiedText,
@@ -361,7 +371,7 @@ export default function Home() {
     setRandomMotionApplied(true);
   };
 
-  const applyPreset = (preset: PresetName) => {
+  const applyPreset = (preset: EffectPresetName) => {
     setActivePreset(preset);
     setChorusBoost(false);
 
@@ -371,26 +381,29 @@ export default function Home() {
     audioMoodRef.current = "quiet";
     setAudioMood("quiet");
 
-    const config = presetConfigs[preset];
+    const config = effectPresetConfigs[preset];
 
-    setSwitchMode(config.switchMode);
-    setPeakSensitivity(config.peakSensitivity);
-    setKickSensitivity(config.kickSensitivity);
-    setMinSwitchInterval(config.minSwitchInterval);
-    setIdealSwitchInterval(config.idealSwitchInterval);
-    setFallbackSwitchInterval(config.fallbackSwitchInterval);
-    setImageDuration(config.imageDuration);
-    setShowGlitch(config.showGlitch);
-    setShowEqualizer(config.showEqualizer);
-    setShowFlash(config.showFlash);
-    setShowPanels(config.showPanels);
-    setPanelMode(config.panelMode);
-    setAutoBubble(config.autoBubble);
-    setShowBubble(config.showBubble);
-    setAutoSfx(config.autoSfx);
-    setShowSfx(config.showSfx);
-    setTextMode(config.textMode);
-    setChorusSensitivity(config.chorusSensitivity);
+    setShowGlitch(config.glitchIntensity > 0.25);
+    setShowEqualizer(true);
+    setShowFlash(true);
+    setShowPanels(true);
+    setPanelMode("random");
+    setAutoBubble(true);
+    setShowBubble(false);
+    setAutoSfx(true);
+    setShowSfx(true);
+    setTextMode("smart");
+    setChorusSensitivity(config.chorusThreshold);
+    setSfxFrequency(config.sfxFrequency);
+    setSfxScale(config.sfxScale);
+    setSfxMaxCount(config.sfxMaxCount);
+    setFocusLineIntensity(config.focusLineIntensity);
+    setGlitchIntensity(config.glitchIntensity);
+    setScreenShakeIntensity(config.screenShakeIntensity);
+    setTextFrequency(config.textFrequency);
+    setChorusEffectMultiplier(config.chorusEffectMultiplier);
+    setFadeFlickerBlurIntensity(config.fadeFlickerBlurIntensity);
+    setBaseContrast(config.baseContrast);
 
     const motionMap: Record<MotionGroup, MotionType[]> = {
       all: motionList,
@@ -400,16 +413,21 @@ export default function Home() {
       groove: grooveMotionList,
     };
 
-    if (preset === "SIMPLE") {
-      if (images.length > 0) {
-        setImageMotions(images.map(() => "zoomIn"));
-        setRandomMotionApplied(false);
-      }
+    if (preset === "エモ") {
+      randomizeMotionsFromList(calmMotionList);
       return;
     }
-
-    randomizeMotionsFromList(motionMap[config.motionGroup]);
+    if (preset === "標準") {
+      randomizeMotionsFromList(motionList);
+      return;
+    }
+    if (preset === "ライブ") {
+      randomizeMotionsFromList(grooveMotionList);
+      return;
+    }
+    randomizeMotionsFromList(battleMotionList);
   };
+
 
   const triggerFlash = () => {
     if (!showFlash) return;
@@ -418,7 +436,7 @@ export default function Home() {
 
     setTimeout(() => {
       setFlashActive(false);
-    }, chorusBoost ? 180 : 120);
+    }, (chorusBoost ? 180 : 120) * fadeFlickerBlurIntensity);
   };
 
   const triggerPanelBurst = () => {
@@ -436,7 +454,7 @@ export default function Home() {
 
     setTimeout(() => {
       setPanelBurst(false);
-    }, 260);
+    }, 260 / Math.max(0.6, focusLineIntensity));
   };
 
   const stepToNextImage = () => {
@@ -450,13 +468,13 @@ export default function Home() {
 
       setSelectedImage(images[nextIndex]);
 
-      if (autoBubble) {
+      if (autoBubble && Math.random() <= textFrequency) {
         setShowBubble(true);
         setBubbleText(pickBubbleText());
         setBubblePosition(randomItem(positions));
       }
 
-      if (autoSfx) {
+      if (autoSfx && Math.random() <= sfxFrequency) {
         setShowSfx(true);
         const items = generateSfxItems();
         setSfxItems(items);
@@ -1261,7 +1279,7 @@ export default function Home() {
 
     setImageMotions(updated);
     setRandomMotionApplied(false);
-    setActivePreset(null);
+    
   };
 
   const applyRandomMotions = () => {
@@ -1269,7 +1287,7 @@ export default function Home() {
 
     setImageMotions(updated);
     setRandomMotionApplied(true);
-    setActivePreset(null);
+    
   };
 
   const getMotionStyle = () => {
@@ -1578,7 +1596,7 @@ export default function Home() {
               switchMode={switchMode}
               formatTime={formatTime}
             />
-            <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3"><PresetPanel presetList={presetList} activePreset={activePreset} applyPreset={applyPreset} /></div>
+            <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3"><PresetPanel presetList={effectPresetList} activePreset={activePreset} applyPreset={applyPreset} /></div>
           </div>
         </div>
         <div className="max-h-[calc(100vh-140px)] overflow-y-auto rounded-2xl border border-cyan-500/30 bg-zinc-950/90 p-4">

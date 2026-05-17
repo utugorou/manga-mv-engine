@@ -12,6 +12,8 @@ import type {
   ExportQuality,
   ExportStatus,
   RecordingMode,
+  ExportFormatPreference,
+  RecordingContainer,
 } from "../types/mv";
 
 type ExportPanelProps = {
@@ -35,6 +37,13 @@ type ExportPanelProps = {
   setAutoRecordEnabled: (enabled: boolean) => void;
   audioDurationState: "idle" | "loading" | "ready" | "error";
   hasAudio: boolean;
+  exportFormatPreference: ExportFormatPreference;
+  setExportFormatPreference: (value: ExportFormatPreference) => void;
+  supportsMp4Recording: boolean;
+  actualRecordingFormat: RecordingContainer;
+  selectedMimeType: string | null;
+  mp4FallbackMessage: string | null;
+  recordedFileExtension: RecordingContainer | null;
 };
 
 export default function ExportPanel({
@@ -58,6 +67,13 @@ export default function ExportPanel({
   setAutoRecordEnabled,
   audioDurationState,
   hasAudio,
+  exportFormatPreference,
+  setExportFormatPreference,
+  supportsMp4Recording,
+  actualRecordingFormat,
+  selectedMimeType,
+  mp4FallbackMessage,
+  recordedFileExtension,
 }: ExportPanelProps) {
   const resolution = getExportResolution(aspectRatio, exportQuality);
   const isRecordingNow = isRecording || exportStatus === "recording";
@@ -142,17 +158,31 @@ export default function ExportPanel({
             ? "未対応のため映像のみ"
             : "未判定"}
       </p>
-      <p className="text-[11px] text-zinc-400 mt-2 leading-relaxed">
-        書き出し形式はWebMです。MP4が必要な場合は、書き出したWebMを外部ツールでMP4に変換してください。
-      </p>
-
-      <div className="mt-3 rounded border border-cyan-800/80 bg-cyan-950/30 p-2">
-        <p className="text-xs text-cyan-200 font-bold">WebM書き出しの流れ</p>
-        <ol className="mt-1 list-decimal list-inside text-xs text-cyan-100 space-y-1">
-          <li>録画開始</li>
-          <li>録画停止</li>
-          <li>WebMをダウンロード</li>
-        </ol>
+      <div className="mt-3 space-y-2">
+        <p className="text-xs text-zinc-300">書き出し形式</p>
+        <div className="grid grid-cols-3 gap-2">
+          {(["auto", "mp4", "webm"] as const).map((format) => (
+            <button
+              key={format}
+              onClick={() => setExportFormatPreference(format)}
+              className={`p-2 rounded text-xs font-bold ${
+                exportFormatPreference === format
+                  ? "bg-lime-500 text-black"
+                  : "bg-zinc-800 hover:bg-zinc-700"
+              }`}
+            >
+              {format === "auto" ? "自動" : format.toUpperCase()}
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-zinc-300">
+          {supportsMp4Recording
+            ? "この端末はMP4書き出しに対応しています"
+            : "この端末はMP4録画に非対応のためWebMで保存します"}
+        </p>
+        {mp4FallbackMessage && <p className="text-xs text-amber-300">{mp4FallbackMessage}</p>}
+        <p className="text-xs text-cyan-300">実際の録画形式：{actualRecordingFormat.toUpperCase()}</p>
+        <p className="text-[11px] text-zinc-500">使用MIME: {selectedMimeType ?? "ブラウザ既定"}</p>
       </div>
       <div className="mt-3 rounded border border-emerald-800/80 bg-emerald-950/30 p-3 space-y-2">
         <p className="text-xs text-emerald-200 font-bold">曲尺自動録画</p>
@@ -196,7 +226,7 @@ export default function ExportPanel({
           <p className="text-zinc-300">録画完了</p>
 
           <div className="space-y-2">
-            <p className="text-zinc-300">WebMプレビュー</p>
+            <p className="text-zinc-300">動画プレビュー</p>
             <video
               src={recordedVideoUrl}
               controls
@@ -206,12 +236,12 @@ export default function ExportPanel({
 
           <a
             href={recordedVideoUrl}
-            download="manga-mv-export.webm"
+            download={`manga-mv-engine.${recordedFileExtension ?? "webm"}`}
             className="inline-block text-lime-300 underline"
           >
-            3. WebMをダウンロード
+            3. {recordedFileExtension === "mp4" ? "MP4" : "WebM"}をダウンロード
           </a>
-          <p className="text-zinc-400">ファイル名：manga-mv-export.webm</p>
+          <p className="text-zinc-400">ファイル名：manga-mv-engine.{recordedFileExtension ?? "webm"}</p>
         </div>
       )}
 
@@ -234,7 +264,7 @@ export default function ExportPanel({
       )}
 
       <p className="text-xs text-zinc-500 mt-2 leading-relaxed">
-        ※現在は Canvas 録画による WebM 書き出しに対応しています。
+        ※MP4 β: 端末がMP4録画非対応の場合は安全にWebMへフォールバックします。
       </p>
     </div>
   );

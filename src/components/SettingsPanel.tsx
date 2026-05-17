@@ -593,7 +593,7 @@ export default function SettingsPanel({
           <button
             onClick={() => {
               setPanelMode("fixed");
-              setPanelPattern("classic");
+              setPanelPattern("full");
               setActivePreset(null);
             }}
             className={`p-2 rounded text-sm ${

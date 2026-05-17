@@ -11,11 +11,16 @@ type PositionType =
   | "center";
 
 type PanelPattern =
-  | "classic"
-  | "vertical"
-  | "horizontal"
+  | "full"
+  | "split-horizontal"
+  | "split-vertical"
+  | "triple-vertical"
+  | "triple-horizontal"
+  | "big-plus-small"
   | "diagonal"
-  | "action";
+  | "four-panel"
+  | "center-focus"
+  | "battle-break";
 
 type EffectOverlaysProps = {
   selectedImage: string | null;
@@ -99,48 +104,15 @@ export default function EffectOverlays({
         >
           <div className="absolute inset-0 border-[10px] border-black/70" />
 
-          {panelPattern === "classic" && (
-            <>
-              <div className="absolute top-0 left-[34%] w-[10px] h-full bg-black/80 rotate-[8deg]" />
-              <div className="absolute top-[48%] left-0 w-full h-[9px] bg-black/75 rotate-[-4deg]" />
-              <div className="absolute top-0 right-[18%] w-[7px] h-full bg-black/55 rotate-[-12deg]" />
-            </>
-          )}
-
-          {panelPattern === "vertical" && (
-            <>
-              <div className="absolute top-0 left-[28%] w-[12px] h-full bg-black/85 rotate-[2deg]" />
-              <div className="absolute top-0 left-[62%] w-[10px] h-full bg-black/80 rotate-[-3deg]" />
-              <div className="absolute top-0 left-[82%] w-[7px] h-full bg-black/60 rotate-[5deg]" />
-            </>
-          )}
-
-          {panelPattern === "horizontal" && (
-            <>
-              <div className="absolute top-[28%] left-0 w-full h-[11px] bg-black/85 rotate-[-2deg]" />
-              <div className="absolute top-[63%] left-0 w-full h-[10px] bg-black/80 rotate-[3deg]" />
-              <div className="absolute top-[82%] left-0 w-full h-[7px] bg-black/60 rotate-[-1deg]" />
-            </>
-          )}
-
-          {panelPattern === "diagonal" && (
-            <>
-              <div className="absolute top-[15%] left-[-10%] w-[120%] h-[12px] bg-black/85 rotate-[18deg]" />
-              <div className="absolute top-[55%] left-[-10%] w-[120%] h-[10px] bg-black/75 rotate-[-14deg]" />
-              <div className="absolute top-0 left-[45%] w-[9px] h-full bg-black/70 rotate-[20deg]" />
-            </>
-          )}
-
-          {panelPattern === "action" && (
-            <>
-              <div className="absolute top-[8%] left-[-10%] w-[120%] h-[9px] bg-black/90 rotate-[8deg]" />
-              <div className="absolute top-[30%] left-[-10%] w-[120%] h-[8px] bg-black/80 rotate-[-12deg]" />
-              <div className="absolute top-[55%] left-[-10%] w-[120%] h-[11px] bg-black/90 rotate-[16deg]" />
-              <div className="absolute top-[76%] left-[-10%] w-[120%] h-[7px] bg-black/75 rotate-[-7deg]" />
-              <div className="absolute top-0 left-[18%] w-[8px] h-full bg-black/70 rotate-[-18deg]" />
-              <div className="absolute top-0 right-[22%] w-[8px] h-full bg-black/70 rotate-[14deg]" />
-            </>
-          )}
+          {panelPattern === "split-vertical" && <div className="absolute top-0 left-1/2 w-[10px] h-full -translate-x-1/2 bg-black/80" />}
+          {panelPattern === "split-horizontal" && <div className="absolute left-0 top-1/2 h-[10px] w-full -translate-y-1/2 bg-black/80" />}
+          {panelPattern === "triple-vertical" && <><div className="absolute top-0 left-1/3 w-[9px] h-full bg-black/80" /><div className="absolute top-0 left-2/3 w-[9px] h-full bg-black/80" /></>}
+          {panelPattern === "triple-horizontal" && <><div className="absolute top-1/3 left-0 w-full h-[9px] bg-black/80" /><div className="absolute top-2/3 left-0 w-full h-[9px] bg-black/80" /></>}
+          {panelPattern === "big-plus-small" && <><div className="absolute top-0 left-[62%] w-[10px] h-full bg-black/85" /><div className="absolute top-1/2 left-[62%] w-[38%] h-[10px] -translate-y-1/2 bg-black/85" /></>}
+          {panelPattern === "diagonal" && <><div className="absolute top-[16%] left-[-10%] w-[120%] h-[10px] bg-black/85 rotate-[18deg]" /><div className="absolute top-[55%] left-[-10%] w-[120%] h-[10px] bg-black/75 rotate-[-15deg]" /></>}
+          {panelPattern === "four-panel" && <><div className="absolute top-0 left-1/2 w-[9px] h-full -translate-x-1/2 bg-black/80" /><div className="absolute left-0 top-1/2 h-[9px] w-full -translate-y-1/2 bg-black/80" /></>}
+          {panelPattern === "center-focus" && <><div className="absolute top-[18%] left-[18%] w-[64%] h-[64%] border-[9px] border-black/80" /><div className="absolute top-0 left-[50%] w-[8px] h-[18%] -translate-x-1/2 bg-black/65" /><div className="absolute bottom-0 left-[50%] w-[8px] h-[18%] -translate-x-1/2 bg-black/65" /></>}
+          {panelPattern === "battle-break" && <><div className="absolute top-[8%] left-[-10%] w-[120%] h-[9px] bg-black/90 rotate-[11deg]" /><div className="absolute top-[35%] left-[-10%] w-[120%] h-[8px] bg-black/80 rotate-[-10deg]" /><div className="absolute top-[62%] left-[-10%] w-[120%] h-[10px] bg-black/90 rotate-[16deg]" /><div className="absolute top-0 left-[22%] w-[7px] h-full bg-black/75 rotate-[-17deg]" /></>}
 
           {chorusBoost && (
             <>

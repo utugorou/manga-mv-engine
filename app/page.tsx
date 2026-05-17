@@ -773,31 +773,16 @@ export default function Home() {
     const timeData = new Uint8Array(analyser.fftSize);
 
     const tick = () => {
-      analyser.getByteFrequencyData(freqData);
-      analyser.getByteTimeDomainData(timeData);
+      try {
+        analyser.getByteFrequencyData(freqData);
+        analyser.getByteTimeDomainData(timeData);
+      } catch (error) {
+        console.error("Audio analyser update failed", error);
+      }
 
       const barCount = 16;
-      const chunkSize = Math.floor(freqData.length / barCount);
-
-      const nextBars = Array.from({ length: barCount }, (_, index) => {
-        const start = index * chunkSize;
-        const end = start + chunkSize;
-
-        let sum = 0;
-
-        for (let i = start; i < end; i++) {
-          sum += freqData[i];
-        }
-
-        const avg = sum / chunkSize;
-
-        const overall = rms * 100;
-        const boosted = (avg / 255) * 100 + overall * 0.35;
-        return Math.max(4, Math.round(boosted));
-      });
-
-      setEqBars(nextBars);
-      setCurrentTime(audio.currentTime);
+      const safeFreqLength = freqData.length;
+      const chunkSize = Math.max(1, Math.floor(safeFreqLength / barCount));
 
       let sumSquares = 0;
 
@@ -806,22 +791,53 @@ export default function Home() {
         sumSquares += normalized * normalized;
       }
 
-      const rms = Math.sqrt(sumSquares / timeData.length);
+      const rms =
+        timeData.length > 0 ? Math.sqrt(sumSquares / timeData.length) : 0;
+      const overall = rms * 100;
+
+      let nextBars: number[] = Array.from({ length: barCount }, () => 4);
+
+      try {
+        nextBars = Array.from({ length: barCount }, (_, index) => {
+          const start = index * chunkSize;
+          const end = Math.min(start + chunkSize, safeFreqLength);
+
+          let sum = 0;
+          let count = 0;
+
+          for (let i = start; i < end; i++) {
+            sum += freqData[i];
+            count += 1;
+          }
+
+          const avg = count > 0 ? sum / count : 0;
+          const boosted = (avg / 255) * 100 + overall * 0.35;
+          return Math.max(4, Math.round(boosted));
+        });
+      } catch (error) {
+        console.error("Equalizer bar calculation failed", error);
+      }
+
+      setEqBars(nextBars);
+      setCurrentTime(audio.currentTime);
 
       const chorusThreshold = chorusSensitivity / 100;
       const isChorusNow = rms > chorusThreshold;
 
       setChorusBoost(isChorusNow);
 
-      const lowBinCount = Math.max(8, Math.floor(freqData.length * 0.06));
+      const lowBinCount = Math.min(
+        safeFreqLength,
+        Math.max(1, Math.floor(safeFreqLength * 0.06))
+      );
 
       let lowSum = 0;
 
       for (let i = 0; i < lowBinCount; i++) {
-        lowSum += freqData[i];
+        lowSum += freqData[i] ?? 0;
       }
 
-      const lowEnergy = lowSum / lowBinCount / 255;
+      const lowEnergy = lowBinCount > 0 ? lowSum / lowBinCount / 255 : 0;
       const lowSpike = lowEnergy - lastLowEnergyRef.current;
 
       if (isChorusNow) {

@@ -69,6 +69,10 @@ export default function EffectOverlays({
   const normalizedSfxItems = sfxItems.slice(0, 4);
   const unifiedSfxText = normalizedSfxItems[0]?.text ?? "";
   const unifiedSfxScale = normalizedSfxItems[0]?.scale ?? 1;
+  const titleBaseRem = bubbleScale * 2;
+  const titleMaxWidthPx = Math.min(560, 320 * bubbleScale);
+  const safeTitleLength = Math.max(1, bubbleText.trim().length);
+  const titleAutoShrink = Math.max(0.72, Math.min(1, 14 / Math.sqrt(safeTitleLength)));
   const getSfxPositionClass = (position: SfxItem["position"]) => {
     const map: Record<SfxItem["position"], PositionType> = {
       topLeft: "topLeft",
@@ -204,7 +208,7 @@ export default function EffectOverlays({
                 ? "rounded-[45%] before:absolute before:-bottom-3 before:right-8 before:h-4 before:w-4 before:rounded-full before:border-4 before:border-black before:bg-white/50 after:absolute after:-bottom-8 after:right-4 after:h-3 after:w-3 after:rounded-full after:border-2 after:border-black after:bg-white/50"
                 : "rounded-full"
           }`}
-          style={{ ...playOrNone("bubbleFloat 1.4s ease-in-out infinite"), fontSize: `${bubbleScale}rem`, maxWidth: `${Math.min(420, 260 * bubbleScale)}px`, lineHeight: 1.25 }}
+          style={{ ...playOrNone("bubbleFloat 1.4s ease-in-out infinite"), fontSize: `clamp(1.25rem, ${titleBaseRem * titleAutoShrink}rem, ${titleBaseRem}rem)`, maxWidth: `min(78%, ${titleMaxWidthPx}px)`, lineHeight: 1.25 }}
         >
           {bubbleText}
         </div>

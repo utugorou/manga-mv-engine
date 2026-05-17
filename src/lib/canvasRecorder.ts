@@ -218,9 +218,17 @@ export const drawSpeechBubble = (
   const p = getAnchor(position, canvasWidth, canvasHeight);
   const bubbleScale = options.scale ?? 1;
   const variant = options.variant ?? "normal";
-  const fontSize = Math.max(20, Math.round(Math.min(canvasWidth, canvasHeight) * 0.05 * bubbleScale));
+  const baseFontSize = Math.max(20, Math.round(Math.min(canvasWidth, canvasHeight) * 0.1 * bubbleScale));
+  const maxBubbleWidth = canvasWidth * 0.78;
+  let fontSize = baseFontSize;
   ctx.font = `800 ${fontSize}px sans-serif`;
-  const w = Math.min(canvasWidth * 0.56, ctx.measureText(text).width + fontSize * 1.7);
+  let textWidth = ctx.measureText(text).width;
+  while (fontSize > 20 && textWidth + fontSize * 1.7 > maxBubbleWidth) {
+    fontSize = Math.max(20, Math.floor(fontSize * 0.92));
+    ctx.font = `800 ${fontSize}px sans-serif`;
+    textWidth = ctx.measureText(text).width;
+  }
+  const w = Math.min(maxBubbleWidth, textWidth + fontSize * 1.7);
   const h = fontSize * 2.15;
   const x = Math.max(24, Math.min(canvasWidth - w - 24, p.x - w / 2));
   const y = Math.max(24, Math.min(canvasHeight - h - 24, p.y - h / 2));

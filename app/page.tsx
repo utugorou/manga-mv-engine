@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type SyntheticEvent } from "react";
 import ControlButtons from "../src/components/ControlButtons";
 import Timeline from "../src/components/Timeline";
 import UploadPanel from "../src/components/UploadPanel";
@@ -56,7 +56,7 @@ const randomItem = <T,>(list: T[]): T => {
 
 type AppLogoProps = {
   src: string;
-  onError: () => void;
+  onError: (event: SyntheticEvent<HTMLImageElement>) => void;
   isError: boolean;
   className?: string;
 };
@@ -203,7 +203,15 @@ export default function Home() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLogoLoadError, setIsLogoLoadError] = useState(false);
-  const logoSrc = withBasePath("/ui/manga-mv-engine-logo.png");
+  const [logoErrorSrc, setLogoErrorSrc] = useState("");
+  const logoSrc = withBasePath("/ui/manga-mv-engine-logo.png?v=1");
+
+  const handleLogoLoadError = useCallback((event: SyntheticEvent<HTMLImageElement>) => {
+    const failedSrc = event.currentTarget.currentSrc || event.currentTarget.src || logoSrc;
+    setLogoErrorSrc(failedSrc);
+    setIsLogoLoadError(true);
+    console.error("[AppLogo] Failed to load logo image", { failedSrc });
+  }, [logoSrc]);
 
   const [switchMode, setSwitchMode] = useState<SwitchMode>("equal");
   const [imageDuration, setImageDuration] = useState(2000);
@@ -1579,10 +1587,13 @@ export default function Home() {
               <AppLogo
                 src={logoSrc}
                 isError={isLogoLoadError}
-                onError={() => setIsLogoLoadError(true)}
+                onError={handleLogoLoadError}
               />
             </h1>
             <p className="text-xs text-zinc-400">Project: <span className="text-cyan-300">Untitled MV</span></p>
+            {isLogoLoadError && logoErrorSrc ? (
+              <p className="mt-1 text-[10px] text-amber-300 break-all">Logo fallback active: {logoErrorSrc}</p>
+            ) : null}
           </div>
         </div>
       </header>

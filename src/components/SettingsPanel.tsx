@@ -10,6 +10,8 @@ import {
   PresetName,
   SwitchMode,
   TextMode,
+  MotionAmplitude,
+  EqualizerType,
 } from "../types/mv";
 
 type SettingsPanelProps = {
@@ -59,6 +61,8 @@ type SettingsPanelProps = {
   setShowGlitch: (value: boolean) => void;
   showEqualizer: boolean;
   setShowEqualizer: (value: boolean) => void;
+  equalizerType: EqualizerType;
+  setEqualizerType: (value: EqualizerType) => void;
   showFlash: boolean;
   setShowFlash: (value: boolean) => void;
   showPanels: boolean;
@@ -75,6 +79,8 @@ type SettingsPanelProps = {
   applyMotionToCurrent: () => void;
   applyRandomMotions: () => void;
   randomMotionApplied: boolean;
+  motionAmplitude: MotionAmplitude;
+  setMotionAmplitude: (value: MotionAmplitude) => void;
 };
 
 export default function SettingsPanel({
@@ -124,6 +130,8 @@ export default function SettingsPanel({
   setShowGlitch,
   showEqualizer,
   setShowEqualizer,
+  equalizerType,
+  setEqualizerType,
   showFlash,
   setShowFlash,
   showPanels,
@@ -140,6 +148,8 @@ export default function SettingsPanel({
   applyMotionToCurrent,
   applyRandomMotions,
   randomMotionApplied,
+  motionAmplitude,
+  setMotionAmplitude,
 }: SettingsPanelProps) {
   return (
     <>
@@ -345,6 +355,12 @@ export default function SettingsPanel({
       >
         吹き出し {showBubble ? "ON" : "追加"}
       </button>
+      <div className="pt-3">
+        <p className="text-sm mb-2 text-cyan-300">エコライザータイプ</p>
+        <select value={equalizerType} onChange={(e) => { setEqualizerType(e.target.value as EqualizerType); setActivePreset(null); }} className="w-full bg-black border border-zinc-600 p-2 rounded text-white">
+          <option value="bars">バー</option><option value="wideBars">ワイドバー</option><option value="mirror">ミラー</option><option value="wave">波形</option><option value="glitchEq">グリッチEQ</option><option value="pulse">パルス</option><option value="circle">円形</option>
+        </select>
+      </div>
 
       <input
         value={bubbleText}
@@ -632,6 +648,12 @@ export default function SettingsPanel({
       </div>
 
       <div className="pt-4 border-t border-zinc-700">
+        <p className="text-sm mb-2 text-cyan-300">モーション動き幅</p>
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          <button onClick={() => { setMotionAmplitude("normal"); setActivePreset(null); }} className={`p-2 rounded ${motionAmplitude === "normal" ? "bg-cyan-500 text-black font-bold" : "bg-zinc-800 hover:bg-zinc-700"}`}>通常</button>
+          <button onClick={() => { setMotionAmplitude("x2"); setActivePreset(null); }} className={`p-2 rounded ${motionAmplitude === "x2" ? "bg-cyan-500 text-black font-bold" : "bg-zinc-800 hover:bg-zinc-700"}`}>2倍</button>
+          <button onClick={() => { setMotionAmplitude("x3"); setActivePreset(null); }} className={`p-2 rounded ${motionAmplitude === "x3" ? "bg-cyan-500 text-black font-bold" : "bg-zinc-800 hover:bg-zinc-700"}`}>3倍</button>
+        </div>
         <p className="text-sm mb-2 text-cyan-300">現在画像のモーション</p>
         <select
           value={selectedMotion}

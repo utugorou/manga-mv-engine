@@ -1,5 +1,7 @@
 import EffectOverlays from "./EffectOverlays";
 import type { SfxItem } from "../types/mv";
+import type { EqualizerType } from "../types/mv";
+import type { CSSProperties } from "react";
 
 type PositionType = "topLeft" | "topRight" | "bottomLeft" | "bottomRight" | "center";
 type PanelPattern = "classic" | "vertical" | "horizontal" | "diagonal" | "action";
@@ -12,11 +14,13 @@ type PreviewStageProps = {
   isPlaying: boolean;
   isRecording: boolean;
   getMotionStyle: () => string;
+  getMotionAmplitude: () => number;
   showPanels: boolean;
   panelBurst: boolean;
   panelPattern: PanelPattern;
   showEqualizer: boolean;
   eqBars: number[];
+  equalizerType: EqualizerType;
   showSfx: boolean;
   sfxItems: SfxItem[];
   sfxPosition: PositionType;
@@ -30,8 +34,9 @@ type PreviewStageProps = {
 };
 
 export default function PreviewStage(props: PreviewStageProps) {
-  const { previewSizeClass, chorusBoost, showGlitch, selectedImage, isPlaying, isRecording, getMotionStyle } = props;
+  const { previewSizeClass, chorusBoost, showGlitch, selectedImage, isPlaying, isRecording, getMotionStyle, getMotionAmplitude } = props;
 
+  const imageStyle = { animation: isPlaying ? getMotionStyle() : "none", ["--motion-amp"]: String(getMotionAmplitude()) } as CSSProperties;
   return (
     <div className="relative flex w-full items-center justify-center">
       <div className="absolute left-2 top-2 z-20 flex gap-2 text-xs font-bold">
@@ -42,7 +47,7 @@ export default function PreviewStage(props: PreviewStageProps) {
 
       <div className={`${previewSizeClass} mt-10 bg-zinc-900 border-2 border-cyan-300/80 rounded-2xl relative overflow-hidden flex items-center justify-center transition-all duration-150 shadow-[0_0_40px_rgba(34,211,238,0.2)] ${chorusBoost ? "shadow-[0_0_70px_#ec4899] scale-[1.02]" : showGlitch ? "shadow-[0_0_40px_#ec4899]" : ""}`}>
         {selectedImage ? (
-          <img src={selectedImage} alt="" className={`w-full h-full object-cover ${showGlitch || chorusBoost ? "contrast-125 saturate-150" : ""}`} style={{ animation: isPlaying ? getMotionStyle() : "none" }} />
+          <img src={selectedImage} alt="" className={`w-full h-full object-cover ${showGlitch || chorusBoost ? "contrast-125 saturate-150" : ""}`} style={imageStyle} />
         ) : (
           <div className="text-center"><p className="text-2xl text-fuchsia-300 font-black">背景画像をアップロードしてください</p><p className="text-sm text-zinc-400 mt-2">デフォルト背景を表示中</p></div>
         )}

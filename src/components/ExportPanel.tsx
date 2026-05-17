@@ -203,10 +203,14 @@ export default function ExportPanel({
               ? "この端末はMP4書き出しに対応しています"
               : "この端末はMP4録画に非対応のためWebMで保存します"}
         </p>
-        {mp4FallbackMessage && <p className="text-xs text-amber-300">{mp4FallbackMessage}</p>}
-        <p className="text-xs text-cyan-300">実際の録画形式：{actualRecordingFormat.toUpperCase()}</p>
-        <p className="text-[11px] text-zinc-500">使用MIME: {selectedMimeType ?? "ブラウザ既定"}</p>
-        {recordingStreamDiagnostics && (
+        {mounted && mp4FallbackMessage && <p className="text-xs text-amber-300">{mp4FallbackMessage}</p>}
+        <p className="text-xs text-cyan-300">
+          実際の録画形式：{mounted ? actualRecordingFormat.toUpperCase() : "確認中"}
+        </p>
+        <p className="text-[11px] text-zinc-500">
+          使用MIME: {mounted ? (selectedMimeType ?? "ブラウザ既定") : "確認中"}
+        </p>
+        {mounted && recordingStreamDiagnostics && (
           <div className="rounded border border-cyan-900/80 bg-cyan-950/20 p-2 space-y-1">
             <p className="text-[11px] text-cyan-200">
               録画ストリーム：{recordingStreamDiagnostics.videoTrackCount > 0 ? "映像あり" : "映像なし"} / {recordingStreamDiagnostics.audioTrackCount > 0 ? "音声あり" : "音声なし"}

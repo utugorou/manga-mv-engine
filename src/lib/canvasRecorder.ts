@@ -253,7 +253,6 @@ export const drawSfxText = (
   options: CanvasSfxDrawOptions = {}
 ): void => {
   if (!text) return;
-  const p = getAnchor(position, canvasWidth, canvasHeight);
   const baseSize = options.chorusBoost ? 64 : 48;
   const scale = options.sfxScale ?? 1;
   const shortSide = Math.min(canvasWidth, canvasHeight);

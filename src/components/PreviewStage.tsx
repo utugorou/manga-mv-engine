@@ -1,5 +1,4 @@
 import EffectOverlays from "./EffectOverlays";
-import type { RefObject } from "react";
 import type { SfxItem } from "../types/mv";
 import type { BackgroundMode } from "../types/mv";
 
@@ -12,10 +11,6 @@ type PreviewStageProps = {
   showGlitch: boolean;
   selectedImage: string | null;
   backgroundMode: BackgroundMode;
-  videoUrl: string | null;
-  videoFitMode: "cover" | "contain";
-  videoRef: RefObject<HTMLVideoElement | null>;
-  videoMuted: boolean;
   isPlaying: boolean;
   isRecording: boolean;
   getMotionStyle: () => string;
@@ -37,7 +32,7 @@ type PreviewStageProps = {
 };
 
 export default function PreviewStage(props: PreviewStageProps) {
-  const { previewSizeClass, chorusBoost, showGlitch, selectedImage, videoUrl, backgroundMode, videoFitMode, videoRef, videoMuted, isPlaying, isRecording, getMotionStyle } = props;
+  const { previewSizeClass, chorusBoost, showGlitch, selectedImage, backgroundMode, isPlaying, isRecording, getMotionStyle } = props;
 
   return (
     <div className="relative flex w-full items-center justify-center">
@@ -48,10 +43,7 @@ export default function PreviewStage(props: PreviewStageProps) {
       </div>
 
       <div className={`${previewSizeClass} mt-10 bg-zinc-900 border-2 border-cyan-300/80 rounded-2xl relative overflow-hidden flex items-center justify-center transition-all duration-150 shadow-[0_0_40px_rgba(34,211,238,0.2)] ${chorusBoost ? "shadow-[0_0_70px_#ec4899] scale-[1.02]" : showGlitch ? "shadow-[0_0_40px_#ec4899]" : ""}`}>
-        {backgroundMode === "video" && videoUrl && (
-          <video ref={videoRef} src={videoUrl} muted={videoMuted} className={`absolute inset-0 w-full h-full ${videoFitMode === "contain" ? "object-contain bg-black" : "object-cover"}`} playsInline />
-        )}
-        {selectedImage && backgroundMode !== "video" ? (
+        {selectedImage && backgroundMode === "image" ? (
           <img src={selectedImage} alt="" className={`w-full h-full object-cover ${showGlitch || chorusBoost ? "contrast-125 saturate-150" : ""}`} style={{ animation: isPlaying ? getMotionStyle() : "none" }} />
         ) : (
           <p className="text-3xl text-fuchsia-400">MV Preview</p>

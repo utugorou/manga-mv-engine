@@ -15,19 +15,39 @@ const mobileButtonClass =
 
 const mobileIconClass = "h-9 w-9 object-contain";
 
-export default function ControlButtons({ isPlaying, isRecording, isMobile = false, onPlay, onPause, onReset }: Props) {
+export default function ControlButtons({ isPlaying, isRecording, chorusBoost, isMobile = false, onPlay, onPause, onReset }: Props) {
   if (isMobile) {
+    const statusIconClass = "h-8 w-8 object-contain transition duration-200";
+    const recordingStateClass = isRecording ? "grayscale-0 opacity-100" : "grayscale opacity-70";
+    const chorusStateClass = chorusBoost
+      ? "grayscale-0 opacity-100 brightness-110 saturate-150 mobile-bakusou-active"
+      : "grayscale opacity-70";
+
     return (
-      <div className="ml-auto flex items-center justify-end gap-1 pr-0.5">
-        <button onClick={onPlay} aria-label="再生" className={mobileButtonClass}>
-          <img src={withBasePath("/ui/play_button_graffiti_transparent.png")} alt="" aria-hidden="true" className={mobileIconClass} />
-        </button>
-        <button onClick={onPause} aria-label="一時停止" className={mobileButtonClass}>
-          <img src={withBasePath("/ui/neon_pause_button_TRUE_TRANSPARENT.png")} alt="" aria-hidden="true" className={mobileIconClass} />
-        </button>
-        <button onClick={onReset} aria-label="最初から" className={mobileButtonClass}>
-          <img src={withBasePath("/ui/start_over_hexagon_graffiti_transparent.png")} alt="" aria-hidden="true" className={mobileIconClass} />
-        </button>
+      <div className="flex w-full items-center justify-between gap-2 pr-0.5">
+        <div className="flex items-center gap-1.5">
+          <img
+            src={withBasePath("/ui/recording_badge_transparent.png")}
+            alt={isRecording ? "録画中" : "録画待機"}
+            className={`${statusIconClass} ${recordingStateClass}`}
+          />
+          <img
+            src={withBasePath("/ui/bousouchu_bakusouchu_transparent.png")}
+            alt={chorusBoost ? "暴走中" : "暴走待機"}
+            className={`${statusIconClass} ${chorusStateClass}`}
+          />
+        </div>
+        <div className="ml-auto flex items-center justify-end gap-1">
+          <button onClick={onPlay} aria-label="再生" className={mobileButtonClass}>
+            <img src={withBasePath("/ui/play_button_graffiti_transparent.png")} alt="" aria-hidden="true" className={mobileIconClass} />
+          </button>
+          <button onClick={onPause} aria-label="一時停止" className={mobileButtonClass}>
+            <img src={withBasePath("/ui/neon_pause_button_TRUE_TRANSPARENT.png")} alt="" aria-hidden="true" className={mobileIconClass} />
+          </button>
+          <button onClick={onReset} aria-label="最初から" className={mobileButtonClass}>
+            <img src={withBasePath("/ui/start_over_hexagon_graffiti_transparent.png")} alt="" aria-hidden="true" className={mobileIconClass} />
+          </button>
+        </div>
       </div>
     );
   }

@@ -1449,13 +1449,13 @@ export default function Home() {
             <h1 className="text-fuchsia-300">
               {!isLogoLoadError ? (
                 <Image
-                  src="/ui/manga-mv-engine-logo.png"
+                  src="/logo.png"
                   alt="MANGA MV ENGINE"
                   width={560}
                   height={72}
                   priority
                   onError={() => setIsLogoLoadError(true)}
-                  className="h-10 sm:h-12 md:h-[clamp(9rem,22vw,17rem)] w-auto max-w-full object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
+                  className="h-8 sm:h-10 md:h-12 lg:h-14 w-auto max-w-[min(72vw,24rem)] object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
                 />
               ) : (
                 <span className="text-lg sm:text-xl md:text-8xl font-black tracking-[0.12em] md:tracking-[0.2em] leading-none">MANGA MV ENGINE</span>

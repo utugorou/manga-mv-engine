@@ -50,6 +50,10 @@ import type {
   TextMode,
 } from "../src/types/mv";
 
+const randomItem = <T,>(list: T[]): T => {
+  return list[Math.floor(Math.random() * list.length)];
+};
+
 export default function Home() {
   const SETTINGS_STORAGE_KEY = "manga-mv-engine:settings:v1";
   const SETTINGS_LIST_STORAGE_KEY = "manga-mv-engine:settings-list:v1";

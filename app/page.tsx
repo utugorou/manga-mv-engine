@@ -1905,6 +1905,11 @@ export default function Home() {
             bubbleScale={bubbleScale}
             flashActive={flashActive}
           />
+          <div className="mt-3 flex min-h-6 flex-wrap items-center gap-1.5">
+            {isPlaying ? <span className="rounded-full border border-emerald-300/70 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-emerald-100">再生中</span> : null}
+            {isRecording ? <span className="rounded-full border border-rose-300/80 bg-rose-500/20 px-2 py-0.5 text-[10px] font-bold tracking-wide text-rose-100">録画中</span> : null}
+            {chorusBoost ? <span className="rounded-full border border-fuchsia-300/70 bg-amber-300/15 px-2 py-0.5 text-[10px] font-bold tracking-wide text-fuchsia-100">サビ暴走中</span> : null}
+          </div>
           <div className="mt-3"><ControlButtons isPlaying={isPlaying} isRecording={isRecording} chorusBoost={chorusBoost} isMobile onPlay={handlePlay} onPause={handlePause} onReset={handleReset} /></div>
         </div>
         <div className="mt-3 grid shrink-0 grid-cols-4 gap-2">

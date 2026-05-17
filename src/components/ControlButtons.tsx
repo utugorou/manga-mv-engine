@@ -11,14 +11,14 @@ type Props = {
 };
 
 const mobileButtonClass =
-  "flex h-14 w-14 items-center justify-center bg-transparent p-0 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40";
+  "flex h-11 w-11 items-center justify-center bg-transparent p-0 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40";
 
-const mobileIconClass = "h-full w-full object-contain";
+const mobileIconClass = "h-10 w-10 object-contain";
 
 export default function ControlButtons({ isPlaying, isRecording, isMobile = false, onPlay, onPause, onReset }: Props) {
   if (isMobile) {
     return (
-      <div className="flex items-center justify-center gap-3">
+      <div className="ml-auto flex items-center justify-end gap-2 pr-1">
         <button onClick={onPlay} aria-label="再生" className={mobileButtonClass}>
           <img src={withBasePath("/ui/play_button_graffiti_transparent.png")} alt="" aria-hidden="true" className={mobileIconClass} />
         </button>

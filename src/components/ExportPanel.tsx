@@ -25,10 +25,8 @@ type ExportPanelProps = {
   exportMessage: string;
   handlePrepareExport: () => void;
   handleStartRecording: () => void;
-  handleStartSyncedRecording: () => void;
   handleStopRecording: () => void;
   isRecording: boolean;
-  hasAudioSource: boolean;
   recordingMode: RecordingMode | null;
   recordedVideoUrl: string | null;
   exportAudioStatus: ExportAudioStatus;
@@ -46,10 +44,8 @@ export default function ExportPanel({
   exportMessage,
   handlePrepareExport,
   handleStartRecording,
-  handleStartSyncedRecording,
   handleStopRecording,
   isRecording,
-  hasAudioSource,
   recordingMode,
   recordedVideoUrl,
   exportAudioStatus,
@@ -145,20 +141,13 @@ export default function ExportPanel({
             : "未判定"}
       </p>
 
-      <div className="grid grid-cols-2 gap-2 mt-3">
+      <div className="grid grid-cols-1 gap-2 mt-3">
         <button
           onClick={handleStartRecording}
           disabled={isRecordingNow}
           className="p-2 rounded text-xs font-bold bg-emerald-500 hover:bg-emerald-400 disabled:bg-zinc-700 disabled:text-zinc-400 text-black"
         >
           {exportStatus === "finished" ? "もう一度録画する" : "録画開始"}
-        </button>
-        <button
-          onClick={handleStartSyncedRecording}
-          disabled={isRecordingNow || !hasAudioSource}
-          className="p-2 rounded text-xs font-bold border border-cyan-300 bg-cyan-400 hover:bg-cyan-300 shadow-[0_0_12px_#22d3ee] disabled:bg-zinc-700 disabled:text-zinc-400 disabled:border-zinc-700 text-black"
-        >
-          ★ 音源尺で自動録画
         </button>
       </div>
 
@@ -194,12 +183,6 @@ export default function ExportPanel({
             WebMをダウンロード
           </a>
           <p className="text-zinc-400">ファイル名：manga-mv-export.webm</p>
-
-          <div className="rounded border border-zinc-700 bg-zinc-900/60 p-3 text-xs space-y-1">
-            <p className="text-pink-300 font-bold">MP4変換：準備中</p>
-            <p className="text-zinc-300">現在はWebMで保存できます</p>
-            <p className="text-zinc-400">MP4化は次の段階で対応予定</p>
-          </div>
         </div>
       )}
 

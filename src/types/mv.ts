@@ -12,8 +12,6 @@ export type ExportMode = "preview" | "canvas" | "remotion";
 export type ExportStatus = "idle" | "ready" | "recording" | "finished" | "error";
 export type ExportAudioStatus = "with-audio" | "video-only" | "unknown";
 export type RecordingMode = "manual" | "synced";
-export type BackgroundMode = "none" | "image";
-export type AudioSourceMode = "bgm" | "silent";
 export type EffectPresetName = "標準" | "バトル" | "エモ" | "ライブ" | "グリッチ" | "サビ爆発";
 
 export type TimelineMarker = { index: number; percent: number };

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import {
+  getExportQualityLabel,
   getExportModeLabel,
   getExportResultStatusMessage,
   getExportResolution,
@@ -185,7 +186,17 @@ export default function ExportPanel({
 
       <p className="text-sm mt-3 mb-2 text-cyan-300">書き出し品質</p>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-3 gap-2">
+        <button
+          onClick={() => setExportQuality("stable")}
+          className={`p-2 rounded text-xs font-bold ${
+            exportQuality === "stable"
+              ? "bg-emerald-500 text-black"
+              : "bg-zinc-800 hover:bg-zinc-700"
+          }`}
+        >
+          安定
+        </button>
         <button
           onClick={() => setExportQuality("standard")}
           className={`p-2 rounded text-xs font-bold ${
@@ -205,9 +216,12 @@ export default function ExportPanel({
               : "bg-zinc-800 hover:bg-zinc-700"
           }`}
         >
-          高画質
+          高品質
         </button>
       </div>
+      {exportQuality === "high" && (
+        <p className="text-xs text-amber-300 mt-2">高品質は重めです。録画が止まる場合は標準または安定を選んでください</p>
+      )}
 
       <p className="text-xs text-zinc-400 mt-2">状態：{statusText}</p>
       <p className="text-xs text-cyan-400 mt-1">録画状態：{recordingText}</p>
@@ -265,9 +279,15 @@ export default function ExportPanel({
             <p className="text-[11px] text-cyan-200">audio.readyState：{recordingStreamDiagnostics.audioReadyState}</p>
             <p className="text-[11px] text-cyan-200">録画形式：{recordingStreamDiagnostics.format.toUpperCase()}</p>
             <p className="text-[11px] text-cyan-200">使用MIME：{recordingStreamDiagnostics.mimeType ?? "ブラウザ既定"}</p>
+            <p className="text-[11px] text-cyan-200">品質モード：{getExportQualityLabel(recordingStreamDiagnostics.qualityMode)}</p>
             <p className="text-[11px] text-cyan-200">Canvas：{recordingStreamDiagnostics.canvasWidth} x {recordingStreamDiagnostics.canvasHeight}</p>
+            <p className="text-[11px] text-cyan-200">fps：{recordingStreamDiagnostics.fps}</p>
+            <p className="text-[11px] text-cyan-200">映像ビットレート：{(recordingStreamDiagnostics.videoBitsPerSecond / 1_000_000).toFixed(1)}Mbps</p>
+            <p className="text-[11px] text-cyan-200">音声ビットレート：{Math.round(recordingStreamDiagnostics.audioBitsPerSecond / 1000)}kbps</p>
             <p className="text-[11px] text-cyan-200">BGM設定：{recordingStreamDiagnostics.hasBgm ? "あり" : "なし"}</p>
             <p className="text-[11px] text-cyan-200">audio.paused：{recordingStreamDiagnostics.audioPaused ? "true" : "false"} / muted：{recordingStreamDiagnostics.audioMuted ? "true" : "false"} / volume：{recordingStreamDiagnostics.audioVolume.toFixed(2)}</p>
+            <p className="text-[11px] text-cyan-200">Blob size：{recordingStreamDiagnostics.blobSizeBytes === null ? "録画中" : `${(recordingStreamDiagnostics.blobSizeBytes / (1024 * 1024)).toFixed(2)}MB`}</p>
+            <p className="text-[11px] text-cyan-200">録画時間：{recordingStreamDiagnostics.durationMs === null ? "録画中" : `${(recordingStreamDiagnostics.durationMs / 1000).toFixed(2)}秒`}</p>
             {recordingStreamDiagnostics.fallbackReason && <p className="text-[11px] text-amber-300">フォールバック理由：{recordingStreamDiagnostics.fallbackReason}</p>}
             {recordingStreamDiagnostics.format === "mp4" && (
               <p className="text-[11px] text-amber-300">注意：この端末ではMP4音声が入らない場合があります</p>

@@ -154,7 +154,8 @@ export default function SettingsPanel({
   return (
     <>
       <div className="pt-1 pb-3 border-b border-zinc-700">
-        <p className="text-sm mb-2 text-cyan-300">画像切替方式</p>
+        <p className="text-sm mb-1 text-cyan-300">切り替えの決め方</p>
+        <p className="text-xs text-zinc-400 mb-2">一定間隔か、音に合わせるかを選びます。</p>
 
         <div className="grid grid-cols-1 gap-2">
           <button
@@ -169,7 +170,7 @@ export default function SettingsPanel({
                 : "bg-zinc-800 hover:bg-zinc-700"
             }`}
           >
-            均等切替
+            一定間隔
           </button>
 
           <button
@@ -184,7 +185,7 @@ export default function SettingsPanel({
                 : "bg-zinc-800 hover:bg-zinc-700"
             }`}
           >
-            音量ピーク＋補助
+            音に合わせる（ピーク）
           </button>
 
           <button
@@ -200,14 +201,15 @@ export default function SettingsPanel({
                 : "bg-zinc-800 hover:bg-zinc-700"
             }`}
           >
-            低音キック＋補助
+            サビ/低音重視（キック）
           </button>
         </div>
       </div>
 
       {switchMode === "equal" ? (
         <div className="pt-2 border-b border-zinc-700 pb-4">
-          <p className="text-sm mb-2 text-cyan-300">画像切替秒数</p>
+          <p className="text-sm mb-1 text-cyan-300">画面切り替えタイミング</p>
+          <p className="text-xs text-zinc-400 mb-2">短いほどテンポよく、長いほどゆっくり切り替わります。</p>
 
           <input
             type="range"
@@ -222,9 +224,12 @@ export default function SettingsPanel({
             className="w-full"
           />
 
+          <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>速い</span><span>遅い</span></p>
+
           <p className="text-xs text-zinc-400 mt-1">
-            {(imageDuration / 1000).toFixed(1)} 秒
+            {(imageDuration / 1000).toFixed(1)} 秒（{imageDuration <= 1500 ? "速い" : imageDuration <= 3500 ? "標準" : "遅い"}）
           </p>
+          <p className="text-[10px] text-zinc-400">{imageDuration <= 1500 ? "短い間隔でテンポよく切り替えます" : imageDuration <= 3500 ? "曲に合わせやすいバランスです" : "ゆっくり見せたい時に向いています"}</p>
 
           <button
             onClick={handleAutoDuration}
@@ -237,7 +242,8 @@ export default function SettingsPanel({
         <div className="pt-2 border-b border-zinc-700 pb-4 space-y-3">
           {switchMode === "peak" && (
             <div>
-              <p className="text-sm mb-2 text-cyan-300">ピーク感度</p>
+              <p className="text-sm mb-1 text-cyan-300">音反応の敏感さ</p>
+              <p className="text-xs text-zinc-400 mb-2">曲のどのくらい小さな音まで拾うかを調整します。</p>
 
               <input
                 type="range"
@@ -252,7 +258,10 @@ export default function SettingsPanel({
                 className="w-full"
               />
 
-              <p className="text-xs text-zinc-400 mt-1">{peakSensitivity}%</p>
+              <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>大きな音だけ</span><span>小さな音にも反応</span></p>
+              <p className="text-xs text-zinc-400 mt-1">{peakSensitivity}%（{peakSensitivity <= 12 ? "低い" : peakSensitivity <= 24 ? "標準" : "高い"}）</p>
+              <p className="text-[10px] text-zinc-400">{peakSensitivity <= 12 ? "強いビートだけ拾います" : peakSensitivity <= 24 ? "自然に反応します" : "細かい音にも反応します"}</p>
+              <p className="text-[10px] text-zinc-500">右にするほど細かく反応しますが、動きが多くなります。</p>
             </div>
           )}
 
@@ -356,7 +365,8 @@ export default function SettingsPanel({
         吹き出し {showBubble ? "ON" : "追加"}
       </button>
       <div className="pt-3">
-        <p className="text-sm mb-2 text-cyan-300">エコライザータイプ</p>
+        <p className="text-sm mb-1 text-cyan-300">エコライザータイプ</p>
+        <p className="text-xs text-zinc-400 mb-2">音への反応をどの形で見せるかを選びます。</p>
         <select value={equalizerType} onChange={(e) => { setEqualizerType(e.target.value as EqualizerType); setActivePreset(null); }} className="w-full bg-black border border-zinc-600 p-2 rounded text-white">
           <option value="bars">バー</option><option value="wideBars">ワイドバー</option><option value="mirror">ミラー</option><option value="wave">波形</option><option value="glitchEq">グリッチEQ</option><option value="pulse">パルス</option><option value="circle">円形</option>
         </select>
@@ -547,6 +557,7 @@ export default function SettingsPanel({
       >
         イコライザー {showEqualizer ? "ON" : "OFF"}
       </button>
+      <p className="text-[10px] text-zinc-400 -mt-1 mb-1">ONで音に合わせたバー演出を表示します。</p>
 
       <button
         onClick={() => {
@@ -624,7 +635,8 @@ export default function SettingsPanel({
       </div>
 
       <div className="pt-4 border-t border-zinc-700">
-        <p className="text-sm mb-2 text-pink-300">サビ暴走モード</p>
+        <p className="text-sm mb-1 text-pink-300">サビ演出倍率</p>
+        <p className="text-xs text-zinc-400 mb-2">サビ部分だけ演出をどれだけ強めるかを調整します。</p>
         <div
           className={`w-full p-2 rounded text-center font-bold mb-3 ${
             chorusBoost ? "bg-pink-600" : "bg-zinc-800 text-zinc-400"
@@ -633,6 +645,7 @@ export default function SettingsPanel({
           {chorusBoost ? "暴走中" : "待機中"}
         </div>
         <p className="text-xs text-zinc-400 mb-1">暴走感度：{chorusSensitivity}%</p>
+        <p className="mt-1 flex justify-between text-[10px] text-zinc-500"><span>自然</span><span>サビ爆発</span></p>
         <input
           type="range"
           min="10"
@@ -648,12 +661,14 @@ export default function SettingsPanel({
       </div>
 
       <div className="pt-4 border-t border-zinc-700">
-        <p className="text-sm mb-2 text-cyan-300">モーション動き幅</p>
+        <p className="text-sm mb-1 text-cyan-300">モーション動き幅</p>
+        <p className="text-xs text-zinc-400 mb-2">右側ほど画像が大きく動き、派手になります。</p>
         <div className="grid grid-cols-3 gap-2 mb-3">
           <button onClick={() => { setMotionAmplitude("normal"); setActivePreset(null); }} className={`p-2 rounded ${motionAmplitude === "normal" ? "bg-cyan-500 text-black font-bold" : "bg-zinc-800 hover:bg-zinc-700"}`}>通常</button>
           <button onClick={() => { setMotionAmplitude("x2"); setActivePreset(null); }} className={`p-2 rounded ${motionAmplitude === "x2" ? "bg-cyan-500 text-black font-bold" : "bg-zinc-800 hover:bg-zinc-700"}`}>2倍</button>
           <button onClick={() => { setMotionAmplitude("x3"); setActivePreset(null); }} className={`p-2 rounded ${motionAmplitude === "x3" ? "bg-cyan-500 text-black font-bold" : "bg-zinc-800 hover:bg-zinc-700"}`}>3倍</button>
         </div>
+        <p className="text-[10px] text-zinc-400 mb-2">現在: {motionAmplitude === "normal" ? "通常：控えめな動き" : motionAmplitude === "x2" ? "2倍：動きが分かりやすい" : "3倍：かなり派手に動く"}</p>
         <p className="text-sm mb-2 text-cyan-300">現在画像のモーション</p>
         <select
           value={selectedMotion}

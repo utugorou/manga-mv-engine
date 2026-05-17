@@ -24,3 +24,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.clip-path-bubble-spiky {
+  clip-path: polygon(7% 15%, 20% 10%, 30% 2%, 42% 10%, 56% 3%, 68% 10%, 82% 7%, 92% 15%, 97% 30%, 91% 43%, 98% 57%, 88% 69%, 93% 82%, 78% 88%, 68% 97%, 53% 91%, 40% 98%, 27% 90%, 14% 95%, 7% 83%, 2% 68%, 9% 54%, 3% 39%, 8% 27%);
+}
+
+:root {
+  --mobile-sfx-scale: 1;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --mobile-sfx-scale: 0.5;
+  }
+}

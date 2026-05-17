@@ -15,6 +15,7 @@ export type RecordingMode = "manual" | "synced";
 export type EffectPresetName = "標準" | "バトル" | "エモ" | "ライブ" | "グリッチ" | "サビ爆発";
 export type MotionAmplitude = "normal" | "x2" | "x3";
 export type EqualizerType = "bars" | "wideBars" | "mirror" | "wave" | "glitchEq" | "pulse" | "circle";
+export type BubbleVariant = "normal" | "spiky" | "thought";
 
 export type TimelineMarker = { index: number; percent: number };
 

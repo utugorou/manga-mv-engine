@@ -50,12 +50,9 @@ type SettingsPanelProps = {
   randomSfxCountEnabled: boolean;
   setRandomSfxScaleEnabled: (value: boolean) => void;
   setRandomSfxCountEnabled: (value: boolean) => void;
-  randomizeSfxScale: () => void;
   regenerateSfxItems: () => void;
   setBubblePosition: (position: PositionType) => void;
-  setSfxPosition: (position: PositionType) => void;
   bubbleTexts: string[];
-  sfxTexts: string[];
   positions: PositionType[];
   randomItem: <T>(list: T[]) => T;
   showGlitch: boolean;
@@ -118,12 +115,9 @@ export default function SettingsPanel({
   randomSfxCountEnabled,
   setRandomSfxScaleEnabled,
   setRandomSfxCountEnabled,
-  randomizeSfxScale,
   regenerateSfxItems,
   setBubblePosition,
-  setSfxPosition,
   bubbleTexts,
-  sfxTexts,
   positions,
   randomItem,
   showGlitch,

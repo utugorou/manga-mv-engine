@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ControlButtons from "../src/components/ControlButtons";
 import Timeline from "../src/components/Timeline";
 import UploadPanel from "../src/components/UploadPanel";
@@ -40,7 +40,6 @@ import type {
   ExportQuality,
   RecordingMode,
   ExportStatus,
-  MotionGroup,
   MotionType,
   PanelMode,
   PanelPattern,
@@ -161,12 +160,12 @@ export default function Home() {
   const [sfxFrequency, setSfxFrequency] = useState(0.65);
   const [sfxMaxCount, setSfxMaxCount] = useState(3);
   const [focusLineIntensity, setFocusLineIntensity] = useState(1);
-  const [glitchIntensity, setGlitchIntensity] = useState(0.45);
-  const [screenShakeIntensity, setScreenShakeIntensity] = useState(1);
+  const [, setGlitchIntensity] = useState(0.45);
+  const [, setScreenShakeIntensity] = useState(1);
   const [textFrequency, setTextFrequency] = useState(0.55);
-  const [chorusEffectMultiplier, setChorusEffectMultiplier] = useState(1.3);
+  const [, setChorusEffectMultiplier] = useState(1.3);
   const [fadeFlickerBlurIntensity, setFadeFlickerBlurIntensity] = useState(1);
-  const [baseContrast, setBaseContrast] = useState(1.05);
+  const [, setBaseContrast] = useState(1.05);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLogoLoadError, setIsLogoLoadError] = useState(false);
@@ -335,15 +334,6 @@ export default function Home() {
     return list[Math.floor(Math.random() * list.length)];
   };
 
-  const randomizeSfxScale = () => {
-    if (!randomSfxScaleEnabled) {
-      setSfxScale(1);
-      return;
-    }
-
-    setSfxScale(randomItem([...sfxScaleOptions]));
-  };
-
   const handleRandomSfxScaleEnabled = (value: boolean) => {
     setRandomSfxScaleEnabled(value);
     if (!value) {
@@ -439,14 +429,6 @@ export default function Home() {
     applyCustomControls(controls);
     setFadeFlickerBlurIntensity(config.fadeFlickerBlurIntensity);
     setBaseContrast(config.baseContrast);
-
-    const motionMap: Record<MotionGroup, MotionType[]> = {
-      all: motionList,
-      calm: calmMotionList,
-      battle: battleMotionList,
-      simpleZoom: ["zoomIn", "zoomOut"],
-      groove: grooveMotionList,
-    };
 
     if (preset === "エモ") {
       randomizeMotionsFromList(calmMotionList);
@@ -578,7 +560,7 @@ export default function Home() {
     }, 260 / Math.max(0.6, focusLineIntensity));
   };
 
-  const stepToNextImage = () => {
+  const stepToNextImage = useCallback(() => {
     if (images.length === 0) return;
 
     triggerFlash();
@@ -606,7 +588,19 @@ export default function Home() {
 
       return nextIndex;
     });
-  };
+  }, [
+    images,
+    autoBubble,
+    textFrequency,
+    autoSfx,
+    sfxFrequency,
+    pickBubbleText,
+    pickSfxText,
+    generateSfxItems,
+    positions,
+    triggerFlash,
+    triggerPanelBurst,
+  ]);
 
   const stopAnalysisLoop = () => {
     if (rafRef.current !== null) {
@@ -788,19 +782,7 @@ export default function Home() {
     }, imageDuration);
 
     return () => clearInterval(timer);
-  }, [
-    isPlaying,
-    images,
-    switchMode,
-    imageDuration,
-    autoBubble,
-    autoSfx,
-    showFlash,
-    showPanels,
-    chorusBoost,
-    panelMode,
-    textMode,
-  ]);
+  }, [isPlaying, images, switchMode, imageDuration, stepToNextImage]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -1827,11 +1809,8 @@ export default function Home() {
                 setRandomSfxScaleEnabled={handleRandomSfxScaleEnabled}
                 setRandomSfxCountEnabled={setRandomSfxCountEnabled}
                 regenerateSfxItems={() => { const items = generateSfxItems(); setSfxItems(items); setSfxText(items[0]?.text ?? sfxText); setSfxScale(items[0]?.scale ?? 1); }}
-                randomizeSfxScale={randomizeSfxScale}
                 setBubblePosition={setBubblePosition}
-                setSfxPosition={setSfxPosition}
                 bubbleTexts={bubbleTexts}
-                sfxTexts={sfxTexts}
                 positions={positions}
                 randomItem={randomItem}
                 showGlitch={showGlitch}

@@ -1,6 +1,5 @@
 import EffectOverlays from "./EffectOverlays";
 import type { SfxItem } from "../types/mv";
-import type { BackgroundMode } from "../types/mv";
 
 type PositionType = "topLeft" | "topRight" | "bottomLeft" | "bottomRight" | "center";
 type PanelPattern = "classic" | "vertical" | "horizontal" | "diagonal" | "action";
@@ -10,7 +9,6 @@ type PreviewStageProps = {
   chorusBoost: boolean;
   showGlitch: boolean;
   selectedImage: string | null;
-  backgroundMode: BackgroundMode;
   isPlaying: boolean;
   isRecording: boolean;
   getMotionStyle: () => string;
@@ -32,7 +30,7 @@ type PreviewStageProps = {
 };
 
 export default function PreviewStage(props: PreviewStageProps) {
-  const { previewSizeClass, chorusBoost, showGlitch, selectedImage, backgroundMode, isPlaying, isRecording, getMotionStyle } = props;
+  const { previewSizeClass, chorusBoost, showGlitch, selectedImage, isPlaying, isRecording, getMotionStyle } = props;
 
   return (
     <div className="relative flex w-full items-center justify-center">
@@ -43,10 +41,10 @@ export default function PreviewStage(props: PreviewStageProps) {
       </div>
 
       <div className={`${previewSizeClass} mt-10 bg-zinc-900 border-2 border-cyan-300/80 rounded-2xl relative overflow-hidden flex items-center justify-center transition-all duration-150 shadow-[0_0_40px_rgba(34,211,238,0.2)] ${chorusBoost ? "shadow-[0_0_70px_#ec4899] scale-[1.02]" : showGlitch ? "shadow-[0_0_40px_#ec4899]" : ""}`}>
-        {selectedImage && backgroundMode === "image" ? (
+        {selectedImage ? (
           <img src={selectedImage} alt="" className={`w-full h-full object-cover ${showGlitch || chorusBoost ? "contrast-125 saturate-150" : ""}`} style={{ animation: isPlaying ? getMotionStyle() : "none" }} />
         ) : (
-          <p className="text-3xl text-fuchsia-400">MV Preview</p>
+          <div className="text-center"><p className="text-2xl text-fuchsia-300 font-black">背景画像をアップロードしてください</p><p className="text-sm text-zinc-400 mt-2">デフォルト背景を表示中</p></div>
         )}
         <EffectOverlays {...props} selectedImage={selectedImage} isPlaying={isPlaying} />
       </div>

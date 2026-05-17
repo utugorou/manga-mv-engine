@@ -34,8 +34,6 @@ import type {
   AudioMood,
   ExportMode,
   ExportAudioStatus,
-  BackgroundMode,
-  AudioSourceMode,
   ExportQuality,
   RecordingMode,
   ExportStatus,
@@ -104,8 +102,6 @@ export default function Home() {
   const [randomMotionApplied, setRandomMotionApplied] = useState(false);
 
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [backgroundMode, setBackgroundMode] = useState<BackgroundMode>("none");
-  const [audioSourceMode, setAudioSourceMode] = useState<AudioSourceMode>("bgm");
   const [audioName, setAudioName] = useState("");
   const [audioDuration, setAudioDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -201,8 +197,6 @@ export default function Home() {
     settings: {
       activePreset: EffectPresetName;
       customControls: typeof customControls;
-      backgroundMode: BackgroundMode;
-      audioSourceMode: AudioSourceMode;
       textMode: TextMode;
       bubbleText: string;
       sfxText: string;
@@ -238,15 +232,9 @@ export default function Home() {
   };
 
 
-  const getActiveMediaElement = () => {
-    if (audioSourceMode === "silent") return null;
-    return audioRef.current;
-  };
+  const getActiveMediaElement = () => audioRef.current;
 
-  const getRecordingAudioElement = () => {
-    if (audioSourceMode === "silent") return null;
-    return audioRef.current;
-  };
+  const getRecordingAudioElement = () => audioRef.current;
 
   useEffect(() => {
     latestSelectedImageRef.current = selectedImage;
@@ -441,8 +429,6 @@ export default function Home() {
   const applySavedSettings = (saved: {
     activePreset: EffectPresetName;
     customControls: typeof customControls;
-    backgroundMode: BackgroundMode;
-    audioSourceMode: AudioSourceMode;
     textMode?: TextMode;
     bubbleText?: string;
     sfxText?: string;
@@ -455,8 +441,6 @@ export default function Home() {
     setCustomControls(saved.customControls);
     setIsCustomAdjusted(true);
     applyCustomControls(saved.customControls);
-    setBackgroundMode(saved.backgroundMode);
-    setAudioSourceMode(saved.audioSourceMode);
     if (saved.textMode) setTextMode(saved.textMode);
     if (typeof saved.bubbleText === "string") setBubbleText(saved.bubbleText);
     if (typeof saved.sfxText === "string") setSfxText(saved.sfxText);
@@ -466,8 +450,6 @@ export default function Home() {
   const createCurrentSettingsPayload = () => ({
     activePreset,
     customControls,
-    backgroundMode,
-    audioSourceMode,
     textMode,
     bubbleText,
     sfxText,
@@ -547,8 +529,6 @@ export default function Home() {
 
   const resetToDefaultSettings = () => {
     applyPreset(DEFAULT_PRESET);
-    setBackgroundMode("none");
-    setAudioSourceMode("bgm");
     setTextMode("random");
     setBubbleText("ここにセリフ");
     setSfxText("ドン!!");
@@ -863,8 +843,6 @@ export default function Home() {
           settings: {
             activePreset: legacy.activePreset || DEFAULT_PRESET,
             customControls: legacy.customControls || mapPresetToControls(effectPresetConfigs[DEFAULT_PRESET]),
-            backgroundMode: legacy.backgroundMode === "image" ? "image" : "none",
-            audioSourceMode: legacy.audioSourceMode === "silent" ? "silent" : "bgm",
             textMode: legacy.textMode || "random",
             bubbleText: legacy.bubbleText || "ここにセリフ",
             sfxText: legacy.sfxText || "ドン!!",
@@ -1110,7 +1088,7 @@ export default function Home() {
         throw new Error("Canvas context の作成に失敗しました");
       }
 
-      const { recorder, hasAudio } = startCanvasRecording(canvas, 30, getRecordingAudioElement(), audioSourceMode !== "silent");
+      const { recorder, hasAudio } = startCanvasRecording(canvas, 30, getRecordingAudioElement(), true);
       mediaRecorderRef.current = recorder;
       recorder.start();
       recordingStartedAtRef.current = performance.now();
@@ -1136,7 +1114,7 @@ export default function Home() {
         recordingElapsedMsRef.current = performance.now() - startedAt;
         const activeState = getRecordingActiveImage(recordingElapsedMsRef.current);
         const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";
-        if (activeState.imageUrl && backgroundMode === "image") {
+        if (activeState.imageUrl) {
           try {
             await drawImageToCanvas(ctx, activeState.imageUrl, resolution.width, resolution.height, {
               motionType: activeMotion,
@@ -1222,138 +1200,6 @@ export default function Home() {
       setIsRecording(false);
       setRecordingMode(null);
       setIsPlaying(false);
-    }
-  };
-
-  const handleStartSyncedRecording = async () => {
-    const hasMediaElement = Boolean(audioRef.current);
-    const hasSource = Boolean(audioUrl);
-    if (images.length === 0 || isRecording || !hasMediaElement || !hasSource) return;
-
-    if (recordedVideoUrl) {
-      URL.revokeObjectURL(recordedVideoUrl);
-      setRecordedVideoUrl(null);
-    }
-
-    if (audioRef.current) {
-      audioRef.current.currentTime = 0;
-    }
-    setCurrentImageIndex(0);
-    setSelectedImage(images[0]);
-    setCurrentTime(0);
-    lastSwitchTimeRef.current = performance.now();
-    wasAboveThresholdRef.current = false;
-    lastLowEnergyRef.current = 0;
-    audioMoodRef.current = "quiet";
-    setAudioMood("quiet");
-
-    try {
-      const resolution = getExportResolution(aspectRatio, exportQuality);
-      const canvas = createExportCanvas(resolution.width, resolution.height);
-      recordingCanvasRef.current = canvas;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        throw new Error("Canvas context の作成に失敗しました");
-      }
-
-      const { recorder, hasAudio } = startCanvasRecording(canvas, 30, getRecordingAudioElement(), audioSourceMode !== "silent");
-      mediaRecorderRef.current = recorder;
-      recorder.start();
-      recordingStartedAtRef.current = performance.now();
-      recordingElapsedMsRef.current = 0;
-      setIsRecording(true);
-      setRecordingMode("synced");
-      setExportAudioStatus(hasAudio ? "with-audio" : "video-only");
-      setExportStatus("recording");
-      setExportMessage("音源尺で録画中です");
-
-      const drawFrame = async () => {
-        if (!recordingCanvasRef.current || !ctx) return;
-        ctx.fillStyle = "#000000";
-        ctx.fillRect(0, 0, resolution.width, resolution.height);
-        const startedAt = recordingStartedAtRef.current ?? performance.now();
-        recordingElapsedMsRef.current = performance.now() - startedAt;
-        const activeState = getRecordingActiveImage(recordingElapsedMsRef.current);
-        const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";
-        if (activeState.imageUrl && backgroundMode === "image") {
-          try {
-            await drawImageToCanvas(ctx, activeState.imageUrl, resolution.width, resolution.height, {
-              motionType: activeMotion,
-              chorusBoost: latestChorusBoostRef.current,
-              recordingElapsedMs: recordingElapsedMsRef.current,
-            });
-          } catch (error) {
-            console.warn("画像描画に失敗しました", error);
-          }
-        }
-        if (latestShowPanelsRef.current) {
-          drawComicPanels(ctx, latestPanelPatternRef.current, resolution.width, resolution.height);
-        }
-        if (latestShowEqualizerRef.current) {
-          drawEqualizerBars(ctx, latestEqBarsRef.current, resolution.width, resolution.height);
-        }
-        if (latestShowSfxRef.current) {
-          drawSfxText(ctx, latestSfxTextRef.current, latestSfxPositionRef.current, resolution.width, resolution.height, {
-            sfxScale: latestSfxScaleRef.current,
-            chorusBoost: latestChorusBoostRef.current,
-            sfxItems: latestSfxItemsRef.current,
-          });
-        }
-        if (latestShowBubbleRef.current) {
-          drawSpeechBubble(ctx, latestBubbleTextRef.current, latestBubblePositionRef.current, resolution.width, resolution.height);
-        }
-        if (latestShowGlitchRef.current) {
-          drawGlitchLines(ctx, resolution.width, resolution.height, Math.floor(performance.now() / 16));
-        }
-        drawFlash(ctx, resolution.width, resolution.height, latestFlashActiveRef.current || latestChorusBoostRef.current);
-        recordingFrameRef.current = window.setTimeout(() => {
-          void drawFrame();
-        }, 1000 / 30) as unknown as number;
-      };
-      await drawFrame();
-
-      const stopOnEnded = () => {
-        void handleStopRecording();
-      };
-      recordingEndedHandlerRef.current = stopOnEnded;
-      audioRef.current?.addEventListener("ended", stopOnEnded, { once: true });
-      if (audioDuration > 0) {
-        recordingStopTimeoutRef.current = window.setTimeout(() => {
-          void handleStopRecording();
-        }, audioDuration * 1000) as unknown as number;
-      }
-
-      await audioRef.current?.play();
-      setIsPlaying(true);
-
-      try {
-        await setupAudioAnalysis();
-        startAnalysisLoop();
-      } catch (error) {
-        console.warn("音声解析の開始に失敗しました。録画は継続します:", error);
-      }
-    } catch (error) {
-      console.error("音源尺録画開始に失敗:", error);
-      if (recordingStopTimeoutRef.current !== null) {
-        clearTimeout(recordingStopTimeoutRef.current);
-        recordingStopTimeoutRef.current = null;
-      }
-      if (recordingEndedHandlerRef.current && audioRef.current) {
-        audioRef.current.removeEventListener("ended", recordingEndedHandlerRef.current);
-        recordingEndedHandlerRef.current = null;
-      }
-      if (recordingFrameRef.current !== null) {
-        clearTimeout(recordingFrameRef.current);
-        recordingFrameRef.current = null;
-      }
-      mediaRecorderRef.current = null;
-      recordingCanvasRef.current = null;
-      recordingStartedAtRef.current = null;
-      recordingElapsedMsRef.current = 0;
-      setIsRecording(false);
-      setRecordingMode(null);
-      setExportStatus("error");
-      setExportMessage("音源尺録画の開始に失敗しました");
     }
   };
 
@@ -1610,10 +1456,6 @@ export default function Home() {
             </h1>
             <p className="text-xs text-zinc-400">Project: <span className="text-cyan-300">Untitled MV</span></p>
           </div>
-          <div className="flex gap-2">
-            <button className="rounded-xl border border-cyan-300/70 bg-cyan-500/15 px-4 py-2 text-sm font-bold text-cyan-100 shadow-[0_0_16px_rgba(34,211,238,0.25)]">プレビュー</button>
-            <button className="rounded-xl border border-fuchsia-300/70 bg-fuchsia-500/15 px-4 py-2 text-sm font-bold text-fuchsia-100 shadow-[0_0_16px_rgba(217,70,239,0.3)]">書き出し</button>
-          </div>
         </div>
       </header>
       <div className="grid grid-cols-1 xl:grid-cols-[300px_minmax(0,1fr)_360px] gap-4 p-4">
@@ -1632,10 +1474,6 @@ export default function Home() {
           activePreset={activePreset}
           audioMood={audioMood}
           imageMotions={imageMotions}
-          backgroundMode={backgroundMode}
-          setBackgroundMode={setBackgroundMode}
-          audioSourceMode={audioSourceMode}
-          setAudioSourceMode={setAudioSourceMode}
           onSelectImage={(image, index) => {
             setSelectedImage(image);
             setCurrentImageIndex(index);
@@ -1648,7 +1486,6 @@ export default function Home() {
               chorusBoost={chorusBoost}
               showGlitch={showGlitch}
               selectedImage={selectedImage}
-              backgroundMode={backgroundMode}
               isPlaying={isPlaying}
               isRecording={isRecording}
               getMotionStyle={getMotionStyle}
@@ -1676,6 +1513,7 @@ export default function Home() {
               onPause={handlePause}
               onReset={handleReset}
             />
+            {!audioUrl ? <p className="rounded-xl border border-amber-300/50 bg-amber-500/10 p-3 text-sm font-bold text-amber-200">BGMをアップロードしてください</p> : null}
             <Timeline
               audioUrl={audioUrl}
               currentTime={currentTime}
@@ -1765,10 +1603,8 @@ export default function Home() {
                 exportMessage={exportMessage}
                 handlePrepareExport={handlePrepareExport}
                 handleStartRecording={handleStartRecording}
-                handleStartSyncedRecording={handleStartSyncedRecording}
                 handleStopRecording={handleStopRecording}
                 isRecording={isRecording}
-                hasAudioSource={audioSourceMode === "silent" ? false : Boolean(audioUrl)}
                 recordingMode={recordingMode}
                 recordedVideoUrl={recordedVideoUrl}
                 exportAudioStatus={exportAudioStatus}
@@ -1848,7 +1684,6 @@ export default function Home() {
             ref={audioRef}
             src={audioUrl}
             className="hidden"
-            muted={audioSourceMode === "silent"}
             onLoadedMetadata={(e) =>
               setAudioDuration(e.currentTarget.duration)
             }

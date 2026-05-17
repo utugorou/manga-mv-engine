@@ -45,7 +45,7 @@ export type CanvasOverlayDrawOptions = {
   showEqualizer: boolean;
   eqBars: number[];
   showPanels: boolean;
-  panelPattern: "classic" | "vertical" | "horizontal" | "diagonal" | "action";
+  panelPattern: "full" | "split-horizontal" | "split-vertical" | "triple-vertical" | "triple-horizontal" | "big-plus-small" | "diagonal" | "four-panel" | "center-focus" | "battle-break";
   flashActive: boolean;
   chorusBoost: boolean;
   frame: number;
@@ -394,22 +394,31 @@ export const drawComicPanels = (ctx: CanvasRenderingContext2D, panelPattern: Can
   ctx.lineWidth = Math.max(4, Math.round(Math.min(canvasWidth, canvasHeight) * 0.012));
   ctx.strokeRect(0, 0, canvasWidth, canvasHeight);
   ctx.beginPath();
-  if (panelPattern === "vertical") {
-    ctx.moveTo(canvasWidth * 0.33, 0); ctx.lineTo(canvasWidth * 0.35, canvasHeight);
-    ctx.moveTo(canvasWidth * 0.68, 0); ctx.lineTo(canvasWidth * 0.66, canvasHeight);
-  } else if (panelPattern === "horizontal") {
-    ctx.moveTo(0, canvasHeight * 0.33); ctx.lineTo(canvasWidth, canvasHeight * 0.35);
-    ctx.moveTo(0, canvasHeight * 0.68); ctx.lineTo(canvasWidth, canvasHeight * 0.66);
+  if (panelPattern === "split-vertical") {
+    ctx.moveTo(canvasWidth * 0.5, 0); ctx.lineTo(canvasWidth * 0.5, canvasHeight);
+  } else if (panelPattern === "split-horizontal") {
+    ctx.moveTo(0, canvasHeight * 0.5); ctx.lineTo(canvasWidth, canvasHeight * 0.5);
+  } else if (panelPattern === "triple-vertical") {
+    ctx.moveTo(canvasWidth * 0.333, 0); ctx.lineTo(canvasWidth * 0.333, canvasHeight);
+    ctx.moveTo(canvasWidth * 0.666, 0); ctx.lineTo(canvasWidth * 0.666, canvasHeight);
+  } else if (panelPattern === "triple-horizontal") {
+    ctx.moveTo(0, canvasHeight * 0.333); ctx.lineTo(canvasWidth, canvasHeight * 0.333);
+    ctx.moveTo(0, canvasHeight * 0.666); ctx.lineTo(canvasWidth, canvasHeight * 0.666);
+  } else if (panelPattern === "big-plus-small") {
+    ctx.moveTo(canvasWidth * 0.62, 0); ctx.lineTo(canvasWidth * 0.62, canvasHeight);
+    ctx.moveTo(canvasWidth * 0.62, canvasHeight * 0.5); ctx.lineTo(canvasWidth, canvasHeight * 0.5);
   } else if (panelPattern === "diagonal") {
     ctx.moveTo(0, canvasHeight * 0.2); ctx.lineTo(canvasWidth, canvasHeight * 0.8);
     ctx.moveTo(canvasWidth * 0.15, 0); ctx.lineTo(canvasWidth * 0.9, canvasHeight);
-  } else if (panelPattern === "action") {
+  } else if (panelPattern === "four-panel") {
+    ctx.moveTo(canvasWidth * 0.5, 0); ctx.lineTo(canvasWidth * 0.5, canvasHeight);
+    ctx.moveTo(0, canvasHeight * 0.5); ctx.lineTo(canvasWidth, canvasHeight * 0.5);
+  } else if (panelPattern === "center-focus") {
+    ctx.strokeRect(canvasWidth * 0.18, canvasHeight * 0.18, canvasWidth * 0.64, canvasHeight * 0.64);
+  } else if (panelPattern === "battle-break") {
     ctx.moveTo(0, canvasHeight * 0.1); ctx.lineTo(canvasWidth, canvasHeight * 0.35);
     ctx.moveTo(0, canvasHeight * 0.55); ctx.lineTo(canvasWidth, canvasHeight * 0.8);
     ctx.moveTo(canvasWidth * 0.2, 0); ctx.lineTo(canvasWidth * 0.1, canvasHeight);
-  } else {
-    ctx.moveTo(canvasWidth * 0.34, 0); ctx.lineTo(canvasWidth * 0.36, canvasHeight);
-    ctx.moveTo(0, canvasHeight * 0.5); ctx.lineTo(canvasWidth, canvasHeight * 0.47);
   }
   ctx.stroke();
 };

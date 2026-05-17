@@ -5,7 +5,7 @@ import type { BubbleVariant } from "../types/mv";
 import type { CSSProperties } from "react";
 
 type PositionType = "topLeft" | "topRight" | "bottomLeft" | "bottomRight" | "center";
-type PanelPattern = "classic" | "vertical" | "horizontal" | "diagonal" | "action";
+type PanelPattern = "full" | "split-horizontal" | "split-vertical" | "triple-vertical" | "triple-horizontal" | "big-plus-small" | "diagonal" | "four-panel" | "center-focus" | "battle-break";
 
 type PreviewStageProps = {
   previewSizeClass: string;

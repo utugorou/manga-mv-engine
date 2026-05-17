@@ -109,7 +109,7 @@ export default function Home() {
   const latestShowEqualizerRef = useRef(false);
   const latestEqBarsRef = useRef<number[]>(Array(12).fill(20));
   const latestShowPanelsRef = useRef(true);
-  const latestPanelPatternRef = useRef<PanelPattern>("classic");
+  const latestPanelPatternRef = useRef<PanelPattern>("full");
   const latestSfxScaleRef = useRef(1);
   const latestFlashActiveRef = useRef(false);
   const latestChorusBoostRef = useRef(false);
@@ -187,7 +187,7 @@ export default function Home() {
   const [showPanels, setShowPanels] = useState(true);
   const [panelBurst, setPanelBurst] = useState(false);
   const [panelPattern, setPanelPattern] =
-    useState<PanelPattern>("classic");
+    useState<PanelPattern>("full");
   const [panelMode, setPanelMode] = useState<PanelMode>("random");
 
   const [chorusBoost, setChorusBoost] = useState(false);
@@ -393,13 +393,29 @@ export default function Home() {
   const battleMotionList: MotionType[] = ["shake", "comic", "impactZoom", "glitchJump"];
   const grooveMotionList: MotionType[] = ["grooveBounce", "sideGroove", "diagonalPan", "panUp"];
 
-  const panelPatterns: PanelPattern[] = [
-    "classic",
-    "vertical",
-    "horizontal",
-    "diagonal",
-    "action",
-  ];
+  const panelPatternByPreset: Record<EffectPresetName, PanelPattern[]> = {
+    標準: ["full", "split-horizontal", "split-vertical", "four-panel"],
+    バトル: ["diagonal", "big-plus-small", "battle-break", "center-focus"],
+    エモ: ["full", "split-horizontal", "center-focus"],
+    ライブ: ["triple-vertical", "triple-horizontal", "split-vertical", "full"],
+    グリッチ: ["diagonal", "four-panel", "battle-break", "split-vertical"],
+    サビ爆発: ["center-focus", "battle-break", "big-plus-small", "diagonal"],
+  };
+  const getSafePanelCandidates = useCallback((preset: EffectPresetName): PanelPattern[] => {
+    const candidates = panelPatternByPreset[preset] ?? panelPatternByPreset[DEFAULT_PRESET];
+    return candidates.length > 0 ? candidates : ["full", "split-horizontal"];
+  }, [panelPatternByPreset]);
+  const pickStablePanelPattern = useCallback((sceneIndexRaw: number, preset: EffectPresetName): PanelPattern => {
+    const candidates = getSafePanelCandidates(preset);
+    const sceneIndex = Number.isFinite(sceneIndexRaw) ? Math.max(0, Math.floor(sceneIndexRaw)) : 0;
+    const seed = `${preset}:${sceneIndex}`;
+    let hash = 2166136261;
+    for (let i = 0; i < seed.length; i++) {
+      hash ^= seed.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return candidates[Math.abs(hash) % candidates.length] ?? "full";
+  }, [getSafePanelCandidates]);
 
   const positions: PositionType[] = [
     "topLeft",
@@ -502,6 +518,7 @@ export default function Home() {
     setShowFlash(true);
     setShowPanels(true);
     setPanelMode("random");
+    setPanelPattern(pickStablePanelPattern(currentImageIndex, preset));
     setAutoBubble(true);
     setShowBubble(false);
     setAutoSfx(true);
@@ -659,12 +676,9 @@ export default function Home() {
   const triggerPanelBurst = () => {
     if (!showPanels) return;
 
-    if (panelMode === "random") {
-      setPanelPattern(panelPatterns[Math.floor(Math.random() * panelPatterns.length)]);
-    }
-
-    if (panelMode === "chorus" && chorusBoost) {
-      setPanelPattern(panelPatterns[Math.floor(Math.random() * panelPatterns.length)]);
+    if (panelMode === "random" || (panelMode === "chorus" && chorusBoost)) {
+      const safeIndex = Number.isFinite(latestCurrentImageIndexRef.current) ? latestCurrentImageIndexRef.current : 0;
+      setPanelPattern(pickStablePanelPattern(safeIndex, activePreset));
     }
 
     setPanelBurst(true);
@@ -725,11 +739,12 @@ export default function Home() {
   const updateScene = useCallback((nextIndex: number, nextImage: string | null, shouldRegenerateTexts: boolean) => {
     setCurrentImageIndex(nextIndex);
     setSelectedImage(nextImage);
+    if (panelMode === "random") setPanelPattern(pickStablePanelPattern(nextIndex, activePreset));
     if (shouldRegenerateTexts && latestTextSceneIndexRef.current !== nextIndex) {
       latestTextSceneIndexRef.current = nextIndex;
       regenerateSceneTexts();
     }
-  }, [regenerateSceneTexts]);
+  }, [activePreset, panelMode, pickStablePanelPattern, regenerateSceneTexts]);
 
   const stepToNextImage = useCallback(() => {
     if (images.length === 0) return;

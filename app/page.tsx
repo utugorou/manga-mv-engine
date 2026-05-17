@@ -1726,32 +1726,133 @@ export default function Home() {
           {mobileTab === "text" ? (
             <div className="space-y-3">
               <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3 space-y-3">
-                <p className="text-sm font-bold text-fuchsia-300">タイトル入力</p>
+                <p className="text-sm font-bold text-fuchsia-300">基本文字</p>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={showBubble} onChange={(e) => setShowBubble(e.target.checked)} />
                   タイトルを表示
                 </label>
                 <input className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2" value={bubbleText} onChange={(e) => setBubbleText(e.target.value)} placeholder="タイトル文言" />
+                <button className={`w-full rounded-lg p-2 font-bold ${autoBubble ? "bg-pink-600" : "bg-zinc-800"}`} onClick={() => setAutoBubble(!autoBubble)}>テキスト自動生成 {autoBubble ? "ON" : "OFF"}</button>
+                <button className="w-full rounded-lg bg-zinc-800 p-2" onClick={() => { setShowBubble(true); setBubbleText(randomItem(bubbleTexts)); setBubblePosition(randomItem(positions)); }}>文字候補を更新</button>
                 <p className="text-sm font-bold text-cyan-300">擬音入力（最大4つ・同文言）</p>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={showSfx} onChange={(e) => setShowSfx(e.target.checked)} />
                   擬音を表示
                 </label>
                 <input className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2" value={sfxText} onChange={(e) => setSfxText(e.target.value)} placeholder="擬音（例: ドン!!）" />
-                <label className="block text-sm text-zinc-300">スマート文字モード</label>
+              </div>
+              <div className="rounded-xl border border-cyan-500/30 bg-zinc-900/60 p-3 space-y-3">
+                <p className="text-sm font-bold text-cyan-300">自動生成 / スマート文字</p>
+                <label className="block text-sm text-zinc-300">文字生成モード</label>
                 <select className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2" value={textMode} onChange={(e) => setTextMode(e.target.value as TextMode)}>
+                  <option value="fixed">固定</option>
                   <option value="random">ランダム</option>
                   <option value="smart">スマート</option>
                 </select>
+                <button className={`w-full rounded-lg p-2 font-bold ${textMode === "smart" ? "bg-cyan-500 text-black" : "bg-zinc-800"}`} onClick={() => setTextMode(textMode === "smart" ? "random" : "smart")}>スマート文字ON/OFF</button>
+                <button className={`w-full rounded-lg p-2 font-bold ${autoSfx ? "bg-pink-600" : "bg-zinc-800"}`} onClick={() => setAutoSfx(!autoSfx)}>擬音自動生成 {autoSfx ? "ON" : "OFF"}</button>
+                <button className="w-full rounded-lg bg-zinc-800 p-2" onClick={() => { setShowSfx(true); const items = generateSfxItems(); setSfxItems(items); setSfxText(items[0]?.text ?? sfxText); setSfxScale(items[0]?.scale ?? 1); }}>擬音生成（ランダム）</button>
+                <button className={`w-full rounded-lg p-2 font-bold ${randomSfxCountEnabled ? "bg-yellow-400 text-black" : "bg-zinc-800"}`} onClick={() => setRandomSfxCountEnabled(!randomSfxCountEnabled)}>擬音数ランダム {randomSfxCountEnabled ? "ON" : "OFF"}</button>
+                <button className={`w-full rounded-lg p-2 font-bold ${randomSfxScaleEnabled ? "bg-yellow-400 text-black" : "bg-zinc-800"}`} onClick={() => handleRandomSfxScaleEnabled(!randomSfxScaleEnabled)}>擬音巨大化 {randomSfxScaleEnabled ? "ON" : "OFF"}</button>
               </div>
             </div>
           ) : null}
           {mobileTab === "effects" ? (
             <div className="space-y-3">
               <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3"><PresetPanel presetList={effectPresetList} activePreset={activePreset} isCustomAdjusted={isCustomAdjusted} applyPreset={applyPreset} customControls={customControls} onCustomControlChange={handleCustomControlChange} /></div>
+              <div className="rounded-xl border border-cyan-500/30 bg-zinc-900/60 p-3 space-y-3">
+                <p className="text-sm font-bold text-cyan-300">タイミング</p>
+                <p className="text-xs text-zinc-400">画面切り替えタイミング（速い / 標準 / 遅い）</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <button onClick={() => { setSwitchMode("equal"); setImageDuration(1200); }} className={`rounded p-2 font-bold ${switchMode === "equal" && imageDuration <= 1400 ? "bg-cyan-500 text-black" : "bg-zinc-800"}`}>速い</button>
+                  <button onClick={() => { setSwitchMode("equal"); setImageDuration(2000); }} className={`rounded p-2 font-bold ${switchMode === "equal" && imageDuration > 1400 && imageDuration < 2800 ? "bg-cyan-500 text-black" : "bg-zinc-800"}`}>標準</button>
+                  <button onClick={() => { setSwitchMode("equal"); setImageDuration(3200); }} className={`rounded p-2 font-bold ${switchMode === "equal" && imageDuration >= 2800 ? "bg-cyan-500 text-black" : "bg-zinc-800"}`}>遅い</button>
+                </div>
+                <p className="text-xs text-zinc-400">シーン切替速度: {(imageDuration / 1000).toFixed(1)}秒</p>
+              </div>
+              <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3 space-y-2">
+                <p className="text-sm font-bold text-pink-300">漫画演出 ON/OFF</p>
+                <button onClick={() => setShowBubble(!showBubble)} className={`w-full rounded p-2 ${showBubble ? "bg-pink-600" : "bg-zinc-800"}`}>タイトル表示 {showBubble ? "ON" : "OFF"}</button>
+                <button onClick={() => setShowSfx(!showSfx)} className={`w-full rounded p-2 ${showSfx ? "bg-pink-600" : "bg-zinc-800"}`}>擬音表示 {showSfx ? "ON" : "OFF"}</button>
+                <button onClick={() => setShowPanels(!showPanels)} className={`w-full rounded p-2 ${showPanels ? "bg-white text-black" : "bg-zinc-800"}`}>集中線/コマ割り {showPanels ? "ON" : "OFF"}</button>
+                <button onClick={() => setShowGlitch(!showGlitch)} className={`w-full rounded p-2 ${showGlitch ? "bg-pink-600" : "bg-zinc-800"}`}>グリッチ {showGlitch ? "ON" : "OFF"}</button>
+                <button onClick={() => setShowEqualizer(!showEqualizer)} className={`w-full rounded p-2 ${showEqualizer ? "bg-cyan-600 text-black" : "bg-zinc-800"}`}>イコライザー {showEqualizer ? "ON" : "OFF"}</button>
+                <button onClick={() => setShowFlash(!showFlash)} className={`w-full rounded p-2 ${showFlash ? "bg-yellow-400 text-black" : "bg-zinc-800"}`}>テキスト演出フラッシュ {showFlash ? "ON" : "OFF"}</button>
+              </div>
               <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
                 <p className="mb-2 text-sm font-bold text-pink-300">画角</p>
                 <div className="grid grid-cols-2 gap-2">{aspectList.map((ratio) => (<button key={ratio} onClick={() => setAspectRatio(ratio)} className={`rounded p-2 font-bold ${aspectRatio === ratio ? "bg-yellow-400 text-black shadow-[0_0_10px_#facc15]" : "bg-zinc-800"}`}>{ratio}</button>))}</div>
+              </div>
+              <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
+                <details open>
+                  <summary className="cursor-pointer text-sm font-bold text-cyan-300">カスタム調整 / 詳細</summary>
+                  <div className="mt-3 space-y-3">
+                    <SettingsPanel
+                      switchMode={switchMode}
+                      setSwitchMode={setSwitchMode}
+                      wasAboveThresholdRef={wasAboveThresholdRef}
+                      lastLowEnergyRef={lastLowEnergyRef}
+                      setActivePreset={(preset) => setActivePreset(preset ?? DEFAULT_PRESET)}
+                      imageDuration={imageDuration}
+                      setImageDuration={setImageDuration}
+                      handleAutoDuration={handleAutoDuration}
+                      peakSensitivity={peakSensitivity}
+                      setPeakSensitivity={setPeakSensitivity}
+                      kickSensitivity={kickSensitivity}
+                      setKickSensitivity={setKickSensitivity}
+                      minSwitchInterval={minSwitchInterval}
+                      setMinSwitchInterval={setMinSwitchInterval}
+                      idealSwitchInterval={idealSwitchInterval}
+                      setIdealSwitchInterval={setIdealSwitchInterval}
+                      fallbackSwitchInterval={fallbackSwitchInterval}
+                      setFallbackSwitchInterval={setFallbackSwitchInterval}
+                      showBubble={showBubble}
+                      setShowBubble={setShowBubble}
+                      bubbleText={bubbleText}
+                      setBubbleText={setBubbleText}
+                      autoBubble={autoBubble}
+                      setAutoBubble={setAutoBubble}
+                      textMode={textMode}
+                      setTextMode={setTextMode}
+                      audioMood={audioMood}
+                      showSfx={showSfx}
+                      setShowSfx={setShowSfx}
+                      sfxText={sfxText}
+                      setSfxText={setSfxText}
+                      autoSfx={autoSfx}
+                      setAutoSfx={setAutoSfx}
+                      randomSfxScaleEnabled={randomSfxScaleEnabled}
+                      randomSfxCountEnabled={randomSfxCountEnabled}
+                      setRandomSfxScaleEnabled={handleRandomSfxScaleEnabled}
+                      setRandomSfxCountEnabled={setRandomSfxCountEnabled}
+                      regenerateSfxItems={() => { const items = generateSfxItems(); setSfxItems(items); setSfxText(items[0]?.text ?? sfxText); setSfxScale(items[0]?.scale ?? 1); }}
+                      setBubblePosition={setBubblePosition}
+                      bubbleTexts={bubbleTexts}
+                      positions={positions}
+                      randomItem={randomItem}
+                      showGlitch={showGlitch}
+                      setShowGlitch={setShowGlitch}
+                      showEqualizer={showEqualizer}
+                      setShowEqualizer={setShowEqualizer}
+                      showFlash={showFlash}
+                      setShowFlash={setShowFlash}
+                      showPanels={showPanels}
+                      setShowPanels={setShowPanels}
+                      panelMode={panelMode}
+                      setPanelMode={setPanelMode}
+                      panelPattern={panelPattern}
+                      setPanelPattern={setPanelPattern}
+                      chorusBoost={chorusBoost}
+                      chorusSensitivity={chorusSensitivity}
+                      setChorusSensitivity={setChorusSensitivity}
+                      selectedMotion={selectedMotion}
+                      setSelectedMotion={setSelectedMotion}
+                      applyMotionToCurrent={applyMotionToCurrent}
+                      applyRandomMotions={applyRandomMotions}
+                      randomMotionApplied={randomMotionApplied}
+                    />
+                  </div>
+                </details>
               </div>
             </div>
           ) : null}

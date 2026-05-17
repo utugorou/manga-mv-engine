@@ -20,6 +20,8 @@ type UploadPanelProps = {
 
 export default function UploadPanel(props: UploadPanelProps) {
   const { handleImageUpload, handleAudioUpload, audioName, aspectRatio, formatTime, audioDuration, currentTime, images, currentImageIndex, isPlaying, chorusBoost, activePreset, audioMood, imageMotions, onSelectImage } = props;
+  const audioInputId = "bgm-upload-input";
+  const imageInputId = "image-upload-input";
   const getMotionLabel = (motion?: MotionType) => {
     const labels: Record<MotionType, string> = { zoomIn: "ズームイン", zoomOut: "ズームアウト", panLeft: "左パン", panRight: "右パン", shake: "シェイク", comic: "漫画揺れ", panUp: "上パン", panDown: "下パン", diagonalPan: "斜めパン", slowZoomIn: "ゆっくりズームイン", breathZoom: "呼吸ズーム", impactZoom: "インパクトズーム", glitchJump: "グリッチジャンプ", grooveBounce: "グルーヴバウンス", sideGroove: "横ノリ", handheld: "手持ちカメラ風" };
     return motion ? labels[motion] : "ズームイン";
@@ -27,11 +29,12 @@ export default function UploadPanel(props: UploadPanelProps) {
 
   return (<div className="h-full rounded-2xl border border-fuchsia-500/30 bg-zinc-950/90 p-4 overflow-y-auto space-y-4">
     <h2 className="text-lg font-black text-fuchsia-300">1. 素材</h2>
-    <label className="block"><p className="mb-1 text-xs text-cyan-300">BGMアップロード</p><div className="w-full cursor-pointer rounded-xl border border-cyan-400/70 bg-cyan-500/15 p-2 text-center text-sm font-bold text-cyan-100 hover:bg-cyan-500/30">音楽アップロード</div><input type="file" accept="audio/*" className="hidden" onChange={handleAudioUpload} /></label>
-    <label className="block"><p className="mb-1 text-xs text-fuchsia-300">背景画像アップロード</p><div className="w-full cursor-pointer rounded-xl border border-fuchsia-400/70 bg-fuchsia-500/15 p-2 text-center text-sm font-bold text-fuchsia-100 hover:bg-fuchsia-500/30">画像アップロード</div><input type="file" accept="image/*" multiple className="hidden" onChange={handleImageUpload} /></label>
+    <div className="block"><p className="mb-1 text-xs text-cyan-300">BGMアップロード</p><label htmlFor={audioInputId} className="block w-full cursor-pointer rounded-xl border border-cyan-400/70 bg-cyan-500/15 p-2 text-center text-sm font-bold text-cyan-100 hover:bg-cyan-500/30">音楽アップロード</label><input id={audioInputId} type="file" accept="audio/*" className="sr-only" onChange={handleAudioUpload} /></div>
+    <div className="block"><p className="mb-1 text-xs text-fuchsia-300">背景画像アップロード</p><label htmlFor={imageInputId} className="block w-full cursor-pointer rounded-xl border border-fuchsia-400/70 bg-fuchsia-500/15 p-2 text-center text-sm font-bold text-fuchsia-100 hover:bg-fuchsia-500/30">画像アップロード</label><input id={imageInputId} type="file" accept="image/*" multiple className="sr-only" onChange={handleImageUpload} /></div>
 
     <div className="rounded-xl border border-zinc-700 bg-zinc-900/80 p-3 text-xs space-y-1">
       <div className="text-cyan-200 break-all">🎧 {audioName || "BGMをアップロードしてください"}</div>
+      <div className={audioName ? "text-emerald-300" : "text-zinc-500"}>{audioName ? "BGM設定済み" : "BGM未設定"}</div>
       <div className="text-zinc-300">尺：{formatTime(currentTime)} / {formatTime(audioDuration)}</div>
       <div className="text-zinc-400">画角：{aspectRatio} / 画像 {images.length}枚</div>
       <div className={isPlaying ? "text-fuchsia-300" : "text-zinc-500"}>再生：{isPlaying ? "ON" : "OFF"}</div>

@@ -53,22 +53,22 @@ export default function PresetPanel({ presetList, activePreset, isCustomAdjusted
           </span>
         </div>
         <div className="space-y-2 text-xs">
-          <label>擬音の量 {customControls.sfxAmount}
+          <label>擬音量 {customControls.sfxAmount}
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.sfxAmount} onChange={(e) => onCustomControlChange("sfxAmount", Number(e.target.value))} />
           </label>
-          <label>擬音の大きさ {customControls.sfxSize}
+          <label>擬音サイズ {customControls.sfxSize}
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.sfxSize} onChange={(e) => onCustomControlChange("sfxSize", Number(e.target.value))} />
           </label>
-          <label>集中線の強さ {customControls.focusLine}
+          <label>集中線 {customControls.focusLine}
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.focusLine} onChange={(e) => onCustomControlChange("focusLine", Number(e.target.value))} />
           </label>
-          <label>グリッチの強さ {customControls.glitch}
+          <label>グリッチ {customControls.glitch}
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.glitch} onChange={(e) => onCustomControlChange("glitch", Number(e.target.value))} />
           </label>
-          <label>画面揺れの強さ {customControls.shake}
+          <label>画面揺れ {customControls.shake}
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.shake} onChange={(e) => onCustomControlChange("shake", Number(e.target.value))} />
           </label>
-          <label>テキスト出現頻度 {customControls.textFrequency}
+          <label>テキスト頻度 {customControls.textFrequency}
             <input className={sliderClass} type="range" min={0} max={100} value={customControls.textFrequency} onChange={(e) => onCustomControlChange("textFrequency", Number(e.target.value))} />
           </label>
           <label>サビ演出倍率 {customControls.chorusMultiplier.toFixed(1)}x

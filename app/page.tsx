@@ -1443,7 +1443,7 @@ export default function Home() {
         }
       `}</style>
 
-      <header className="sticky top-0 z-30 border-b border-fuchsia-500/30 bg-black/90 px-6 py-4 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b border-fuchsia-500/30 bg-black/90 px-3 py-2 md:px-6 md:py-4 backdrop-blur">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-fuchsia-300">
@@ -1455,10 +1455,10 @@ export default function Home() {
                   height={72}
                   priority
                   onError={() => setIsLogoLoadError(true)}
-                  className="h-[clamp(4rem,14vw,9rem)] md:h-[clamp(9rem,22vw,17rem)] w-auto max-w-full object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
+                  className="h-10 sm:h-12 md:h-[clamp(9rem,22vw,17rem)] w-auto max-w-full object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
                 />
               ) : (
-                <span className="text-7xl md:text-8xl font-black tracking-[0.2em] leading-none">MANGA MV ENGINE</span>
+                <span className="text-lg sm:text-xl md:text-8xl font-black tracking-[0.12em] md:tracking-[0.2em] leading-none">MANGA MV ENGINE</span>
               )}
             </h1>
             <p className="text-xs text-zinc-400">Project: <span className="text-cyan-300">Untitled MV</span></p>
@@ -1647,7 +1647,7 @@ export default function Home() {
         </div>
       </div>
       <div className="md:hidden px-3 pb-4 overflow-x-hidden">
-        <div className="sticky top-[108px] z-20 rounded-2xl border border-cyan-500/30 bg-zinc-950/95 p-3 backdrop-blur">
+        <div className="rounded-2xl border border-cyan-500/30 bg-zinc-950/95 p-3">
           <PreviewStage
             previewSizeClass="w-full max-w-none aspect-video"
             chorusBoost={chorusBoost}
@@ -1684,7 +1684,7 @@ export default function Home() {
             <button key={tab.id} onClick={() => setMobileTab(tab.id as "assets" | "text" | "effects" | "export")} className={`min-h-11 rounded-xl border text-sm font-bold ${mobileTab === tab.id ? "border-cyan-300 bg-cyan-500/25 text-cyan-100" : "border-zinc-700 bg-zinc-900/90 text-zinc-200"}`}>{tab.label}</button>
           ))}
         </div>
-        <div className="mt-3 rounded-2xl border border-zinc-700 bg-zinc-950/90 p-3 [&_button]:min-h-11 [&_button]:text-sm [&_input]:min-h-11 [&_input]:text-base [&_select]:min-h-11 [&_select]:text-base [&_textarea]:min-h-11 [&_textarea]:text-base [&_input[type='range']]:min-h-8">
+        <div className="mt-3 rounded-2xl border border-zinc-700 bg-zinc-950/90 p-3 pb-5 [&_button]:min-h-11 [&_button]:text-sm [&_input]:min-h-11 [&_input]:text-base [&_select]:min-h-11 [&_select]:text-base [&_textarea]:min-h-11 [&_textarea]:text-base [&_input[type='range']]:min-h-8">
           {mobileTab === "assets" ? (
             <UploadPanel
               handleImageUpload={handleImageUpload}
@@ -1710,13 +1710,13 @@ export default function Home() {
           {mobileTab === "text" ? (
             <div className="space-y-3">
               <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3 space-y-3">
-                <p className="text-sm font-bold text-fuchsia-300">タイトル表示</p>
+                <p className="text-sm font-bold text-fuchsia-300">タイトル入力</p>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={showBubble} onChange={(e) => setShowBubble(e.target.checked)} />
                   タイトルを表示
                 </label>
                 <input className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2" value={bubbleText} onChange={(e) => setBubbleText(e.target.value)} placeholder="タイトル文言" />
-                <p className="text-sm font-bold text-cyan-300">擬音表示（最大4つ・同文言）</p>
+                <p className="text-sm font-bold text-cyan-300">擬音入力（最大4つ・同文言）</p>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={showSfx} onChange={(e) => setShowSfx(e.target.checked)} />
                   擬音を表示

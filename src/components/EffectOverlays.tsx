@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { SfxItem } from "../types/mv";
 import type { EqualizerType } from "../types/mv";
+import type { BubbleVariant } from "../types/mv";
 
 type PositionType =
   | "topLeft"
@@ -33,6 +34,8 @@ type EffectOverlaysProps = {
   showBubble: boolean;
   bubblePosition: PositionType;
   bubbleText: string;
+  bubbleVariant: BubbleVariant;
+  bubbleScale: 1 | 2;
   flashActive: boolean;
 };
 
@@ -53,6 +56,8 @@ export default function EffectOverlays({
   showBubble,
   bubblePosition,
   bubbleText,
+  bubbleVariant,
+  bubbleScale,
   flashActive,
 }: EffectOverlaysProps) {
   const playOrNone = (animation: string): CSSProperties => ({
@@ -182,7 +187,7 @@ export default function EffectOverlays({
 
       {showSfx && normalizedSfxItems.map((item) => (
         <div key={item.id} className={`absolute ${getSfxPositionClass(item.position)} font-black text-white drop-shadow-[0_0_10px_#ec4899] text-center`}
-          style={{ ...playOrNone("sfxShake 0.45s ease-in-out infinite"), fontSize: `${Math.min(baseSize * unifiedSfxScale, maxFontSize)}px`, maxWidth: "82%", lineHeight: 1.05, transform: `rotate(${item.rotation}deg)` }}>
+          style={{ ...playOrNone("sfxShake 0.45s ease-in-out infinite"), fontSize: `min(${Math.min(baseSize * unifiedSfxScale, maxFontSize)}px, calc(44vw * var(--mobile-sfx-scale, 1)))`, maxWidth: "82%", lineHeight: 1.05, transform: `rotate(${item.rotation}deg)` }}>
           {unifiedSfxText}
         </div>
       ))}
@@ -191,8 +196,14 @@ export default function EffectOverlays({
         <div
           className={`absolute ${getPositionClass(
             bubblePosition
-          )} bg-white text-black px-6 py-4 rounded-full border-4 border-black max-w-[260px] text-center font-bold`}
-          style={playOrNone("bubbleFloat 1.4s ease-in-out infinite")}
+          )} bg-white text-black px-6 py-4 border-4 border-black text-center font-bold ${
+            bubbleVariant === "spiky"
+              ? "clip-path-bubble-spiky rounded-[20%]"
+              : bubbleVariant === "thought"
+                ? "rounded-[45%] before:absolute before:-bottom-3 before:right-8 before:h-4 before:w-4 before:rounded-full before:border-4 before:border-black before:bg-white after:absolute after:-bottom-8 after:right-4 after:h-3 after:w-3 after:rounded-full after:border-2 after:border-black after:bg-white"
+                : "rounded-full"
+          }`}
+          style={{ ...playOrNone("bubbleFloat 1.4s ease-in-out infinite"), fontSize: `${bubbleScale}rem`, maxWidth: `${Math.min(420, 260 * bubbleScale)}px`, lineHeight: 1.25 }}
         >
           {bubbleText}
         </div>

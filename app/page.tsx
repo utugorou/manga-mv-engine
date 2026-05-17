@@ -47,6 +47,7 @@ import type {
   SfxItem,
   SwitchMode,
   TextMode,
+  BubbleVariant,
 } from "../src/types/mv";
 
 const randomItem = <T,>(list: T[]): T => {
@@ -99,6 +100,9 @@ export default function Home() {
   const latestBubbleTextRef = useRef("");
   const latestSfxPositionRef = useRef<PositionType>("bottomLeft");
   const latestBubblePositionRef = useRef<PositionType>("topRight");
+  const latestBubbleVariantRef = useRef<BubbleVariant>("normal");
+  const latestBubbleScaleRef = useRef<1 | 2>(1);
+  const latestSfxViewportScaleRef = useRef(1);
   const latestShowSfxRef = useRef(true);
   const latestShowBubbleRef = useRef(false);
   const latestShowGlitchRef = useRef(false);
@@ -155,6 +159,8 @@ export default function Home() {
   const [bubblePosition, setBubblePosition] =
     useState<PositionType>("topRight");
   const [autoBubble, setAutoBubble] = useState(false);
+  const [bubbleVariant, setBubbleVariant] = useState<BubbleVariant>("normal");
+  const [bubbleScale, setBubbleScale] = useState<1 | 2>(1);
 
   const [showSfx, setShowSfx] = useState(true);
   const [sfxText, setSfxText] = useState("ドン!!");
@@ -241,6 +247,7 @@ export default function Home() {
   const [savedSettingsList, setSavedSettingsList] = useState<SavedSettingsSlot[]>([]);
   const [selectedSettingsId, setSelectedSettingsId] = useState<string | null>(null);
   const [mobileTab, setMobileTab] = useState<"assets" | "text" | "effects" | "export">("assets");
+  const [isMobileViewport, setIsMobileViewport] = useState(false);
 
 
   const mapPresetToControls = (config: (typeof effectPresetConfigs)[EffectPresetName]) => ({
@@ -291,6 +298,17 @@ export default function Home() {
 
   useEffect(() => { latestSfxPositionRef.current = sfxPosition; }, [sfxPosition]);
   useEffect(() => { latestBubblePositionRef.current = bubblePosition; }, [bubblePosition]);
+  useEffect(() => { latestBubbleVariantRef.current = bubbleVariant; }, [bubbleVariant]);
+  useEffect(() => { latestBubbleScaleRef.current = bubbleScale; }, [bubbleScale]);
+  useEffect(() => { latestSfxViewportScaleRef.current = isMobileViewport ? 0.5 : 1; }, [isMobileViewport]);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobileViewport(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
   useEffect(() => { latestShowSfxRef.current = showSfx; }, [showSfx]);
   useEffect(() => { latestShowBubbleRef.current = showBubble; }, [showBubble]);
   useEffect(() => { latestShowGlitchRef.current = showGlitch; }, [showGlitch]);
@@ -639,6 +657,13 @@ export default function Home() {
     }));
   };
 
+  const weightedBubbleVariant = () => {
+    const roll = Math.random();
+    if (activePreset === "バトル" || activePreset === "サビ爆発") return roll < 0.6 ? "spiky" : roll < 0.8 ? "normal" : "thought";
+    if (activePreset === "エモ") return roll < 0.5 ? "normal" : "thought";
+    return roll < 0.55 ? "normal" : roll < 0.8 ? "spiky" : "thought";
+  };
+
   const stepToNextImage = useCallback(() => {
     if (images.length === 0) return;
 
@@ -654,6 +679,8 @@ export default function Home() {
         setShowBubble(true);
         setBubbleText(pickBubbleText());
         setBubblePosition(positions[Math.floor(Math.random() * positions.length)]);
+        setBubbleVariant(weightedBubbleVariant());
+        setBubbleScale(Math.random() < 0.5 ? 1 : 2);
       }
 
       if (autoSfx && Math.random() <= sfxFrequency) {
@@ -678,6 +705,7 @@ export default function Home() {
     positions,
     triggerFlash,
     triggerPanelBurst,
+    activePreset,
   ]);
 
   const stopAnalysisLoop = () => {
@@ -1230,10 +1258,11 @@ export default function Home() {
             sfxScale: latestSfxScaleRef.current,
             chorusBoost: latestChorusBoostRef.current,
             sfxItems: latestSfxItemsRef.current,
+            viewportScale: latestSfxViewportScaleRef.current,
           });
         }
         if (latestShowBubbleRef.current) {
-          drawSpeechBubble(ctx, latestBubbleTextRef.current, latestBubblePositionRef.current, resolution.width, resolution.height);
+          drawSpeechBubble(ctx, latestBubbleTextRef.current, latestBubblePositionRef.current, resolution.width, resolution.height, { variant: latestBubbleVariantRef.current, scale: latestBubbleScaleRef.current });
         }
         if (latestShowGlitchRef.current) {
           drawGlitchLines(ctx, resolution.width, resolution.height, Math.floor(performance.now() / 16));
@@ -1605,6 +1634,8 @@ export default function Home() {
               showBubble={showBubble}
               bubblePosition={bubblePosition}
               bubbleText={bubbleText}
+              bubbleVariant={bubbleVariant}
+              bubbleScale={bubbleScale}
               flashActive={flashActive}
             />
           </div>
@@ -1775,6 +1806,8 @@ export default function Home() {
             showBubble={showBubble}
             bubblePosition={bubblePosition}
             bubbleText={bubbleText}
+            bubbleVariant={bubbleVariant}
+            bubbleScale={bubbleScale}
             flashActive={flashActive}
           />
           <div className="mt-3"><ControlButtons isPlaying={isPlaying} onPlay={handlePlay} onPause={handlePause} onReset={handleReset} /></div>
@@ -1823,7 +1856,7 @@ export default function Home() {
                 </label>
                 <input className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2" value={bubbleText} onChange={(e) => setBubbleText(e.target.value)} placeholder="タイトル文言" />
                 <button className={`w-full rounded-lg p-2 font-bold ${autoBubble ? "bg-pink-600" : "bg-zinc-800"}`} onClick={() => setAutoBubble(!autoBubble)}>テキスト自動生成 {autoBubble ? "ON" : "OFF"}</button>
-                <button className="w-full rounded-lg bg-zinc-800 p-2" onClick={() => { setShowBubble(true); setBubbleText(randomItem(bubbleTexts)); setBubblePosition(randomItem(positions)); }}>文字候補を更新</button>
+                <button className="w-full rounded-lg bg-zinc-800 p-2" onClick={() => { setShowBubble(true); setBubbleText(randomItem(bubbleTexts)); setBubblePosition(randomItem(positions)); setBubbleVariant(weightedBubbleVariant()); setBubbleScale(Math.random() < 0.5 ? 1 : 2); }}>文字候補を更新</button>
                 <p className="text-sm font-bold text-cyan-300">擬音入力（最大4つ・同文言）</p>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" checked={showSfx} onChange={(e) => setShowSfx(e.target.checked)} />

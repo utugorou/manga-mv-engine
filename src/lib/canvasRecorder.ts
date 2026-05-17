@@ -206,10 +206,19 @@ export const drawImageToCanvas = async (
   drawCoverImage(ctx, image, width, height);
 };
 
-export const drawSpeechBubble = (ctx: CanvasRenderingContext2D, text: string, position: CanvasOverlayPosition, canvasWidth: number, canvasHeight: number): void => {
+export const drawSpeechBubble = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  position: CanvasOverlayPosition,
+  canvasWidth: number,
+  canvasHeight: number,
+  options: { variant?: "normal" | "spiky" | "thought"; scale?: 1 | 2 } = {}
+): void => {
   if (!text) return;
   const p = getAnchor(position, canvasWidth, canvasHeight);
-  const fontSize = Math.max(20, Math.round(Math.min(canvasWidth, canvasHeight) * 0.05));
+  const bubbleScale = options.scale ?? 1;
+  const variant = options.variant ?? "normal";
+  const fontSize = Math.max(20, Math.round(Math.min(canvasWidth, canvasHeight) * 0.05 * bubbleScale));
   ctx.font = `800 ${fontSize}px sans-serif`;
   const w = Math.min(canvasWidth * 0.56, ctx.measureText(text).width + fontSize * 1.7);
   const h = fontSize * 2.15;
@@ -219,19 +228,49 @@ export const drawSpeechBubble = (ctx: CanvasRenderingContext2D, text: string, po
   ctx.fillStyle = "#ffffff";
   ctx.strokeStyle = "#000000";
   ctx.lineWidth = Math.max(3, Math.round(fontSize * 0.1));
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, h / 2);
-  ctx.fill();
-  ctx.stroke();
+  if (variant === "spiky") {
+    const spikes = 22;
+    const cx = x + w / 2;
+    const cy = y + h / 2;
+    const outer = Math.max(w, h) * 0.55;
+    const inner = Math.max(w, h) * 0.42;
+    ctx.beginPath();
+    for (let i = 0; i < spikes * 2; i++) {
+      const angle = (i / (spikes * 2)) * Math.PI * 2;
+      const radius = i % 2 === 0 ? outer : inner;
+      const px = cx + Math.cos(angle) * radius;
+      const py = cy + Math.sin(angle) * radius;
+      if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, variant === "thought" ? h * 0.42 : h / 2);
+    ctx.fill();
+    ctx.stroke();
+  }
 
   const tailSize = Math.max(12, fontSize * 0.33);
-  ctx.beginPath();
-  ctx.moveTo(x + w * 0.75, y + h);
-  ctx.lineTo(x + w * 0.75 + tailSize, y + h + tailSize);
-  ctx.lineTo(x + w * 0.6, y + h - 1);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
+  if (variant === "thought") {
+    ctx.beginPath();
+    ctx.arc(x + w * 0.72, y + h + tailSize * 0.5, tailSize * 0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(x + w * 0.8, y + h + tailSize * 1.1, tailSize * 0.22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(x + w * 0.75, y + h);
+    ctx.lineTo(x + w * 0.75 + tailSize, y + h + tailSize);
+    ctx.lineTo(x + w * 0.6, y + h - 1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
 
   ctx.fillStyle = "#000000";
   ctx.textAlign = "center";
@@ -243,6 +282,7 @@ export const drawSpeechBubble = (ctx: CanvasRenderingContext2D, text: string, po
 export type CanvasSfxDrawOptions = {
   chorusBoost?: boolean;
   sfxScale?: number;
+  viewportScale?: number;
   sfxItems?: Array<{ text: string; position: "topLeft" | "top" | "topRight" | "left" | "center" | "right" | "bottomLeft" | "bottom" | "bottomRight" | "random"; scale: number; rotation: number }>;
 };
 
@@ -257,9 +297,10 @@ export const drawSfxText = (
   if (!text) return;
   const baseSize = options.chorusBoost ? 64 : 48;
   const scale = options.sfxScale ?? 1;
+  const viewportScale = options.viewportScale ?? 1;
   const shortSide = Math.min(canvasWidth, canvasHeight);
   const maxFontSize = shortSide * 0.42;
-  const fontSize = Math.max(42, Math.min(baseSize * scale, maxFontSize));
+  const fontSize = Math.max(20, Math.min(baseSize * scale * viewportScale, maxFontSize));
   ctx.font = `900 italic ${fontSize}px sans-serif`;
   ctx.textAlign = position.includes("Right") ? "right" : position === "center" ? "center" : "left";
   ctx.textBaseline = "middle";
@@ -268,7 +309,7 @@ export const drawSfxText = (
   ctx.fillStyle = "#ffffff";
   const drawOne = (label: string, pos: CanvasOverlayPosition, scaleOverride: number, rotateDeg: number) => {
     const anchor = getAnchor(pos, canvasWidth, canvasHeight);
-    const localSize = Math.max(42, Math.min(baseSize * scaleOverride, maxFontSize));
+    const localSize = Math.max(20, Math.min(baseSize * scaleOverride * viewportScale, maxFontSize));
     ctx.font = `900 italic ${localSize}px sans-serif`;
     ctx.textAlign = pos.includes("Right") ? "right" : pos === "center" ? "center" : "left";
     const textWidth = ctx.measureText(label).width;

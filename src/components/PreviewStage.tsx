@@ -1,6 +1,7 @@
 import EffectOverlays from "./EffectOverlays";
 import type { SfxItem } from "../types/mv";
 import type { EqualizerType } from "../types/mv";
+import type { BubbleVariant } from "../types/mv";
 import type { CSSProperties } from "react";
 
 type PositionType = "topLeft" | "topRight" | "bottomLeft" | "bottomRight" | "center";
@@ -30,6 +31,8 @@ type PreviewStageProps = {
   showBubble: boolean;
   bubblePosition: PositionType;
   bubbleText: string;
+  bubbleVariant: BubbleVariant;
+  bubbleScale: 1 | 2;
   flashActive: boolean;
 };
 

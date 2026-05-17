@@ -11,14 +11,14 @@ type Props = {
 };
 
 const mobileButtonClass =
-  "flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-700/70 bg-zinc-950/90 p-1 transition hover:bg-zinc-900 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed";
+  "flex h-14 w-14 items-center justify-center bg-transparent p-0 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40";
 
 const mobileIconClass = "h-full w-full object-contain";
 
-export default function ControlButtons({ isPlaying, isRecording, chorusBoost, isMobile = false, onPlay, onPause, onReset }: Props) {
+export default function ControlButtons({ isPlaying, isRecording, isMobile = false, onPlay, onPause, onReset }: Props) {
   if (isMobile) {
     return (
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-fuchsia-500/30 bg-zinc-950/70 p-2">
+      <div className="flex items-center justify-center gap-3">
         <button onClick={onPlay} aria-label="再生" className={mobileButtonClass}>
           <img src={withBasePath("/ui/play_button_graffiti_transparent.png")} alt="" aria-hidden="true" className={mobileIconClass} />
         </button>
@@ -28,8 +28,6 @@ export default function ControlButtons({ isPlaying, isRecording, chorusBoost, is
         <button onClick={onReset} aria-label="最初から" className={mobileButtonClass}>
           <img src={withBasePath("/ui/start_over_hexagon_graffiti_transparent.png")} alt="" aria-hidden="true" className={mobileIconClass} />
         </button>
-        {isRecording ? <span className="rounded-full border border-rose-300/80 bg-rose-500/20 px-2 py-1 text-[10px] font-bold text-rose-100">録画中</span> : null}
-        {chorusBoost ? <span className="rounded-full border border-pink-300/80 bg-yellow-300/20 px-2 py-1 text-[10px] font-bold text-pink-100">サビ暴走中</span> : null}
       </div>
     );
   }

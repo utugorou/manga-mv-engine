@@ -118,6 +118,7 @@ export default function Home() {
   const latestSwitchModeRef = useRef<SwitchMode>("equal");
   const latestImageDurationRef = useRef(2000);
   const latestImageMotionsRef = useRef<MotionType[]>([]);
+  const latestTextSceneIndexRef = useRef<number | null>(null);
   const recordingStartedAtRef = useRef<number | null>(null);
   const recordingElapsedMsRef = useRef(0);
   const equalModeFallbackStartedAtRef = useRef<number | null>(null);
@@ -695,12 +696,40 @@ export default function Home() {
     }));
   };
 
-  const weightedBubbleVariant = () => {
+  const weightedBubbleVariant = useCallback(() => {
     const roll = Math.random();
     if (activePreset === "バトル" || activePreset === "サビ爆発") return roll < 0.6 ? "spiky" : roll < 0.8 ? "normal" : "thought";
     if (activePreset === "エモ") return roll < 0.5 ? "normal" : "thought";
     return roll < 0.55 ? "normal" : roll < 0.8 ? "spiky" : "thought";
-  };
+  }, [activePreset]);
+
+  const regenerateSceneTexts = useCallback(() => {
+    if (autoBubble && Math.random() <= textFrequency) {
+      setShowBubble(true);
+      setBubbleText(pickBubbleText());
+      setBubblePosition(positions[Math.floor(Math.random() * positions.length)]);
+      setBubbleVariant(weightedBubbleVariant());
+      setBubbleScale(Math.random() < 0.5 ? 1 : 2);
+    }
+
+    if (autoSfx && Math.random() <= sfxFrequency) {
+      setShowSfx(true);
+      const items = generateSfxItems();
+      setSfxItems(items);
+      setSfxText(items[0]?.text ?? pickSfxText());
+      setSfxPosition((items[0]?.position === "random" ? "center" : (items[0]?.position ?? "bottomLeft")) as PositionType);
+      setSfxScale(items[0]?.scale ?? 1);
+    }
+  }, [autoBubble, autoSfx, pickBubbleText, pickSfxText, positions, sfxFrequency, textFrequency, weightedBubbleVariant]);
+
+  const updateScene = useCallback((nextIndex: number, nextImage: string | null, shouldRegenerateTexts: boolean) => {
+    setCurrentImageIndex(nextIndex);
+    setSelectedImage(nextImage);
+    if (shouldRegenerateTexts && latestTextSceneIndexRef.current !== nextIndex) {
+      latestTextSceneIndexRef.current = nextIndex;
+      regenerateSceneTexts();
+    }
+  }, [regenerateSceneTexts]);
 
   const stepToNextImage = useCallback(() => {
     if (images.length === 0) return;
@@ -710,40 +739,18 @@ export default function Home() {
 
     setCurrentImageIndex((prev) => {
       const nextIndex = (prev + 1) % images.length;
-
-      setSelectedImage(images[nextIndex]);
-
-      if (autoBubble && Math.random() <= textFrequency) {
-        setShowBubble(true);
-        setBubbleText(pickBubbleText());
-        setBubblePosition(positions[Math.floor(Math.random() * positions.length)]);
-        setBubbleVariant(weightedBubbleVariant());
-        setBubbleScale(Math.random() < 0.5 ? 1 : 2);
-      }
-
-      if (autoSfx && Math.random() <= sfxFrequency) {
-        setShowSfx(true);
-        const items = generateSfxItems();
-        setSfxItems(items);
-        setSfxText(items[0]?.text ?? pickSfxText());
-        setSfxPosition((items[0]?.position === "random" ? "center" : (items[0]?.position ?? "bottomLeft")) as PositionType);
-        setSfxScale(items[0]?.scale ?? 1);
-      }
+      const nextImage = images[nextIndex] ?? null;
+      setSelectedImage(nextImage);
+      latestTextSceneIndexRef.current = nextIndex;
+      regenerateSceneTexts();
 
       return nextIndex;
     });
   }, [
     images,
-    autoBubble,
-    textFrequency,
-    autoSfx,
-    sfxFrequency,
-    pickBubbleText,
-    pickSfxText,
-    positions,
+    regenerateSceneTexts,
     triggerFlash,
     triggerPanelBurst,
-    activePreset,
   ]);
 
   const stopAnalysisLoop = () => {
@@ -913,8 +920,7 @@ export default function Home() {
           nextIndex !== latestCurrentImageIndexRef.current ||
           nextImage !== latestSelectedImageRef.current
         ) {
-          setCurrentImageIndex(nextIndex);
-          setSelectedImage(nextImage);
+          updateScene(nextIndex, nextImage, true);
         }
       }
 
@@ -1168,14 +1174,17 @@ export default function Home() {
         nextIndex = Math.min(nextIndex, images.length - 1);
       }
 
-      setCurrentImageIndex(nextIndex);
-      setSelectedImage(images[nextIndex]);
+      updateScene(nextIndex, images[nextIndex] ?? null, true);
     }
 
     lastSwitchTimeRef.current = performance.now();
     wasAboveThresholdRef.current = false;
     lastLowEnergyRef.current = 0;
   };
+
+  useEffect(() => {
+    latestTextSceneIndexRef.current = currentImageIndex;
+  }, [currentImageIndex]);
 
   const handlePrepareExport = () => {
     const hasPlayableSource = Boolean(audioUrl);

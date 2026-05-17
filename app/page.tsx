@@ -33,6 +33,8 @@ import type {
   AspectRatio,
   AudioMood,
   ExportMode,
+  ExportFormat,
+  ExportFormatPreference,
   ExportAudioStatus,
   ExportQuality,
   RecordingMode,
@@ -52,6 +54,20 @@ import type {
 
 const randomItem = <T,>(list: T[]): T => {
   return list[Math.floor(Math.random() * list.length)];
+};
+const MP4_MIME_CANDIDATES = [
+  "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+  "video/mp4;codecs=h264,aac",
+  "video/mp4",
+] as const;
+const WEBM_MIME_CANDIDATES = [
+  "video/webm;codecs=vp9,opus",
+  "video/webm;codecs=vp8,opus",
+  "video/webm",
+] as const;
+const pickSupportedMimeType = (candidates: readonly string[]): string | null => {
+  if (typeof window === "undefined" || typeof MediaRecorder === "undefined") return null;
+  return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate)) ?? null;
 };
 
 type AppLogoProps = {
@@ -153,6 +169,11 @@ export default function Home() {
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
   const [exportAudioStatus, setExportAudioStatus] = useState<ExportAudioStatus>("unknown");
   const [recordingMode, setRecordingMode] = useState<RecordingMode | null>(null);
+  const [exportFormatPreference, setExportFormatPreference] = useState<ExportFormatPreference>("auto");
+  const [mp4SupportedMimeType] = useState<string | null>(() => pickSupportedMimeType(MP4_MIME_CANDIDATES));
+  const [webmSupportedMimeType] = useState<string>(() => pickSupportedMimeType(WEBM_MIME_CANDIDATES) ?? "video/webm");
+  const [lastRecordedFormat, setLastRecordedFormat] = useState<ExportFormat>("webm");
+  const lastRecordingMimeTypeRef = useRef("video/webm");
   const [autoRecordEnabled, setAutoRecordEnabled] = useState(true);
   const autoStopTriggeredRef = useRef(false);
 
@@ -1272,7 +1293,17 @@ export default function Home() {
         throw new Error("Canvas context の作成に失敗しました");
       }
 
-      const { recorder, hasAudio } = startCanvasRecording(canvas, 30, getRecordingAudioElement(), true);
+      const requestedMp4 = exportFormatPreference !== "webm";
+      const shouldUseMp4 = exportFormatPreference === "mp4"
+        ? Boolean(mp4SupportedMimeType)
+        : exportFormatPreference === "auto"
+          ? Boolean(mp4SupportedMimeType)
+          : false;
+      const selectedFormat: ExportFormat = shouldUseMp4 ? "mp4" : "webm";
+      const selectedMimeType = selectedFormat === "mp4" ? mp4SupportedMimeType ?? "video/mp4" : webmSupportedMimeType;
+      lastRecordingMimeTypeRef.current = selectedMimeType;
+      setLastRecordedFormat(selectedFormat);
+      const { recorder, hasAudio } = startCanvasRecording(canvas, 30, getRecordingAudioElement(), true, selectedMimeType);
       mediaRecorderRef.current = recorder;
       recorder.start();
       recordingStartedAtRef.current = null;
@@ -1285,12 +1316,15 @@ export default function Home() {
       setExportMessage(
         canUseAutoRecord
           ? hasAudio
-            ? "曲尺自動録画中です（WebM・音声付き）"
-            : "曲尺自動録画中です（WebM・映像のみ）"
+            ? `曲尺自動録画中です（${selectedFormat.toUpperCase()}・音声付き）`
+            : `曲尺自動録画中です（${selectedFormat.toUpperCase()}・映像のみ）`
           : hasAudio
-            ? "録画中です（WebM・音声付き）"
-            : "録画中です（WebM・映像のみ）"
+            ? `録画中です（${selectedFormat.toUpperCase()}・音声付き）`
+            : `録画中です（${selectedFormat.toUpperCase()}・映像のみ）`
       );
+      if (requestedMp4 && !shouldUseMp4) {
+        setExportMessage("MP4非対応のためWebMにフォールバックして録画します");
+      }
 
       if (canUseAutoRecord && audio) {
         autoStopTriggeredRef.current = false;
@@ -1393,12 +1427,12 @@ export default function Home() {
         recordingFrameRef.current = null;
       }
 
-      const blob = await stopCanvasRecording(mediaRecorderRef.current);
+      const blob = await stopCanvasRecording(mediaRecorderRef.current, lastRecordingMimeTypeRef.current);
       const videoUrl = URL.createObjectURL(blob);
 
       setRecordedVideoUrl(videoUrl);
       setExportStatus("finished");
-      setExportMessage("録画完了：WebMリンクを生成しました");
+      setExportMessage(`録画完了：${lastRecordedFormat.toUpperCase()}リンクを生成しました`);
     } catch (error) {
       console.error("録画停止に失敗:", error);
       setExportStatus("error");
@@ -1801,6 +1835,10 @@ export default function Home() {
                 setAutoRecordEnabled={setAutoRecordEnabled}
                 audioDurationState={audioDurationState}
                 hasAudio={Boolean(audioUrl)}
+                exportFormatPreference={exportFormatPreference}
+                setExportFormatPreference={setExportFormatPreference}
+                mp4Supported={Boolean(mp4SupportedMimeType)}
+                lastRecordedFormat={lastRecordedFormat}
               />
             </div>
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
@@ -2087,7 +2125,7 @@ export default function Home() {
           ) : null}
           {mobileTab === "export" ? (
             <div className="rounded-xl border border-zinc-700 bg-zinc-900/70 p-3">
-              <ExportPanel aspectRatio={aspectRatio} audioDuration={audioDuration} imageCount={images.length} exportMode={exportMode} exportQuality={exportQuality} setExportQuality={setExportQuality} exportStatus={exportStatus} exportMessage={exportMessage} handlePrepareExport={handlePrepareExport} handleStartRecording={handleStartRecording} handleStopRecording={handleStopRecording} isRecording={isRecording} recordingMode={recordingMode} recordedVideoUrl={recordedVideoUrl} exportAudioStatus={exportAudioStatus} formatTime={formatTime} autoRecordEnabled={autoRecordEnabled} setAutoRecordEnabled={setAutoRecordEnabled} audioDurationState={audioDurationState} hasAudio={Boolean(audioUrl)} />
+              <ExportPanel aspectRatio={aspectRatio} audioDuration={audioDuration} imageCount={images.length} exportMode={exportMode} exportQuality={exportQuality} setExportQuality={setExportQuality} exportStatus={exportStatus} exportMessage={exportMessage} handlePrepareExport={handlePrepareExport} handleStartRecording={handleStartRecording} handleStopRecording={handleStopRecording} isRecording={isRecording} recordingMode={recordingMode} recordedVideoUrl={recordedVideoUrl} exportAudioStatus={exportAudioStatus} formatTime={formatTime} autoRecordEnabled={autoRecordEnabled} setAutoRecordEnabled={setAutoRecordEnabled} audioDurationState={audioDurationState} hasAudio={Boolean(audioUrl)} exportFormatPreference={exportFormatPreference} setExportFormatPreference={setExportFormatPreference} mp4Supported={Boolean(mp4SupportedMimeType)} lastRecordedFormat={lastRecordedFormat} />
             </div>
           ) : null}
         </div>

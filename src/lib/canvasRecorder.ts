@@ -463,21 +463,24 @@ export const startCanvasRecording = (
   canvas: HTMLCanvasElement,
   fps: number,
   mediaElement?: HTMLMediaElement | null,
-  includeAudio = true
+  includeAudio = true,
+  mimeType?: string
 ): { recorder: MediaRecorder; hasAudio: boolean } => {
   const canvasStream = canvas.captureStream(fps);
   const audioStream = includeAudio ? getAudioStreamFromElement(mediaElement) : null;
   const { stream, hasAudio } = combineCanvasAndAudioStreams(canvasStream, audioStream);
 
-  const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-    ? "video/webm;codecs=vp9"
-    : "video/webm";
+  const recorderMimeType = mimeType
+    ?? (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
+      ? "video/webm;codecs=vp9"
+      : "video/webm");
 
-  return { recorder: new MediaRecorder(stream, { mimeType }), hasAudio };
+  return { recorder: new MediaRecorder(stream, { mimeType: recorderMimeType }), hasAudio };
 };
 
 export const stopCanvasRecording = async (
-  mediaRecorder: MediaRecorder
+  mediaRecorder: MediaRecorder,
+  blobMimeType = "video/webm"
 ): Promise<Blob> => {
   const chunks: BlobPart[] = [];
 
@@ -493,7 +496,7 @@ export const stopCanvasRecording = async (
     };
 
     mediaRecorder.onstop = () => {
-      resolve(new Blob(chunks, { type: "video/webm" }));
+      resolve(new Blob(chunks, { type: blobMimeType }));
     };
 
     mediaRecorder.stop();

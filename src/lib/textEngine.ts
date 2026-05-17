@@ -32,4 +32,4 @@ export const smartSfxTexts: Record<AudioMood, string[]> = {
   chorus: ["PULSE", "NOISE", "BURST"],
 };
 
-export const presetGenreMap: Record<EffectPresetName, TextGenre> = {"標準":"ポップ","バトル":"バトル","エモ":"エモ","ライブ":"ライブ","グリッチ":"グリッチ","サビ爆発":"サビ爆発"};
+export const presetGenreMap: Record<EffectPresetName, TextGenre> = {"標準":"ポップ","バトル":"バトル","エモ":"エモ","ライブ":"ライブ","サビ爆発":"サビ爆発"};

@@ -1185,6 +1185,14 @@ export default function Home() {
     }
 
     try {
+      setCurrentImageIndex(0);
+      if (images.length > 0) {
+        setSelectedImage(images[0]);
+      }
+      lastSwitchTimeRef.current = 0;
+      wasAboveThresholdRef.current = false;
+      lastLowEnergyRef.current = 0;
+
       const resolution = getExportResolution(aspectRatio, exportQuality);
       const canvas = createExportCanvas(resolution.width, resolution.height);
       recordingCanvasRef.current = canvas;
@@ -1219,6 +1227,8 @@ export default function Home() {
         autoStopTriggeredRef.current = false;
         audio.currentTime = 0;
         await audio.play();
+        setIsPlaying(true);
+        startAnalysisLoop();
         const stopFromAuto = () => {
           if (autoStopTriggeredRef.current) return;
           autoStopTriggeredRef.current = true;
@@ -1239,6 +1249,9 @@ export default function Home() {
         ctx.fillRect(0, 0, resolution.width, resolution.height);
 
         const startedAt = recordingStartedAtRef.current ?? performance.now();
+        if (recordingStartedAtRef.current === null) {
+          recordingStartedAtRef.current = startedAt;
+        }
         recordingElapsedMsRef.current = performance.now() - startedAt;
         const activeState = getRecordingActiveImage(recordingElapsedMsRef.current);
         const activeMotion = latestImageMotionsRef.current[activeState.imageIndex] ?? "zoomIn";

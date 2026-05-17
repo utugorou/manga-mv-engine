@@ -346,6 +346,9 @@ export const drawGlitchLines = (ctx: CanvasRenderingContext2D, canvasWidth: numb
 
 export const drawEqualizerBars = (ctx: CanvasRenderingContext2D, eqBars: number[], canvasWidth: number, canvasHeight: number, eqType: "bars" | "wideBars" | "mirror" | "wave" | "glitchEq" | "pulse" | "circle" = "bars"): void => {
   const barCount = Math.max(12, eqBars.length);
+  const eqAreaHeight = canvasHeight * 0.2;
+  const eqAreaTop = canvasHeight - eqAreaHeight;
+  const eqAreaMid = eqAreaTop + eqAreaHeight / 2;
   if (eqType === "wave") {
     ctx.strokeStyle = "rgba(34,211,238,0.95)";
     ctx.lineWidth = Math.max(2, canvasHeight * 0.006);
@@ -353,7 +356,7 @@ export const drawEqualizerBars = (ctx: CanvasRenderingContext2D, eqBars: number[
     for (let i = 0; i < canvasWidth; i++) {
       const idx = Math.floor((i / canvasWidth) * eqBars.length) % eqBars.length;
       const amp = (eqBars[idx] ?? 15) / 100;
-      const y = canvasHeight * 0.5 + Math.sin((i / canvasWidth) * Math.PI * 8) * amp * canvasHeight * 0.28;
+      const y = eqAreaMid + Math.sin((i / canvasWidth) * Math.PI * 8) * amp * eqAreaHeight * 0.42;
       if (i === 0) ctx.moveTo(i, y); else ctx.lineTo(i, y);
     }
     ctx.stroke();
@@ -367,12 +370,18 @@ export const drawEqualizerBars = (ctx: CanvasRenderingContext2D, eqBars: number[
 
   for (let idx = 0; idx < barCount; idx++) {
     const bar = eqBars[idx % eqBars.length] ?? 15;
-    const h = Math.max(10, (bar / 100) * canvasHeight * (eqType === "pulse" ? 0.4 : 0.32));
+    const h = Math.max(8, (bar / 100) * eqAreaHeight * (eqType === "pulse" ? 0.95 : 0.8));
     const x = baseX + idx * (barWidth + gap);
     if (eqType === "mirror") {
       ctx.fillStyle = idx % 2 === 0 ? "rgba(255,255,255,0.85)" : "rgba(34,211,238,0.95)";
-      ctx.fillRect(x, canvasHeight * 0.5 - h, barWidth, h);
-      ctx.fillRect(x, canvasHeight * 0.5, barWidth, h);
+      ctx.fillRect(x, eqAreaMid - h, barWidth, h);
+      ctx.fillRect(x, eqAreaMid, barWidth, h);
+    } else if (eqType === "circle") {
+      ctx.fillStyle = idx % 2 === 0 ? "rgba(255,255,255,0.78)" : "rgba(34,211,238,0.9)";
+      const radius = Math.max(2, h * 0.16);
+      ctx.beginPath();
+      ctx.arc(x + barWidth / 2, baseY - h, radius, 0, Math.PI * 2);
+      ctx.fill();
     } else {
       ctx.fillStyle = eqType === "glitchEq" && idx % 3 === 0 ? "rgba(244,114,182,0.95)" : idx % 2 === 0 ? "rgba(255,255,255,0.8)" : "rgba(34,211,238,0.9)";
       ctx.fillRect(x, baseY - h, barWidth, h);

@@ -164,20 +164,21 @@ export default function EffectOverlays({
       {showEqualizer && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           {equalizerType === "wave" ? (
-            <svg className="absolute inset-0 h-full w-full" preserveAspectRatio="none">
-              <polyline fill="none" stroke="rgba(34,211,238,0.92)" strokeWidth="3" points={eqBars.map((v, i) => `${(i / Math.max(1, eqBars.length - 1)) * 100},${50 - (v / 100) * 35}`).join(" ")} />
+            <svg className="absolute bottom-0 left-0 h-[22%] w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+              <polyline fill="none" stroke="rgba(34,211,238,0.88)" strokeWidth="4" points={eqBars.map((v, i) => `${(i / Math.max(1, eqBars.length - 1)) * 100},${50 - (v / 100) * 38}`).join(" ")} />
             </svg>
           ) : null}
-          <div className={`absolute inset-x-0 ${equalizerType === "mirror" ? "top-0 bottom-0 items-center" : "bottom-0 h-[45%] items-end"} flex gap-[0.4vw] px-[1.5%] transition-all duration-150`}>
+          <div className={`absolute inset-x-0 bottom-0 ${equalizerType === "mirror" ? "h-[24%] items-center" : "h-[20%] items-end"} flex gap-[0.35vw] px-[1.2%] transition-all duration-150 bg-gradient-to-t from-black/35 via-black/15 to-transparent`}>
           {eqBars.map((height, index) => (
             <div
               key={index}
               className={`origin-bottom rounded-t ${equalizerType === "glitchEq" && index % 3 === 0 ? "bg-pink-400" : "bg-cyan-300"} shadow-[0_0_12px_#22d3ee]`}
               style={{
                 width: `${equalizerType === "wideBars" ? 100 / Math.max(1, eqBars.length * 0.95) : 100 / Math.max(1, eqBars.length * 1.6)}%`,
-                height: `${Math.max(6, (height / 100) * 100)}%`,
+                height: `${Math.max(8, (height / 100) * (equalizerType === "pulse" ? 95 : 82))}%`,
                 animation: isPlaying ? `eqMove ${0.3 + index * 0.05}s infinite` : "none",
                 transform: equalizerType === "mirror" ? "translateY(0)" : undefined,
+                borderRadius: equalizerType === "circle" ? "999px" : undefined,
               }}
             />
           ))}

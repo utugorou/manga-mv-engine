@@ -1,6 +1,39 @@
-type Props = { isPlaying: boolean; isRecording: boolean; onPlay: () => void; onPause: () => void; onReset: () => void };
+import { withBasePath } from "../lib/assetPath";
 
-export default function ControlButtons({ isPlaying, isRecording, onPlay, onPause, onReset }: Props) {
+type Props = {
+  isPlaying: boolean;
+  isRecording: boolean;
+  chorusBoost: boolean;
+  isMobile?: boolean;
+  onPlay: () => void;
+  onPause: () => void;
+  onReset: () => void;
+};
+
+const mobileButtonClass =
+  "flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-700/70 bg-zinc-950/90 p-1 transition hover:bg-zinc-900 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed";
+
+const mobileIconClass = "h-full w-full object-contain";
+
+export default function ControlButtons({ isPlaying, isRecording, chorusBoost, isMobile = false, onPlay, onPause, onReset }: Props) {
+  if (isMobile) {
+    return (
+      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-fuchsia-500/30 bg-zinc-950/70 p-2">
+        <button onClick={onPlay} aria-label="再生" className={mobileButtonClass}>
+          <img src={withBasePath("/ui/play_button_graffiti_transparent.png")} alt="" aria-hidden="true" className={mobileIconClass} />
+        </button>
+        <button onClick={onPause} aria-label="一時停止" className={mobileButtonClass}>
+          <img src={withBasePath("/ui/neon_pause_button_TRUE_TRANSPARENT.png")} alt="" aria-hidden="true" className={mobileIconClass} />
+        </button>
+        <button onClick={onReset} aria-label="最初から" className={mobileButtonClass}>
+          <img src={withBasePath("/ui/start_over_hexagon_graffiti_transparent.png")} alt="" aria-hidden="true" className={mobileIconClass} />
+        </button>
+        {isRecording ? <span className="rounded-full border border-rose-300/80 bg-rose-500/20 px-2 py-1 text-[10px] font-bold text-rose-100">録画中</span> : null}
+        {chorusBoost ? <span className="rounded-full border border-pink-300/80 bg-yellow-300/20 px-2 py-1 text-[10px] font-bold text-pink-100">サビ暴走中</span> : null}
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-fuchsia-500/30 bg-zinc-950/70 p-2.5 sm:gap-3 sm:p-3">
       <button

@@ -1736,6 +1736,7 @@ export default function Home() {
             <ControlButtons
               isPlaying={isPlaying}
               isRecording={isRecording}
+              chorusBoost={chorusBoost}
               onPlay={handlePlay}
               onPause={handlePause}
               onReset={handleReset}
@@ -1904,7 +1905,7 @@ export default function Home() {
             bubbleScale={bubbleScale}
             flashActive={flashActive}
           />
-          <div className="mt-3"><ControlButtons isPlaying={isPlaying} isRecording={isRecording} onPlay={handlePlay} onPause={handlePause} onReset={handleReset} /></div>
+          <div className="mt-3"><ControlButtons isPlaying={isPlaying} isRecording={isRecording} chorusBoost={chorusBoost} isMobile onPlay={handlePlay} onPause={handlePause} onReset={handleReset} /></div>
         </div>
         <div className="mt-3 grid shrink-0 grid-cols-4 gap-2">
           {[

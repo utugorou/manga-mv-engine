@@ -341,25 +341,7 @@ export default function Home() {
 
 
   const sfxPositions = ["topLeft", "top", "topRight", "left", "center", "right", "bottomLeft", "bottom", "bottomRight", "random"] as const;
-  const randomInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
-  const generateSfxItems = (): SfxItem[] => {
-    const maxCount = Math.min(4, Math.max(0, sfxMaxCount));
-    const count = sfxFrequency <= 0 ? 0 : (randomSfxCountEnabled ? randomInt(0, maxCount) : Math.min(1, maxCount));
-    const unifiedText = pickSfxText();
-    const unifiedScale = randomSfxScaleEnabled ? randomItem([...sfxScaleOptions]) * sfxFrequency : sfxScale;
-    return Array.from({ length: count }, (_, i) => ({
-      id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`,
-      text: unifiedText,
-      position: randomItem([...sfxPositions]),
-      scale: unifiedScale,
-      rotation: randomInt(-18, 18),
-    }));
-  };
   const aspectList: AspectRatio[] = ["16:9", "9:16", "1:1", "4:5"];
-
-  const randomItem = <T,>(list: T[]): T => {
-    return list[Math.floor(Math.random() * list.length)];
-  };
 
   const handleRandomSfxScaleEnabled = (value: boolean) => {
     setRandomSfxScaleEnabled(value);
@@ -398,10 +380,10 @@ export default function Home() {
     }
 
     if (textMode === "smart") {
-      return randomItem(smartBubbleTexts[audioMoodRef.current]);
+      return smartBubbleTexts[audioMoodRef.current][Math.floor(Math.random() * smartBubbleTexts[audioMoodRef.current].length)];
     }
 
-    return randomItem(bubbleTexts);
+    return bubbleTexts[Math.floor(Math.random() * bubbleTexts.length)];
   };
 
   const pickSfxText = () => {
@@ -410,10 +392,10 @@ export default function Home() {
     }
 
     if (textMode === "smart") {
-      return randomItem(smartSfxTexts[audioMoodRef.current]);
+      return smartSfxTexts[audioMoodRef.current][Math.floor(Math.random() * smartSfxTexts[audioMoodRef.current].length)];
     }
 
-    return randomItem(sfxTexts);
+    return sfxTexts[Math.floor(Math.random() * sfxTexts.length)];
   };
 
   const randomizeMotionsFromList = (list: MotionType[]) => {
@@ -422,7 +404,7 @@ export default function Home() {
       return;
     }
 
-    const updated = images.map(() => randomItem(list));
+    const updated = images.map(() => list[Math.floor(Math.random() * list.length)]);
     setImageMotions(updated);
     setRandomMotionApplied(true);
   };
@@ -433,7 +415,7 @@ export default function Home() {
 
     wasAboveThresholdRef.current = false;
     lastLowEnergyRef.current = 0;
-    lastSwitchTimeRef.current = performance.now();
+    lastSwitchTimeRef.current = 0;
     audioMoodRef.current = "quiet";
     setAudioMood("quiet");
 
@@ -723,11 +705,11 @@ export default function Home() {
     if (!showPanels) return;
 
     if (panelMode === "random") {
-      setPanelPattern(randomItem(panelPatterns));
+      setPanelPattern(panelPatterns[Math.floor(Math.random() * panelPatterns.length)]);
     }
 
     if (panelMode === "chorus" && chorusBoost) {
-      setPanelPattern(randomItem(panelPatterns));
+      setPanelPattern(panelPatterns[Math.floor(Math.random() * panelPatterns.length)]);
     }
 
     setPanelBurst(true);
@@ -751,12 +733,28 @@ export default function Home() {
       if (autoBubble && Math.random() <= textFrequency) {
         setShowBubble(true);
         setBubbleText(pickBubbleText());
-        setBubblePosition(randomItem(positions));
+        setBubblePosition(positions[Math.floor(Math.random() * positions.length)]);
       }
 
       if (autoSfx && Math.random() <= sfxFrequency) {
         setShowSfx(true);
-        const items = generateSfxItems();
+        const maxCount = Math.min(4, Math.max(0, sfxMaxCount));
+        const count = sfxFrequency <= 0
+          ? 0
+          : (randomSfxCountEnabled
+            ? Math.floor(Math.random() * (maxCount + 1))
+            : Math.min(1, maxCount));
+        const unifiedText = pickSfxText();
+        const unifiedScale = randomSfxScaleEnabled
+          ? [...sfxScaleOptions][Math.floor(Math.random() * sfxScaleOptions.length)] * sfxFrequency
+          : sfxScale;
+        const items = Array.from({ length: count }, (_, i) => ({
+          id: `${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`,
+          text: unifiedText,
+          position: [...sfxPositions][Math.floor(Math.random() * sfxPositions.length)],
+          scale: unifiedScale,
+          rotation: Math.floor(Math.random() * 37) - 18,
+        }));
         setSfxItems(items);
         setSfxText(items[0]?.text ?? pickSfxText());
         setSfxPosition((items[0]?.position === "random" ? "center" : (items[0]?.position ?? "bottomLeft")) as PositionType);
@@ -773,7 +771,6 @@ export default function Home() {
     sfxFrequency,
     pickBubbleText,
     pickSfxText,
-    generateSfxItems,
     positions,
     triggerFlash,
     triggerPanelBurst,

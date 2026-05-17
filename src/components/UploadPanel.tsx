@@ -18,6 +18,40 @@ type UploadPanelProps = {
   onSelectImage: (image: string, index: number) => void;
 };
 
+type FileUploadButtonProps = {
+  label: string;
+  buttonText: string;
+  inputId: string;
+  accept: string;
+  multiple?: boolean;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  tone: "cyan" | "fuchsia";
+};
+
+function FileUploadButton(props: FileUploadButtonProps) {
+  const { label, buttonText, inputId, accept, multiple = false, onChange, tone } = props;
+  const toneClasses = tone === "cyan"
+    ? "border-cyan-400/70 bg-cyan-500/15 text-cyan-100"
+    : "border-fuchsia-400/70 bg-fuchsia-500/15 text-fuchsia-100";
+
+  return (
+    <div className="block">
+      <p className={`mb-1 text-xs ${tone === "cyan" ? "text-cyan-300" : "text-fuchsia-300"}`}>{label}</p>
+      <label htmlFor={inputId} className={`relative flex min-h-11 w-full cursor-pointer items-center justify-center rounded-xl border p-2 text-center text-sm font-bold ${toneClasses} active:scale-[0.99]`}>
+        <span>{buttonText}</span>
+        <input
+          id={inputId}
+          type="file"
+          accept={accept}
+          multiple={multiple}
+          onChange={onChange}
+          className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+        />
+      </label>
+    </div>
+  );
+}
+
 export default function UploadPanel(props: UploadPanelProps) {
   const { handleImageUpload, handleAudioUpload, audioName, aspectRatio, formatTime, audioDuration, currentTime, images, currentImageIndex, isPlaying, chorusBoost, activePreset, audioMood, imageMotions, onSelectImage } = props;
   const audioInputId = "bgm-upload-input";
@@ -27,10 +61,10 @@ export default function UploadPanel(props: UploadPanelProps) {
     return motion ? labels[motion] : "ズームイン";
   };
 
-  return (<div className="h-full rounded-2xl border border-fuchsia-500/30 bg-zinc-950/90 p-4 overflow-y-auto space-y-4">
+  return (<div className="relative z-20 h-full rounded-2xl border border-fuchsia-500/30 bg-zinc-950/90 p-4 overflow-y-auto space-y-4">
     <h2 className="text-lg font-black text-fuchsia-300">1. 素材</h2>
-    <div className="block"><p className="mb-1 text-xs text-cyan-300">BGMアップロード</p><label htmlFor={audioInputId} className="block w-full cursor-pointer rounded-xl border border-cyan-400/70 bg-cyan-500/15 p-2 text-center text-sm font-bold text-cyan-100 hover:bg-cyan-500/30">音楽アップロード</label><input id={audioInputId} type="file" accept="audio/*" className="sr-only" onChange={handleAudioUpload} /></div>
-    <div className="block"><p className="mb-1 text-xs text-fuchsia-300">背景画像アップロード</p><label htmlFor={imageInputId} className="block w-full cursor-pointer rounded-xl border border-fuchsia-400/70 bg-fuchsia-500/15 p-2 text-center text-sm font-bold text-fuchsia-100 hover:bg-fuchsia-500/30">画像アップロード</label><input id={imageInputId} type="file" accept="image/*" multiple className="sr-only" onChange={handleImageUpload} /></div>
+    <FileUploadButton label="BGMアップロード" buttonText="音楽アップロード" inputId={audioInputId} accept="audio/*" onChange={handleAudioUpload} tone="cyan" />
+    <FileUploadButton label="背景画像アップロード" buttonText="画像アップロード" inputId={imageInputId} accept="image/*" multiple onChange={handleImageUpload} tone="fuchsia" />
 
     <div className="rounded-xl border border-zinc-700 bg-zinc-900/80 p-3 text-xs space-y-1">
       <div className="text-cyan-200 break-all">🎧 {audioName || "BGMをアップロードしてください"}</div>

@@ -28,3 +28,15 @@ export type SfxItem = {
 };
 
 export type PresetName = EffectPresetName;
+
+export type ExportFormatPreference = "auto" | "mp4" | "webm";
+export type RecordingContainer = "mp4" | "webm";
+
+export type RecordingFormatSelection = {
+  selectedMimeType?: string;
+  fileExtension: RecordingContainer;
+  actualFormat: RecordingContainer;
+  supportsMp4: boolean;
+  mp4RequestedButUnsupported: boolean;
+  fallbackMessage: string | null;
+};

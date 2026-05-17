@@ -1,3 +1,5 @@
+
+import type { ExportFormatPreference, RecordingFormatSelection } from "../types/mv";
 export const createExportCanvas = (width: number, height: number): HTMLCanvasElement => {
   const canvas = document.createElement("canvas");
   canvas.width = width;
@@ -468,25 +470,87 @@ export const combineCanvasAndAudioStreams = (
   return { stream: composedStream, hasAudio: audioTracks.length > 0 };
 };
 
+const MP4_MIME_CANDIDATES = [
+  "video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+  "video/mp4;codecs=h264,aac",
+  "video/mp4",
+] as const;
+
+const WEBM_MIME_CANDIDATES = [
+  "video/webm;codecs=vp9,opus",
+  "video/webm;codecs=vp8,opus",
+  "video/webm;codecs=vp9",
+  "video/webm;codecs=vp8",
+  "video/webm",
+] as const;
+
+const pickSupportedMimeType = (candidates: readonly string[]): string | undefined => {
+  if (typeof MediaRecorder === "undefined" || typeof MediaRecorder.isTypeSupported !== "function") {
+    return undefined;
+  }
+  return candidates.find((candidate) => MediaRecorder.isTypeSupported(candidate));
+};
+
+export const selectRecordingFormat = (
+  preference: ExportFormatPreference
+): RecordingFormatSelection => {
+  const supportedMp4 = pickSupportedMimeType(MP4_MIME_CANDIDATES);
+  const supportedWebm = pickSupportedMimeType(WEBM_MIME_CANDIDATES);
+  const supportsMp4 = Boolean(supportedMp4);
+
+  if ((preference === "auto" || preference === "mp4") && supportedMp4) {
+    return {
+      selectedMimeType: supportedMp4,
+      fileExtension: "mp4",
+      actualFormat: "mp4",
+      supportsMp4,
+      mp4RequestedButUnsupported: false,
+      fallbackMessage: null,
+    };
+  }
+
+  if (supportedWebm) {
+    return {
+      selectedMimeType: supportedWebm,
+      fileExtension: "webm",
+      actualFormat: "webm",
+      supportsMp4,
+      mp4RequestedButUnsupported: preference === "mp4" && !supportedMp4,
+      fallbackMessage: preference === "mp4" && !supportedMp4
+        ? "この端末ではMP4録画に非対応のため、WebMで保存します"
+        : null,
+    };
+  }
+
+  return {
+    selectedMimeType: undefined,
+    fileExtension: preference === "mp4" && supportedMp4 ? "mp4" : "webm",
+    actualFormat: preference === "mp4" && supportedMp4 ? "mp4" : "webm",
+    supportsMp4,
+    mp4RequestedButUnsupported: preference === "mp4" && !supportedMp4,
+    fallbackMessage: preference === "mp4" && !supportedMp4
+      ? "この端末ではMP4録画に非対応のため、WebMで保存します"
+      : null,
+  };
+};
+
 export const startCanvasRecording = (
   canvas: HTMLCanvasElement,
   fps: number,
   mediaElement?: HTMLMediaElement | null,
-  includeAudio = true
+  includeAudio = true,
+  mimeType?: string
 ): { recorder: MediaRecorder; hasAudio: boolean } => {
   const canvasStream = canvas.captureStream(fps);
   const audioStream = includeAudio ? getAudioStreamFromElement(mediaElement) : null;
   const { stream, hasAudio } = combineCanvasAndAudioStreams(canvasStream, audioStream);
-
-  const mimeType = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-    ? "video/webm;codecs=vp9"
-    : "video/webm";
-
-  return { recorder: new MediaRecorder(stream, { mimeType }), hasAudio };
+  const options = mimeType ? { mimeType } : undefined;
+  return { recorder: options ? new MediaRecorder(stream, options) : new MediaRecorder(stream), hasAudio };
 };
 
 export const stopCanvasRecording = async (
-  mediaRecorder: MediaRecorder
+  mediaRecorder: MediaRecorder,
+  blobMimeType = "video/webm"
 ): Promise<Blob> => {
   const chunks: BlobPart[] = [];
 
@@ -502,7 +566,7 @@ export const stopCanvasRecording = async (
     };
 
     mediaRecorder.onstop = () => {
-      resolve(new Blob(chunks, { type: "video/webm" }));
+      resolve(new Blob(chunks, { type: blobMimeType }));
     };
 
     mediaRecorder.stop();

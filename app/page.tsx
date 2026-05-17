@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { ChangeEvent, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ControlButtons from "../src/components/ControlButtons";
 import Timeline from "../src/components/Timeline";
 import UploadPanel from "../src/components/UploadPanel";
@@ -164,8 +164,7 @@ export default function Home() {
   const [, setScreenShakeIntensity] = useState(1);
   const [textFrequency, setTextFrequency] = useState(0.55);
   const [, setChorusEffectMultiplier] = useState(1.3);
-  const [fadeFlickerBlurIntensity, setFadeFlickerBlurIntensity] = useState(1);
-  const [, setBaseContrast] = useState(1.05);
+  const [fadeFlickerBlurIntensity] = useState(1);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLogoLoadError, setIsLogoLoadError] = useState(false);
@@ -199,7 +198,6 @@ export default function Home() {
     name: string;
     createdAt: string;
     updatedAt: string;
-    importedAt?: string;
     settings: {
       activePreset: EffectPresetName;
       customControls: typeof customControls;
@@ -214,12 +212,6 @@ export default function Home() {
   const [savedSettingsList, setSavedSettingsList] = useState<SavedSettingsSlot[]>([]);
   const [selectedSettingsId, setSelectedSettingsId] = useState<string | null>(null);
 
-  type SettingsTemplateExport = {
-    version: number;
-    appName: "manga-mv-engine";
-    exportedAt: string;
-    slots: SavedSettingsSlot[];
-  };
 
   const mapPresetToControls = (config: (typeof effectPresetConfigs)[EffectPresetName]) => ({
     sfxAmount: Math.round(config.sfxFrequency * 100),
@@ -429,10 +421,7 @@ export default function Home() {
     setAutoSfx(true);
     setShowSfx(true);
     setTextMode("smart");
-    setChorusSensitivity(config.chorusThreshold);
     applyCustomControls(controls);
-    setFadeFlickerBlurIntensity(config.fadeFlickerBlurIntensity);
-    setBaseContrast(config.baseContrast);
 
     if (preset === "エモ") {
       randomizeMotionsFromList(calmMotionList);
@@ -495,56 +484,9 @@ export default function Home() {
   };
 
   const createSlotId = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  const createSafeExportFileName = (base: string) =>
-    `${base.replace(/[^a-zA-Z0-9_-]/g, "_") || "settings"}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
 
-  const isValidCustomControls = (controls: unknown): controls is typeof customControls => {
-    if (!controls || typeof controls !== "object") return false;
-    const candidate = controls as Record<string, unknown>;
-    return ["sfxAmount", "sfxSize", "focusLine", "glitch", "shake", "textFrequency", "chorusMultiplier"]
-      .every((key) => typeof candidate[key] === "number");
-  };
 
-  const isValidSlot = (slot: unknown): slot is SavedSettingsSlot => {
-    if (!slot || typeof slot !== "object") return false;
-    const candidate = slot as Record<string, unknown>;
-    if (typeof candidate.id !== "string" || typeof candidate.name !== "string") return false;
-    if (!candidate.settings || typeof candidate.settings !== "object") return false;
-    const settings = candidate.settings as Record<string, unknown>;
-    if (!effectPresetList.includes(settings.activePreset as EffectPresetName)) return false;
-    if (!isValidCustomControls(settings.customControls)) return false;
-    if (!["none", "image"].includes(settings.backgroundMode as string)) return false;
-    if (!["bgm", "silent"].includes(settings.audioSourceMode as string)) return false;
-    if (!["fixed", "random", "smart"].includes(settings.textMode as string)) return false;
-    return typeof settings.bubbleText === "string"
-      && typeof settings.sfxText === "string"
-      && typeof settings.settingsName === "string";
-  };
 
-  const exportSettingsSlots = (slots: SavedSettingsSlot[], fileBaseName: string) => {
-    if (slots.length === 0) {
-      setSettingsStatus("書き出し対象のスロットがありません");
-      return;
-    }
-    const payload: SettingsTemplateExport = {
-      version: 1,
-      appName: "manga-mv-engine",
-      exportedAt: new Date().toISOString(),
-      slots,
-    };
-    try {
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = url;
-      anchor.download = createSafeExportFileName(fileBaseName);
-      anchor.click();
-      URL.revokeObjectURL(url);
-      setSettingsStatus(`${slots.length}件の設定をJSON書き出ししました`);
-    } catch {
-      setSettingsStatus("JSON書き出しに失敗しました");
-    }
-  };
 
   const saveAsNewSlot = () => {
     const trimmedName = settingsName.trim() || "マイ設定";
@@ -613,67 +555,7 @@ export default function Home() {
     setSettingsStatus("初期設定に戻しました");
   };
 
-  const exportSelectedSlot = () => {
-    if (!selectedSettingsId) {
-      setSettingsStatus("書き出すスロットを選択してください");
-      return;
-    }
-    const slot = savedSettingsList.find((item) => item.id === selectedSettingsId);
-    if (!slot) {
-      setSettingsStatus("選択中スロットが見つかりません");
-      return;
-    }
-    exportSettingsSlots([slot], `manga-mv-engine-slot-${slot.name}`);
-  };
 
-  const exportAllSlots = () => {
-    exportSettingsSlots(savedSettingsList, "manga-mv-engine-all-slots");
-  };
-
-  const importSettingsFromJson = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = JSON.parse(String(reader.result)) as Partial<SettingsTemplateExport>;
-        if (parsed.appName !== "manga-mv-engine") throw new Error("appNameが不正です");
-        if (!Array.isArray(parsed.slots)) throw new Error("slots配列がありません");
-        const validImported = parsed.slots.filter(isValidSlot);
-        if (validImported.length === 0) throw new Error("有効なスロットがありません");
-
-        const existingIds = new Set(savedSettingsList.map((slot) => slot.id));
-        const existingNames = new Set(savedSettingsList.map((slot) => slot.name));
-        const now = new Date().toISOString();
-        const importedSlots = validImported.map((slot) => {
-          let nextId = slot.id;
-          while (existingIds.has(nextId)) nextId = createSlotId();
-          existingIds.add(nextId);
-          let nextName = slot.name;
-          if (existingNames.has(nextName)) {
-            nextName = `${slot.name} imported`;
-            let suffix = 2;
-            while (existingNames.has(nextName)) {
-              nextName = `${slot.name} imported ${suffix}`;
-              suffix += 1;
-            }
-          }
-          existingNames.add(nextName);
-          return { ...slot, id: nextId, name: nextName, importedAt: now, updatedAt: now };
-        });
-        syncSettingsList([...importedSlots, ...savedSettingsList]);
-        setSettingsStatus(`${importedSlots.length}件の設定をJSONから読み込みました`);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "不明なエラー";
-        setSettingsStatus(`JSON読み込みに失敗しました: ${message}`);
-      }
-    };
-    reader.onerror = () => {
-      setSettingsStatus("ファイル読み込みに失敗しました");
-    };
-    reader.readAsText(file);
-  };
 
   const handleCustomControlChange = (
     key: keyof typeof customControls,
@@ -1819,14 +1701,6 @@ export default function Home() {
                 <button onClick={saveAsNewSlot} className="rounded-lg border border-cyan-300/70 bg-cyan-500/20 px-2 py-1 text-xs font-bold text-cyan-100">新規保存</button>
                 <button onClick={overwriteSelectedSlot} className="rounded-lg border border-fuchsia-300/70 bg-fuchsia-500/20 px-2 py-1 text-xs font-bold text-fuchsia-100">選択中へ上書き保存</button>
                 <button onClick={resetToDefaultSettings} className="rounded-lg border border-zinc-400/70 bg-zinc-700/30 px-2 py-1 text-xs font-bold text-zinc-100">初期設定に戻す</button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button onClick={exportSelectedSlot} className="rounded-lg border border-emerald-300/70 bg-emerald-500/20 px-2 py-1 text-xs font-bold text-emerald-100">選択中設定を書き出し</button>
-                <button onClick={exportAllSlots} className="rounded-lg border border-sky-300/70 bg-sky-500/20 px-2 py-1 text-xs font-bold text-sky-100">全設定を書き出し</button>
-                <label className="cursor-pointer rounded-lg border border-amber-300/70 bg-amber-500/20 px-2 py-1 text-center text-xs font-bold text-amber-100">
-                  JSONから読み込み
-                  <input type="file" accept="application/json,.json" onChange={importSettingsFromJson} className="hidden" />
-                </label>
               </div>
               <div className="space-y-2">
                 <p className="text-[11px] text-zinc-400">保存済み設定リスト（選択中は枠線で表示）</p>

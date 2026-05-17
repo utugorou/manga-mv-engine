@@ -44,6 +44,12 @@ type ExportPanelProps = {
   selectedMimeType: string | null;
   mp4FallbackMessage: string | null;
   recordedFileExtension: RecordingContainer | null;
+  recordingStreamDiagnostics: {
+    videoTrackCount: number;
+    audioTrackCount: number;
+    mimeType: string | null;
+    format: RecordingContainer;
+  } | null;
 };
 
 export default function ExportPanel({
@@ -74,6 +80,7 @@ export default function ExportPanel({
   selectedMimeType,
   mp4FallbackMessage,
   recordedFileExtension,
+  recordingStreamDiagnostics,
 }: ExportPanelProps) {
   const resolution = getExportResolution(aspectRatio, exportQuality);
   const isRecordingNow = isRecording || exportStatus === "recording";
@@ -183,6 +190,18 @@ export default function ExportPanel({
         {mp4FallbackMessage && <p className="text-xs text-amber-300">{mp4FallbackMessage}</p>}
         <p className="text-xs text-cyan-300">実際の録画形式：{actualRecordingFormat.toUpperCase()}</p>
         <p className="text-[11px] text-zinc-500">使用MIME: {selectedMimeType ?? "ブラウザ既定"}</p>
+        {recordingStreamDiagnostics && (
+          <div className="rounded border border-cyan-900/80 bg-cyan-950/20 p-2 space-y-1">
+            <p className="text-[11px] text-cyan-200">
+              録画ストリーム：{recordingStreamDiagnostics.videoTrackCount > 0 ? "映像あり" : "映像なし"} / {recordingStreamDiagnostics.audioTrackCount > 0 ? "音声あり" : "音声なし"}
+            </p>
+            <p className="text-[11px] text-cyan-200">音声トラック：{recordingStreamDiagnostics.audioTrackCount}</p>
+            <p className="text-[11px] text-cyan-200">録画MIME：{recordingStreamDiagnostics.mimeType ?? "ブラウザ既定"}</p>
+            {recordingStreamDiagnostics.format === "mp4" && (
+              <p className="text-[11px] text-amber-300">注意：この端末ではMP4音声が入らない場合があります</p>
+            )}
+          </div>
+        )}
       </div>
       <div className="mt-3 rounded border border-emerald-800/80 bg-emerald-950/30 p-3 space-y-2">
         <p className="text-xs text-emerald-200 font-bold">曲尺自動録画</p>

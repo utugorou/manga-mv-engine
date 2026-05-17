@@ -1449,7 +1449,7 @@ export default function Home() {
                   height={72}
                   priority
                   onError={() => setIsLogoLoadError(true)}
-                  className="h-[clamp(9rem,22vw,17rem)] w-auto max-w-full object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
+                  className="h-[clamp(4rem,14vw,9rem)] md:h-[clamp(9rem,22vw,17rem)] w-auto max-w-full object-contain opacity-95 drop-shadow-[0_0_14px_rgba(217,70,239,0.45)]"
                 />
               ) : (
                 <span className="text-7xl md:text-8xl font-black tracking-[0.2em] leading-none">MANGA MV ENGINE</span>
@@ -1527,48 +1527,7 @@ export default function Home() {
               formatTime={formatTime}
             />
             <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3"><PresetPanel presetList={effectPresetList} activePreset={activePreset} isCustomAdjusted={isCustomAdjusted} applyPreset={applyPreset} customControls={customControls} onCustomControlChange={handleCustomControlChange} /></div>
-            <div className="rounded-xl border border-cyan-500/30 bg-zinc-900/60 p-3 space-y-2">
-              <p className="text-xs font-bold text-cyan-200">設定保存</p>
-              <input
-                type="text"
-                value={settingsName}
-                onChange={(e) => setSettingsName(e.target.value)}
-                placeholder="保存名を入力"
-                className="w-full rounded-lg border border-zinc-600 bg-zinc-950 px-2 py-1 text-xs text-zinc-100"
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <button onClick={saveAsNewSlot} className="rounded-lg border border-cyan-300/70 bg-cyan-500/20 px-2 py-1 text-xs font-bold text-cyan-100">新規保存</button>
-                <button onClick={overwriteSelectedSlot} className="rounded-lg border border-fuchsia-300/70 bg-fuchsia-500/20 px-2 py-1 text-xs font-bold text-fuchsia-100">選択中へ上書き保存</button>
-                <button onClick={resetToDefaultSettings} className="rounded-lg border border-zinc-400/70 bg-zinc-700/30 px-2 py-1 text-xs font-bold text-zinc-100">初期設定に戻す</button>
-              </div>
-              <div className="space-y-2">
-                <p className="text-[11px] text-zinc-400">保存済み設定リスト（選択中は枠線で表示）</p>
-                {savedSettingsList.length === 0 ? (
-                  <p className="text-[11px] text-zinc-500">保存済みスロットはありません</p>
-                ) : (
-                  <ul className="space-y-1">
-                    {savedSettingsList.map((slot) => (
-                      <li
-                        key={slot.id}
-                        className={`rounded-md border p-2 ${selectedSettingsId === slot.id ? "border-cyan-300 bg-cyan-500/10" : "border-zinc-700 bg-zinc-900/50"}`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <div>
-                            <p className="text-xs font-bold text-zinc-100">{slot.name}</p>
-                            <p className="text-[10px] text-zinc-400">更新: {new Date(slot.updatedAt).toLocaleString("ja-JP")}</p>
-                          </div>
-                          <div className="flex gap-1">
-                            <button onClick={() => loadSlot(slot.id)} className="rounded border border-cyan-400/70 bg-cyan-500/20 px-2 py-1 text-[10px] font-bold text-cyan-100">読み込み</button>
-                            <button onClick={() => deleteSlot(slot.id)} className="rounded border border-rose-400/70 bg-rose-500/20 px-2 py-1 text-[10px] font-bold text-rose-100">削除</button>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-              {settingsStatus ? <p className="text-[11px] text-zinc-300">{settingsStatus}</p> : null}
-            </div>
+            
           </div>
         </div>
         <div className="max-h-[calc(100vh-140px)] overflow-y-auto rounded-2xl border border-cyan-500/30 bg-zinc-950/90 p-4">
@@ -1744,7 +1703,25 @@ export default function Home() {
           ) : null}
           {mobileTab === "text" ? (
             <div className="space-y-3">
-              <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3"><SettingsPanel {...{switchMode,setSwitchMode,wasAboveThresholdRef,lastLowEnergyRef,setActivePreset,imageDuration,setImageDuration,handleAutoDuration,peakSensitivity,setPeakSensitivity,kickSensitivity,setKickSensitivity,minSwitchInterval,setMinSwitchInterval,idealSwitchInterval,setIdealSwitchInterval,fallbackSwitchInterval,setFallbackSwitchInterval,showBubble,setShowBubble,bubbleText,setBubbleText,autoBubble,setAutoBubble,textMode,setTextMode,audioMood,showSfx,setShowSfx,sfxText,setSfxText,autoSfx,setAutoSfx,randomSfxScaleEnabled,randomSfxCountEnabled,setRandomSfxScaleEnabled:handleRandomSfxScaleEnabled,setRandomSfxCountEnabled,regenerateSfxItems:() => { const items = generateSfxItems(); setSfxItems(items); setSfxText(items[0]?.text ?? sfxText); setSfxScale(items[0]?.scale ?? 1); },setBubblePosition,bubbleTexts,positions,randomItem,showGlitch,setShowGlitch,showEqualizer,setShowEqualizer,showFlash,setShowFlash,showPanels,setShowPanels,panelMode,setPanelMode,panelPattern,setPanelPattern,chorusBoost,chorusSensitivity,setChorusSensitivity,selectedMotion,setSelectedMotion,applyMotionToCurrent,applyRandomMotions,randomMotionApplied}} /></div>
+              <div className="rounded-xl border border-fuchsia-500/30 bg-zinc-900/60 p-3 space-y-3">
+                <p className="text-sm font-bold text-fuchsia-300">タイトル表示</p>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={showBubble} onChange={(e) => setShowBubble(e.target.checked)} />
+                  タイトルを表示
+                </label>
+                <input className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2" value={bubbleText} onChange={(e) => setBubbleText(e.target.value)} placeholder="タイトル文言" />
+                <p className="text-sm font-bold text-cyan-300">擬音表示（最大4つ・同文言）</p>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" checked={showSfx} onChange={(e) => setShowSfx(e.target.checked)} />
+                  擬音を表示
+                </label>
+                <input className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2" value={sfxText} onChange={(e) => setSfxText(e.target.value)} placeholder="擬音（例: ドン!!）" />
+                <label className="block text-sm text-zinc-300">スマート文字モード</label>
+                <select className="w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2" value={textMode} onChange={(e) => setTextMode(e.target.value as TextMode)}>
+                  <option value="random">ランダム</option>
+                  <option value="smart">スマート</option>
+                </select>
+              </div>
             </div>
           ) : null}
           {mobileTab === "effects" ? (

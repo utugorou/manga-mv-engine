@@ -74,7 +74,7 @@ export default function ExportPanel({
         </div>
 
         <div className="flex justify-between">
-          <span>書き出し方式</span>
+          <span>書き出し形式</span>
           <span className="text-lime-300">{getExportModeLabel(exportMode)}</span>
         </div>
 
@@ -121,13 +121,6 @@ export default function ExportPanel({
           高画質
         </button>
       </div>
-
-      <button
-        onClick={handlePrepareExport}
-        className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold p-2 rounded mt-3"
-      >
-        書き出し準備
-      </button>
 
       <p className="text-xs text-zinc-400 mt-2">状態：{statusText}</p>
       <p className="text-xs text-cyan-400 mt-1">録画状態：{recordingText}</p>
